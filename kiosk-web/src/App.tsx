@@ -65,6 +65,7 @@ import {
   shutdownKiosk,
 } from "./localBackend";
 import { playSound, useKioskSounds } from "./sounds";
+import { applyPaymentAction } from "./agentCheckout";
 import { PaymentPanelBody, paymentMethods, type Payment } from "./PaymentFlow";
 import { paymentMethodName } from "./domain";
 import { AgentChat, type AgentState } from "./AgentChat";
@@ -306,6 +307,7 @@ export default function App() {
   );
   const [outcome, setOutcome] = useState<Outcome>("success");
   const [payment, setPayment] = useState<Payment | null>(null);
+  const lastAgentPaymentAction = useRef<string | null>(null);
   const [order, setOrder] = useState<Order | null>(null);
   const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
   const [receiptSample, setReceiptSample] = useState(false);
@@ -381,7 +383,7 @@ export default function App() {
     };
     window.addEventListener("pointerdown", resetTaps);
     return () => window.removeEventListener("pointerdown", resetTaps);
-  }, [screen, overlay]);
+  }, [screen, overlay, chatOpen]);
   const surface = useRef<HTMLDivElement>(null);
   const catalogScroll = useRef<HTMLDivElement>(null);
   const dockScroll = useRef<HTMLDivElement>(null);
@@ -525,10 +527,10 @@ export default function App() {
       setScreen("completed");
   }, [screen, order?.id, autoPrint?.state]);
   useEffect(() => {
-    if (screen !== "completed" || overlay) return;
+    if (screen !== "completed" || overlay || chatOpen) return;
     const timer = setInterval(() => setFinishSeconds((n) => n - 1), 1000);
     return () => clearInterval(timer);
-  }, [screen, overlay]);
+  }, [screen, overlay, chatOpen]);
   useEffect(() => {
     if (screen === "completed" && finishSeconds <= 0) reset();
   }, [finishSeconds, screen]);
@@ -570,6 +572,7 @@ export default function App() {
   }, [idleSeconds, overlay]);
 
   function reset() {
+    lastAgentPaymentAction.current = null;
     setChatOpen(false);
     setChatGeneration((value) => value + 1);
     setCart([]);
@@ -613,11 +616,26 @@ export default function App() {
       throw new Error(
         "메뉴 데이터가 달라 주문을 적용하지 않았어요. 에이전트와 키오스크의 카탈로그를 확인해 주세요.",
       );
-    setCart(lines);
+    if (screen === "finalizing" || screen === "completed") return;
+    const action = state.payment_action;
+    if (action && action.id !== lastAgentPaymentAction.current) {
+      const next = applyPaymentAction(action, payment, totalPrice(lines));
+      lastAgentPaymentAction.current = action.id;
+      processing.current = false;
+      setToast("");
+      setPayment(next);
+    }
+    setCart((previous) =>
+      JSON.stringify(previous) === JSON.stringify(lines) ? previous : lines,
+    );
     if (state.place) setPlace(state.place);
     setEditor(null);
     if (state.phase === "checkout") setScreen("payment");
-    else if (state.place)
+    else if (state.view === "review" || state.confirmation_pending) {
+      setPayment(null);
+      processing.current = false;
+      setScreen("cart");
+    } else if (state.place)
       setScreen((previous) =>
         previous === "home" || previous === "payment" ? "menu" : previous,
       );
@@ -1827,20 +1845,36 @@ export default function App() {
       <AgentChat
         key={chatGeneration}
         cart={{
-          lines: cart,
+          lines:
+            (screen === "finalizing" || screen === "completed") && order
+              ? order.lines
+              : cart,
           place: screen === "home" ? null : place,
-          screen:
-            screen === "finalizing" || screen === "completed" ? "home" : screen,
+          screen,
+          payment,
+          receipt:
+            (screen === "finalizing" || screen === "completed") && order
+              ? {
+                  id: order.id,
+                  number: order.number,
+                  total: order.total,
+                  method: order.method,
+                }
+              : null,
+          last_action_id: lastAgentPaymentAction.current,
         }}
         disabled={
           !!overlay ||
           !!editor ||
-          !!payment ||
           screen === "finalizing" ||
           screen === "completed"
         }
         onState={applyAgentState}
         onOpenChange={setChatOpen}
+        onSessionEnd={() => {
+          setChatOpen(false);
+          setChatGeneration((value) => value + 1);
+        }}
       />
     </div>
   );

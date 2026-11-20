@@ -9,7 +9,11 @@ import {
   VolumeX,
 } from "lucide-react";
 import { assetUrl } from "./catalog";
-import type { CartLine, Place } from "./domain";
+import { findProduct, money } from "./catalog";
+import type { Payment } from "./PaymentFlow";
+import type { PaymentAction } from "./agentCheckout";
+import { summary, totalPrice } from "./domain";
+import type { CartLine, Place, PaymentMethod } from "./domain";
 import "./agent-chat.css";
 import { AgentSpeech } from "./agentSpeech";
 import { streamAgentAudio, unlockAgentAudio } from "./agentAudio";
@@ -17,10 +21,21 @@ import { streamAgentAudio, unlockAgentAudio } from "./agentAudio";
 export type ChatCart = {
   lines: CartLine[];
   place: Place | null;
-  screen: "home" | "menu" | "cart" | "payment";
+  screen: "home" | "menu" | "cart" | "payment" | "finalizing" | "completed";
+  payment?: Payment | null;
+  receipt?: {
+    id: string;
+    number: string;
+    total: number;
+    method: PaymentMethod;
+  } | null;
+  last_action_id?: string | null;
 };
 export type AgentState = {
-  phase: "ordering" | "checkout" | "handoff";
+  phase: "ordering" | "checkout" | "handoff" | "completed";
+  view?: "menu" | "review" | "payment";
+  confirmation_pending?: boolean;
+  payment_action?: PaymentAction | null;
   place: Place | null;
   lines: {
     id: string;
@@ -37,6 +52,7 @@ type Pending = {
   text: string;
   cart: ChatCart;
   session: string;
+  payment_event?: boolean;
 };
 type Result = {
   ok: boolean;
@@ -44,6 +60,7 @@ type Result = {
   text?: string;
   error?: string;
   state?: AgentState;
+  session_complete?: boolean;
 };
 type StreamEvent = Result & {
   type: "text.delta" | "final" | "error" | "interrupted";
@@ -88,17 +105,22 @@ export function AgentChat({
   disabled,
   onState,
   onOpenChange,
+  onSessionEnd,
 }: {
   cart: ChatCart;
   disabled: boolean;
   onState: (state: AgentState) => void;
   onOpenChange: (open: boolean) => void;
+  onSessionEnd: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const end = useRef<HTMLDivElement>(null);
   const current = useRef(cart);
   current.current = cart;
+  const checkoutView = ["cart", "payment", "finalizing", "completed"].includes(
+    cart.screen,
+  );
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([greeting]);
   const [text, setText] = useState("");
@@ -118,6 +140,8 @@ export function AgentChat({
         "음성 재생에 실패했어요. ‘음성 끄기’를 누르면 화면의 안내로 계속할 수 있어요.",
       ),
     );
+  const latestConnection = useRef({ session, token: status?.token });
+  latestConnection.current = { session, token: status?.token };
   const generation = useRef(0);
   const streamAbort = useRef<AbortController | null>(null);
   const cursor = useRef(0);
@@ -127,9 +151,44 @@ export function AgentChat({
     () => () => {
       streamAbort.current?.abort();
       speech.current?.stop();
+      const latest = latestConnection.current;
+      if (latest.session && latest.token)
+        void request(`sessions/${latest.session}/end`, latest.token, {}).catch(
+          () => {},
+        );
     },
     [],
   );
+
+  const submitLatest = useRef(submit);
+  submitLatest.current = submit;
+  const seenPaymentNotices = useRef(new Set<string>());
+  useEffect(() => {
+    const key = cart.receipt
+      ? `complete:${cart.receipt.id}`
+      : cart.payment && ["failure", "timeout"].includes(cart.payment.status)
+        ? `${cart.payment.attempt}:${cart.payment.status}`
+        : null;
+    if (
+      !key ||
+      !session ||
+      !status?.ready ||
+      !open ||
+      busy ||
+      seenPaymentNotices.current.has(key)
+    )
+      return;
+    seenPaymentNotices.current.add(key);
+    void submitLatest.current(undefined, true);
+  }, [
+    cart.receipt?.id,
+    cart.payment?.attempt,
+    cart.payment?.status,
+    session,
+    status?.ready,
+    open,
+    busy,
+  ]);
 
   async function connect() {
     setChecking(true);
@@ -162,12 +221,14 @@ export function AgentChat({
 
   useEffect(() => {
     if (open) {
-      dialog.current?.showModal();
+      dialog.current?.close();
+      if (checkoutView) dialog.current?.show();
+      else dialog.current?.showModal();
       void connect();
       input.current?.focus();
     } else dialog.current?.close();
     onOpenChange(open);
-  }, [open]);
+  }, [open, checkoutView]);
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: "nearest" });
@@ -186,6 +247,7 @@ export function AgentChat({
   function apply(state: AgentState) {
     onState(state);
     current.current = {
+      ...current.current,
       lines: state.lines.map((line) => ({
         id: line.id,
         productId: line.product_id,
@@ -196,11 +258,13 @@ export function AgentChat({
       screen:
         state.phase === "checkout"
           ? "payment"
-          : state.place
-            ? current.current.screen === "cart"
-              ? "cart"
-              : "menu"
-            : "home",
+          : state.view === "review" || state.confirmation_pending
+            ? "cart"
+            : state.place
+              ? current.current.screen === "cart"
+                ? "cart"
+                : "menu"
+              : "home",
     };
   }
 
@@ -230,16 +294,21 @@ export function AgentChat({
         status.token,
         {},
       );
-      if (result.state) apply(result.state);
+      if (
+        result.state &&
+        !["finalizing", "completed"].includes(current.current.screen)
+      )
+        apply(result.state);
     }
     sending.current = false;
     setBusy(false);
     setPending(null);
   }
 
-  async function submit(retry?: Pending) {
+  async function submit(retry?: Pending, paymentEvent = false) {
+    if (disabled && !paymentEvent) return;
     if (ttsEnabled) unlockAgentAudio();
-    if (!status?.ready || (!retry && !text.trim())) return;
+    if (!status?.ready || (!retry && !paymentEvent && !text.trim())) return;
     if (sending.current || speaking || delivery.current) {
       try {
         await interrupt();
@@ -265,15 +334,18 @@ export function AgentChat({
       if (!operation) {
         operation = {
           request_id: crypto.randomUUID(),
-          text: text.trim(),
+          text: paymentEvent ? "키오스크 결제 결과 알림" : text.trim(),
+          payment_event: paymentEvent,
           cart: structuredClone(current.current),
           session: id,
         };
-        setMessages((previous) => [
-          ...previous,
-          { role: "user", text: operation!.text },
-        ]);
-        setText("");
+        if (!paymentEvent) {
+          setMessages((previous) => [
+            ...previous,
+            { role: "user", text: operation!.text },
+          ]);
+          setText("");
+        }
         cursor.current = 0;
         speech.current!.begin();
       }
@@ -295,6 +367,7 @@ export function AgentChat({
           request_id: operation.request_id,
           text: operation.text,
           cart: operation.cart,
+          payment_event: operation.payment_event,
         },
       );
       if (!started.ok) {
@@ -367,10 +440,13 @@ export function AgentChat({
           } else {
             completed = true;
             setPending(null);
-            if (event.state) {
+            if (event.state && !operation.payment_event) {
               if (
-                JSON.stringify(current.current) !==
-                JSON.stringify(operation.cart)
+                JSON.stringify([
+                  current.current.lines,
+                  current.current.place,
+                ]) !==
+                JSON.stringify([operation.cart.lines, operation.cart.place])
               ) {
                 setSession(null);
                 throw new Error(
@@ -386,7 +462,15 @@ export function AgentChat({
                   session: id,
                   request: operation.request_id,
                 };
-              speech.current!.finish(event.text, () => void acknowledge());
+              speech.current!.finish(event.text, () => {
+                void acknowledge();
+                if (event.session_complete) {
+                  void request(`sessions/${id}/end`, status.token, {}).catch(
+                    () => {},
+                  );
+                  onSessionEnd();
+                }
+              });
             } else {
               speech.current!.stop();
               if (event.error) setError(event.error);
@@ -443,7 +527,7 @@ export function AgentChat({
       </button>
       <dialog
         ref={dialog}
-        className="agent-chat-dialog"
+        className={`agent-chat-dialog${checkoutView ? " is-checkout" : ""}`}
         aria-labelledby="agent-chat-title"
         onCancel={(event) => {
           event.preventDefault();
@@ -520,6 +604,43 @@ export function AgentChat({
             설정 후 에이전트 서버를 다시 실행하고 ‘다시 연결’을 눌러 주세요.
           </div>
         )}
+        {checkoutView && cart.lines.length > 0 && (
+          <section
+            className="agent-checkout-summary"
+            aria-label="대화 주문 확인"
+          >
+            <strong>
+              {cart.receipt
+                ? `주문번호 ${cart.receipt.number}번`
+                : cart.screen === "cart"
+                  ? "주문 내용을 확인해 주세요"
+                  : "결제를 도와드릴게요"}
+            </strong>
+            <ul>
+              {cart.lines.map((line) => (
+                <li key={line.id}>
+                  {findProduct(line.productId)?.name} {line.quantity}개
+                  <small>{summary(line.options)}</small>
+                </li>
+              ))}
+            </ul>
+            {cart.payment && (
+              <p>
+                {
+                  {
+                    waiting: "리더기 대기 중",
+                    reading: "결제 정보 확인 중",
+                    processing: "승인 처리 중",
+                    approved: "승인 완료",
+                    failure: "결제 실패",
+                    timeout: "결제 시간 초과",
+                  }[cart.payment.status]
+                }
+              </p>
+            )}
+            <b>총 {money(totalPrice(cart.lines))}</b>
+          </section>
+        )}
         <div
           className="agent-chat-log"
           role="log"
@@ -574,7 +695,7 @@ export function AgentChat({
             value={text}
             maxLength={4000}
             rows={2}
-            disabled={(!busy && !!pending) || !status?.ready}
+            disabled={disabled || (!busy && !!pending) || !status?.ready}
             onChange={(event) => setText(event.target.value)}
             onKeyDown={(event) => {
               if (
@@ -592,7 +713,9 @@ export function AgentChat({
             aria-label={
               busy || speaking ? "끼어들어 메시지 보내기" : "메시지 보내기"
             }
-            disabled={(!busy && !!pending) || !status?.ready || !text.trim()}
+            disabled={
+              disabled || (!busy && !!pending) || !status?.ready || !text.trim()
+            }
           >
             <Send size={21} />
           </button>
@@ -600,10 +723,14 @@ export function AgentChat({
         <div className="agent-chat-footer">
           <span>OpenAI AI 음성 · Enter 전송</span>
           <button
-            disabled={busy || !!pending}
+            disabled={disabled || busy || !!pending}
             onClick={() => {
               speech.current!.stop();
               delivery.current = null;
+              if (session && status)
+                void request(`sessions/${session}/end`, status.token, {}).catch(
+                  () => {},
+                );
               setMessages([greeting]);
               setSession(null);
               setError("");

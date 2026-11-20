@@ -34,7 +34,7 @@ def load_config():
 
 def sync_cart(store, cart):
     """Import a touch-edited cart atomically; keep confirmations if unchanged."""
-    if not isinstance(cart, dict) or cart.get("screen") not in {"home", "menu", "cart", "payment"}:
+    if not isinstance(cart, dict) or cart.get("screen") not in {"home", "menu", "cart", "payment", "finalizing", "completed"}:
         raise OrderError("현재 화면에서는 주문 대화를 시작할 수 없어요.")
     place, rows = cart.get("place"), cart.get("lines")
     if place not in {None, "store", "takeout"} or not isinstance(rows, list) or len(rows) > 99:
@@ -52,7 +52,14 @@ def sync_cart(store, cart):
     if cart["screen"] == "home" and (candidate or place is not None):
         raise OrderError("시작 화면의 주문 정보를 확인해 주세요.")
     store.validate_cart(candidate)
-    phase = "checkout" if cart["screen"] == "payment" else "ordering"
+    from .payments import sync_payment
+    ui = sync_payment(store, cart, sum(store.unit_price(line) * line.quantity for line in candidate))
+    phase = "completed" if ui["receipt"] else "checkout" if cart["screen"] == "payment" else "ordering"
+    if store.phase == "completed" and ui["receipt"] != store.payment_ui.get("receipt"):
+        raise OrderError("완료된 주문은 다시 결제할 수 없어요. 새 대화를 시작해 주세요.")
+    store.payment_ui = ui
+    if store.payment_action and (cart.get("last_action_id") == store.payment_action["id"] or store.payment_action["expected_attempt"] != (ui["payment"]["attempt"] if ui["payment"] else None)):
+        store.payment_action = None
     if candidate != store.lines or place != store.place or (store.phase != "handoff" and phase != store.phase):
         store.lines, store.place, store.phase = deepcopy(candidate), place, phase
         if store.focus not in ids:
@@ -120,7 +127,14 @@ class Bridge:
             try:
                 sync_cart(conversation.store, payload.get("cart"))
                 synced = True
-                result = await asyncio.wait_for(conversation.reply(text, emit=emit, defer_delivery=True), timeout=90)
+                if payload.get("payment_event"):
+                    from .payments import notice
+                    message = notice(conversation.store)
+                    if hasattr(conversation, "history"):
+                        conversation.history.append({"role": "assistant", "content": message})
+                    result = {"text": message, "state": conversation.store.snapshot(), "session_complete": bool(conversation.store.payment_ui.get("receipt"))}
+                else:
+                    result = await asyncio.wait_for(conversation.reply(text, emit=emit, defer_delivery=True), timeout=90)
                 emit({"type": "final", "ok": True, **result, "needs_delivery": conversation.store.final_confirmation_text is not None})
             except asyncio.CancelledError:
                 conversation.store.pending = conversation.store.confirmation_at_turn_start = None
@@ -167,6 +181,17 @@ class Bridge:
         s.pending = s.confirmation_at_turn_start = None
         s.final_confirmation_text = None
         return {"ok": True, "state": s.snapshot()}
+
+    async def end(self, session_id):
+        session = self.sessions.get(session_id)
+        if session:
+            await self.interrupt(session_id)
+            if session["warmup"] and not session["warmup"].done():
+                session["warmup"].cancel()
+                await asyncio.gather(session["warmup"], return_exceptions=True)
+            await session["speaker"].disconnect()
+            self.sessions.pop(session_id, None)
+        return {"ok": True}
 
     async def speech(self, session_id, request_id, text):
         session = self.sessions.get(session_id)
@@ -294,7 +319,7 @@ def handler_for(bridge):
                     result = bridge.submit(bridge.create())
                 else:
                     parts = path.strip("/").split("/")
-                    if len(parts) != 4 or parts[:2] != ["agent-api", "sessions"] or parts[3] not in {"turns", "interrupt", "delivered", "speech"}:
+                    if len(parts) != 4 or parts[:2] != ["agent-api", "sessions"] or parts[3] not in {"turns", "interrupt", "delivered", "speech", "end"}:
                         return self.send_json(404, {"error": "존재하지 않는 경로예요."})
                     if parts[3] == "speech":
                         try:
@@ -318,6 +343,8 @@ def handler_for(bridge):
                         except Exception:
                             self.send_json(502, {"error": "음성을 만들지 못했어요. TTS 연결·모델 권한을 확인해 주세요."})
                         return
+                    elif parts[3] == "end":
+                        result = bridge.submit(bridge.end(parts[2]))
                     elif parts[3] == "interrupt":
                         result = bridge.submit(bridge.interrupt(parts[2]))
                     elif parts[3] == "delivered":

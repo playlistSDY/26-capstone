@@ -51,6 +51,9 @@ class OrderStore:
     stock: dict[str, int | None] = field(default_factory=dict)
     utterance: str = ""
     item_drafts: dict = field(default_factory=dict)
+    payment_ui: dict = field(default_factory=dict)
+    payment_action: dict | None = None
+    view: str = "menu"
 
     @classmethod
     def demo(cls):
@@ -70,7 +73,10 @@ class OrderStore:
             "네", "예", "응", "좋아요", "맞아요", "그래", "그래요",
             "결제해줘", "결제해주세요", "네결제해주세요", "이대로결제해주세요",
             "네맞아요", "네좋아요", "그대로해주세요", "그렇게해주세요",
+            "맞아", "맞습니다", "좋아", "이대로해줘",
         }
+        affirmative = affirmative or bool(re.fullmatch(
+            r"(네|예|응|맞아|맞아요|좋아요|그래요)?(카드|삼성페이|애플페이|카카오페이|네이버페이)(요|로|로할게요|로할게|로해주세요|로결제할게요|로결제해주세요|로결제할래요)?", normalized))
         if not affirmative:
             self.pending = None
             self.confirmation_at_turn_start = None
@@ -153,6 +159,8 @@ class OrderStore:
             "lines": [dict(asdict(l), name=self.product(l.product_id)["name"], unit_price=self.unit_price(l)) for l in self.lines],
             "total": sum(self.unit_price(l) * l.quantity for l in self.lines),
             "confirmation_pending": self.pending is not None,
+            "view": self.view, "payment_ui": deepcopy(self.payment_ui),
+            "payment_action": deepcopy(self.payment_action),
             "handoff": deepcopy(self.handoff),
             "item_drafts": deepcopy(list(self.item_drafts.values())),
         }
@@ -231,6 +239,7 @@ class OrderStore:
         if not self.lines or self.place is None:
             raise OrderError("메뉴와 매장/포장 선택을 먼저 마쳐 주세요.")
         self.validate_cart(self.lines)
+        self.view = "review"
         self.pending = {"revision": self.revision, "turn": self.turn, "created": time.monotonic(), "delivered": False}
         self.final_confirmation_text = f"{'매장에서 드시는' if self.place == 'store' else '포장하시는'} 주문은 {self.summary()}, 총 {self.snapshot()['total']:,}원이에요. 이대로 결제할까요?"
         return {"summary": self.final_confirmation_text, "revision": self.revision}
@@ -246,12 +255,17 @@ class OrderStore:
             raise OrderError("현재 주문의 최종 내용을 안내하고 새 답변으로 확인받아 주세요.")
         self.validate_cart(self.lines)
         self.phase = "checkout"
+        self.view = "payment"
         self.pending = self.confirmation_at_turn_start = None
         return {"event": "checkout.opened", "mode": "mock", "cart": self.snapshot(), "payment_executed": False}
 
     def return_to_order(self):
-        if self.phase == "handoff":
-            raise OrderError("직원 인계 후에는 새 세션을 시작해 주세요.")
+        if self.phase in {"handoff", "completed"}:
+            raise OrderError("완료되거나 인계한 주문은 새 세션을 시작해 주세요.")
+        if self.payment_ui.get("payment") and self.payment_ui["payment"]["status"] not in {"failure", "timeout"}:
+            raise OrderError("진행 중인 결제를 먼저 취소해 주세요.")
         self.phase = "ordering"
+        self.view = "review"
+        self.payment_action = None
         self.changed()
         return self.snapshot()

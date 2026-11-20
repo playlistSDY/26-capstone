@@ -10,6 +10,7 @@ from agents import Agent, ModelSettings, Runner, RunConfig
 
 from .domain import OrderStore
 from .tools import TOOLS
+from .payments import METHODS
 
 
 class Conversation:
@@ -26,7 +27,7 @@ class Conversation:
             instructions=self.instructions,
             model_settings=ModelSettings(parallel_tool_calls=False, store=False),
             # These tools end the current model turn. The host speaks their outcome.
-            tool_use_behavior={"stop_at_tool_names": ["request_final_confirmation", "open_checkout", "handoff_to_staff"]},
+            tool_use_behavior={"stop_at_tool_names": ["request_final_confirmation", "open_checkout", "select_payment_method", "retry_payment", "cancel_payment", "handoff_to_staff"]},
         )
 
     def instructions(self, ctx, agent):
@@ -36,6 +37,7 @@ class Conversation:
         async with self.lock:
             self.store.begin_turn(text)
             start_revision = self.store.revision
+            start_phase = self.store.phase
             try:
                 kwargs = dict(context=self.store, max_turns=12, run_config=RunConfig(tracing_disabled=True))
                 inputs = self.history + [{"role": "user", "content": text}]
@@ -57,8 +59,18 @@ class Conversation:
                     answer = self.store.final_confirmation_text
                     if not defer_delivery:
                         self.store.delivered()
-                elif self.store.phase == "checkout":
-                    answer = "확인 감사합니다. 가상 결제 화면으로 넘어갈게요."
+                elif self.store.phase == "checkout" and self.store.payment_action:
+                    action = self.store.payment_action
+                    if action["kind"] == "cancel":
+                        answer = "결제를 취소했어요. 다른 결제수단으로 하시겠어요?"
+                    elif action["method"] == "card":
+                        answer = "카드를 리더기에 넣어 주세요. 승인이 끝나면 알려드릴게요."
+                    elif action["method"] in {"kakao", "naver"}:
+                        answer = f"{METHODS[action['method']]} 앱의 결제코드를 스캐너에 보여 주세요."
+                    else:
+                        answer = f"{METHODS[action['method']]}를 켜고 휴대폰을 리더기에 대 주세요."
+                elif self.store.phase == "checkout" and start_phase != "checkout":
+                    answer = "결제수단을 선택해 주세요. 카드나 어떤 페이로 결제하시겠어요?"
                 elif self.store.phase == "handoff":
                     answer = "지금까지의 주문과 도움이 필요한 내용을 정리했어요. 아직 실제 직원 호출에는 연결되지 않았어요."
                 else:
@@ -70,6 +82,12 @@ class Conversation:
                             answer = tool_result["message"]
                     except (ValueError, TypeError):
                         pass
+                try:
+                    stopped = json.loads(str(result.final_output))
+                    if isinstance(stopped, dict) and stopped.get("ok") is False:
+                        answer = stopped["message"]
+                except (ValueError, TypeError):
+                    pass
                 last = self.history[-1] if self.history else {}
                 content = last.get("content", "")
                 previous_text = content if isinstance(content, str) else "".join(part.get("text", "") for part in content if isinstance(part, dict))

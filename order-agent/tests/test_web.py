@@ -58,6 +58,25 @@ class BridgeTest(unittest.TestCase):
             await record["task"]
         self.bridge.submit(wait())
 
+    def test_payment_result_uses_ui_receipt_without_calling_model(self):
+        c = self.bridge.sessions[self.session]["conversation"]
+        c.store.add("latte", 1, Options(temperature="hot"))
+        rows = [{"id": l.id, "productId": l.product_id, "quantity": l.quantity, "options": asdict(l.options)} for l in c.store.lines]
+        payload = {"request_id":"turn-1", "text":"결제 결과", "payment_event":True,
+                   "cart":{"screen":"completed", "place":"store", "lines":rows,
+                           "receipt":{"id":"order1", "number":"009", "total":4200, "method":"card"}}}
+        self.bridge.submit(self.bridge.turn(self.session,payload)); self.finish()
+        event = self.bridge.submit(self.bridge.events(self.session,"turn-1",0))["events"][-1]
+        self.assertTrue(event["session_complete"])
+        self.assertIn("009번",event["text"])
+        self.assertEqual(c.calls,0)
+
+    def test_end_deletes_session_and_rejects_late_turn(self):
+        self.bridge.submit(self.bridge.end(self.session))
+        self.assertNotIn(self.session, self.bridge.sessions)
+        result = self.bridge.submit(self.bridge.turn(self.session,{"request_id":"late", "text":"네", "cart":cart()}))
+        self.assertEqual(result["code"], "SESSION_EXPIRED")
+
     def test_duplicate_request_replays_events_without_duplicate_mutation(self):
         payload = self.start()
         self.finish()

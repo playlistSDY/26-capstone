@@ -11,6 +11,7 @@ from agents import RunContextWrapper, function_tool
 
 from .domain import Options, OrderError, OrderStore
 from .knowledge import details, suitable, service_policy
+from .payments import command
 from .preferences import add_with_preferences, important_options
 
 
@@ -151,14 +152,37 @@ def set_order_type(ctx: RunContextWrapper[OrderStore], place: str) -> str:
 
 @function_tool
 def request_final_confirmation(ctx: RunContextWrapper[OrderStore]) -> str:
-    """사용자가 주문을 마치려 할 때 호출한다. 전체 내역과 금액을 안내하고 새로운 사용자 발화로 최종 동의를 기다린다. 이 호출 자체는 결제로 이동하지 않는다."""
+    """사용자가 주문을 마치려 할 때 호출한다. 전체 내역과 금액을 안내하고 새로운 사용자 발화로 최종 동의를 기다린다. 주문 확인 화면으로 이동하며, 결제수단 선택은 다음 동의 후에 진행한다."""
     return guarded(ctx.context.request_confirmation)
 
 
 @function_tool
-def open_checkout(ctx: RunContextWrapper[OrderStore]) -> str:
+def open_checkout(ctx: RunContextWrapper[OrderStore], method: Literal["card", "samsung", "apple", "kakao", "naver"] | None = None) -> str:
     """직전 최종 주문 요약에 사용자가 명확히 동의한 경우에만 결제 화면을 연다. 현재는 가상 이벤트이며 실제 청구는 없다."""
-    return guarded(ctx.context.checkout)
+    def open_screen():
+        result = ctx.context.checkout()
+        if method is not None:
+            command(ctx.context, "select", method)
+        return result
+    return guarded(open_screen)
+
+
+@function_tool
+def select_payment_method(ctx: RunContextWrapper[OrderStore], method: Literal["card", "samsung", "apple", "kakao", "naver"]) -> str:
+    """고객이 선택한 결제수단으로 기존 키오스크 리더기 화면을 연다. card=신용·체크카드. 청구 성공을 만들지 않으며 결과는 키오스크가 보고한다."""
+    return guarded(lambda: command(ctx.context, "select", method))
+
+
+@function_tool
+def retry_payment(ctx: RunContextWrapper[OrderStore]) -> str:
+    """고객이 실패·시간 초과된 결제의 재시도에 동의하면 같은 결제수단으로 리더기를 다시 시작한다."""
+    return guarded(lambda: command(ctx.context, "retry"))
+
+
+@function_tool
+def cancel_payment(ctx: RunContextWrapper[OrderStore]) -> str:
+    """고객 요청으로 승인 전 결제 시도를 취소하고 결제수단 선택으로 돌아간다. 주문은 유지한다. 승인 완료 취소·환불은 지원하지 않는다."""
+    return guarded(lambda: command(ctx.context, "cancel"))
 
 
 @function_tool
@@ -179,4 +203,4 @@ def handoff_to_staff(ctx: RunContextWrapper[OrderStore], reason: str, unresolved
     return encoded({"ok": True, "event": "staff.handoff_requested", "mode": "mock", "staff_notified": False})
 
 
-TOOLS = [search_menu, read_menu, find_suitable_menu, get_cart, add_item, cancel_pending_item, edit_item, split_item, remove_item, clear_order, select_item, set_order_type, request_final_confirmation, open_checkout, return_to_order, handoff_to_staff]
+TOOLS = [search_menu, read_menu, find_suitable_menu, get_cart, add_item, cancel_pending_item, edit_item, split_item, remove_item, clear_order, select_item, set_order_type, request_final_confirmation, open_checkout, select_payment_method, retry_payment, cancel_payment, return_to_order, handoff_to_staff]

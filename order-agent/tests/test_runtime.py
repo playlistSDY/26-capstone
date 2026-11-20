@@ -56,6 +56,25 @@ class RuntimeTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await c.reply("네"))["state"]["phase"], "checkout")
         self.assertTrue(any(item.get("role") == "user" and item.get("content") == "끝" for item in model.inputs[-1]))
 
+    async def test_review_then_consent_with_method_opens_reader_command(self):
+        s = OrderStore.demo(); s.add("latte",1,Options(temperature="hot")); s.set_place("store")
+        c = Conversation(store=s, model=ScriptedModel([
+            [call("request_final_confirmation")],
+            [call("open_checkout", {"method":"card"})],
+        ]))
+        review = await c.reply("주문 다 한 것 같아")
+        self.assertEqual(review["state"]["view"], "review")
+        self.assertEqual(review["state"]["phase"], "ordering")
+        pay = await c.reply("네 카드로 결제할게요")
+        self.assertEqual(pay["state"]["payment_action"]["method"], "card")
+        self.assertIn("리더기", pay["text"])
+        self.assertFalse(s.payment_ui.get("receipt"))
+
+    async def test_payment_status_question_is_not_replaced_by_method_question(self):
+        s = OrderStore.demo(); s.phase = "checkout"
+        c = Conversation(store=s, model=ScriptedModel([[speech("카드 승인을 기다리고 있어요.")]]))
+        self.assertEqual((await c.reply("지금 뭐 해?"))["text"], "카드 승인을 기다리고 있어요.")
+
     async def test_model_cannot_skip_confirmation(self):
         c = Conversation(model=ScriptedModel([[call("open_checkout")]]))
         result = await c.reply("그냥 결제해")
