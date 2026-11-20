@@ -1,0 +1,235 @@
+.printer-settings-modal {
+  max-height: 1150px;
+}
+.printer-settings-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.printer-settings-scroll {
+  overflow: auto;
+  padding: 24px 30px;
+  min-height: 0;
+}
+.printer-device-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid #e5e8eb;
+  border-radius: 14px;
+  padding: 19px;
+}
+.printer-device-card b {
+  font-size: 21px;
+}
+.printer-device-card p {
+  margin-top: 6px;
+  color: #8b95a1;
+  font-size: 14px;
+}
+.printer-device-card > span {
+  margin-left: auto;
+  font-size: 12px;
+  color: #8b95a1;
+}
+.printer-section {
+  padding-top: 26px;
+}
+.printer-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+.printer-section p,
+.printer-section li {
+  font-size: 15px;
+  line-height: 1.65;
+  color: #6b7684;
+}
+.printer-section small {
+  display: block;
+  font-size: 12px;
+  color: #8b95a1;
+  line-height: 1.6;
+  margin-top: 9px;
+}
+.printer-outline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  padding: 15px;
+  border: 1px solid #d4dce8;
+  border-radius: 10px;
+  color: #4a6bed;
+  font-size: 17px;
+  font-weight: 650;
+  margin-top: 14px;
+}
+.printer-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  margin-top: 17px;
+  cursor: pointer;
+  line-height: 1.5;
+}
+.printer-check input {
+  width: 21px;
+  height: 21px;
+  accent-color: #4a6bed;
+  flex-shrink: 0;
+}
+.printer-check b {
+  font-size: 18px;
+}
+.printer-check small {
+  margin-top: 4px;
+}
+.printer-auto-toggle {
+  background: #f7f9ff;
+  border-radius: 12px;
+  padding: 17px;
+  margin-bottom: 18px;
+}
+.printer-field {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 15px;
+}
+.printer-field > label {
+  width: 110px;
+  flex-shrink: 0;
+}
+.printer-field select {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #dfe4ed;
+  border-radius: 9px;
+  padding: 12px;
+  background: #fff;
+  font-size: 14px;
+  color: #4e5968;
+}
+.printer-field input[type="number"] {
+  width: 120px;
+  border: 1px solid #dfe4ed;
+  border-radius: 9px;
+  padding: 12px;
+}
+.printer-field input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  accent-color: #4a6bed;
+}
+.printer-outline.compact {
+  width: auto;
+  margin: 0;
+  padding: 10px;
+  font-size: 13px;
+}
+.printer-jobs > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-bottom: 1px solid #edf0f4;
+  padding: 10px 0;
+  font-size: 14px;
+}
+.printer-jobs > div > span {
+  margin-left: auto;
+  color: #8b95a1;
+}
+.printer-jobs small {
+  width: 100%;
+}
+.printer-shortcut {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  margin-top: 22px;
+  color: #8b95a1;
+}
+.header-back-spacer {
+  width: 48px;
+}
+.printer-windows-guide {
+  border-top: 1px solid #edf0f4;
+  margin-top: 25px;
+}
+.printer-windows-guide ol {
+  margin: 0;
+  padding-left: 23px;
+}
+.printer-windows-guide li + li {
+  margin-top: 7px;
+}
+.printer-settings-actions {
+  display: flex;
+  gap: 12px;
+  padding: 20px 30px 26px;
+  border-top: 1px solid #edf0f4;
+  flex-shrink: 0;
+}
+.printer-settings-actions .secondary {
+  width: 150px;
+}
+.printer-settings-actions .primary {
+  flex: 1;
+}
+.printer-error {
+  color: #d46b50;
+  font-size: 15px;
+  margin-top: 15px;
+  line-height: 1.6;
+}
+.printer-test-status {
+  margin-top: 12px;
+}
+.automatic-receipt-source {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 80mm;
+  pointer-events: none;
+}
+.completed-screen .auto-print-status {
+  font-size: 17px;
+  color: #6b7684;
+  line-height: 1.6;
+  margin: 14px 0;
+}
+.completed-screen .auto-print-error {
+  color: #d46b50;
+}
+@media (min-width: 851px) and (max-width: 1200px) {
+  .studio-title > span:last-child {
+    display: none;
+  }
+  .studio-bar {
+    padding: 0 14px;
+    gap: 10px;
+  }
+  .studio-actions {
+    gap: 4px;
+  }
+}
+.sound-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.sound-preview-grid > button {
+  min-width: 0;
+  padding: 10px 6px;
+  font-size: 14px;
+  line-height: 1.3;
+}

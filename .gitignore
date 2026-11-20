@@ -1,0 +1,47 @@
+# Local system and editor state
+.DS_Store
+._*
+~$*
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem.key
+*.key
+
+# Installed dependencies and generated caches
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.tsbuildinfo
+dist/
+build/
+test-results/
+playwright-report/
+coverage/
+*.log
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+.live-preview/
+
+# Reproducible release files, downloaded runtimes, and historical builds
+/output/
+/tmp/
+/archive/
+/kiosk-web/public/downloads/
+/kiosk-web/public/updates/
+/kiosk-web/qa/
+/hardware/kiosk_station_print_v2/generated/

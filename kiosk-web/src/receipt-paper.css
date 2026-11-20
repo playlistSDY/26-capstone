@@ -1,0 +1,216 @@
+.thermal-receipt {
+  box-sizing: border-box;
+  width: 80mm;
+  margin: 0;
+  background: #fff;
+  color: #000;
+  padding: 5mm 4mm 8mm;
+  font-family: Pretendard, Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 450;
+  letter-spacing: -0.12px;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.thermal-receipt * {
+  box-sizing: border-box;
+  margin: 0;
+}
+.thermal-receipt strong,
+.thermal-receipt b {
+  font-weight: 750;
+}
+.thermal-brand {
+  text-align: center;
+  padding-bottom: 2mm;
+}
+.thermal-brand > strong {
+  font-size: 28px;
+  letter-spacing: -1.3px;
+  font-weight: 850;
+  line-height: 1.1;
+  display: inline-block;
+}
+.thermal-brand > span {
+  display: block;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 4px;
+  padding-left: 4px;
+  margin-top: 1mm;
+}
+.thermal-brand p {
+  font-size: 9px;
+  margin-top: 3mm;
+  letter-spacing: -0.1px;
+}
+.thermal-separator {
+  border-top: 1px dashed #000;
+  margin: 3mm 0;
+}
+.thermal-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 2mm;
+}
+.thermal-title > span {
+  font-size: 7.5px;
+  letter-spacing: 1px;
+  font-weight: 650;
+}
+.thermal-pickup-number {
+  text-align: center;
+  padding: 3mm 0;
+}
+.thermal-pickup-number > span {
+  display: block;
+  font-size: 10px;
+}
+.thermal-pickup-number > strong {
+  display: block;
+  font-size: 55px;
+  letter-spacing: 3px;
+  line-height: 1.1;
+  margin: 1mm 0 2mm;
+  font-weight: 850;
+}
+.thermal-pickup-number > b {
+  display: inline-block;
+  font-size: 13px;
+  border: 1.4px solid black;
+  padding: 0.5mm 4mm;
+  line-height: 1.4;
+}
+.thermal-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  gap: 2mm;
+  padding-top: 2mm;
+}
+.thermal-table-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  margin-bottom: 2mm;
+}
+.thermal-item {
+  padding: 2.4mm 0;
+  break-inside: avoid;
+}
+.thermal-item + .thermal-item {
+  border-top: 1px dotted #aaa;
+}
+.thermal-item-name {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 3mm;
+  font-size: 13px;
+}
+.thermal-item-name > b {
+  min-width: 0;
+}
+.thermal-item-name > strong {
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+.thermal-item > p {
+  font-size: 11.5px;
+  line-height: 1.55;
+  margin-top: 1mm;
+  white-space: normal;
+}
+.thermal-unit {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 9px;
+  margin-top: 0.6mm;
+}
+.thermal-grand-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2mm;
+  margin: 3mm 0;
+}
+.thermal-grand-total > span {
+  font-weight: 650;
+  font-size: 12px;
+}
+.thermal-grand-total > strong {
+  font-size: 18px;
+  white-space: nowrap;
+  letter-spacing: -0.8px;
+}
+.thermal-payment {
+  font-size: 10px;
+  margin: 2mm 0;
+}
+.thermal-payment > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 2mm;
+  padding: 0.7mm 0;
+}
+.thermal-thanks {
+  text-align: center;
+  padding: 1mm 0 2mm;
+}
+.thermal-thanks > b {
+  font-size: 11px;
+}
+.thermal-thanks > p {
+  font-size: 9px;
+  margin-top: 1mm;
+}
+.thermal-footer {
+  text-align: center;
+  padding-top: 1mm;
+  font-size: 8.5px;
+}
+.thermal-footer > span {
+  font-size: 7.5px;
+  letter-spacing: 0.3px;
+}
+.thermal-footer > p {
+  margin-top: 2mm;
+  line-height: 1.6;
+}
+.thermal-pickup .thermal-pickup-number > strong {
+  font-size: 72px;
+}
+.thermal-pickup .thermal-item-name {
+  font-size: 15px;
+}
+.thermal-pickup .thermal-item-name > strong {
+  font-size: 16px;
+}
+.thermal-pickup .thermal-item > p {
+  font-size: 13px;
+  line-height: 1.65;
+  margin-top: 1.4mm;
+}
+.thermal-pickup .thermal-item {
+  padding: 3mm 0;
+}
+@media print {
+  .thermal-receipt {
+    margin: 0 !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    zoom: 1 !important;
+  }
+  .thermal-item,
+  .thermal-grand-total,
+  .thermal-payment,
+  .thermal-thanks {
+    break-inside: avoid;
+  }
+}

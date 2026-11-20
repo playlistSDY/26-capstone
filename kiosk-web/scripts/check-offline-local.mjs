@@ -1,0 +1,54 @@
+import {chromium,expect} from '@playwright/test';
+import fs from 'node:fs/promises';
+const base=process.env.SWITCH_QA_BASE||'http://127.0.0.1:18731/';
+const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio']});
+const context=await browser.newContext({viewport:{width:800,height:1280}});
+const external=[],errors=[],failures=[];
+await context.route('**/*',route=>{
+ const u=new URL(route.request().url());
+ if(!['127.0.0.1','localhost'].includes(u.hostname)){external.push(u.href);return route.abort();}
+ return route.continue();
+});
+const page=await context.newPage();
+page.on('pageerror',e=>errors.push(e.message));
+page.on('requestfailed',r=>failures.push(r.url()));
+try{
+ await page.addInitScript(()=>{window.print=()=>{throw Error('Browser print must not be called');};});
+ await page.goto(base+'?kiosk=1&printerSetup=1');
+ await expect(page.locator('.studio-bar,.studio-footer')).toHaveCount(0);
+ const dialog=page.getByRole('dialog',{name:'프린터 설정'});
+ await dialog.getByLabel('출력 대상',{exact:true}).selectOption('개발용 PNG 저장');
+ await dialog.getByRole('checkbox',{name:/결제 완료 후 영수증 자동 출력/}).check();
+ await dialog.getByLabel('글자 크기',{exact:true}).selectOption('1.15');
+ await page.evaluate(()=>document.fonts.ready);
+ await page.screenshot({path:'qa/offline-settings.png'});
+ await dialog.getByRole('button',{name:'설정 적용 · 테스트 출력',exact:true}).click();
+ await expect(dialog.getByRole('status')).toContainText('종이는 출력하지 않았어요');
+ await dialog.getByRole('button',{name:'설정 저장',exact:true}).click();
+ await expect(dialog).toHaveCount(0);
+ await page.getByRole('button',{name:/포장할게요/}).click();
+ await expect.poll(()=>page.locator('.product-card img').evaluateAll(imgs=>imgs.length===12&&imgs.every(i=>i.complete&&i.naturalWidth>0))).toBe(true);
+ await page.getByRole('button',{name:'아메리카노 3,200원',exact:true}).click();
+ await page.getByRole('button',{name:/차갑게/}).click();
+ await page.getByRole('button',{name:'3,200원 담기',exact:true}).click();
+ await page.getByRole('button',{name:'결제하기',exact:true}).click();
+ await expect(page.locator('.kiosk-header').getByRole('button',{name:/돌아가기|이전/})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'이전으로',exact:true})).toHaveCount(1);
+ await page.screenshot({path:'qa/offline-review.png'});
+ await page.getByRole('button',{name:'확인하고 결제하기',exact:true}).click();
+ await page.getByRole('button',{name:'신용·체크카드',exact:true}).click();
+ await page.getByRole('button',{name:'결제 리더기',exact:true}).click();
+ await expect(page.locator('.completion-receipt-message')).toHaveText('영수증 출력중이에요.');
+ await expect(page.locator('.toast')).toHaveCount(0);
+ await page.screenshot({path:'qa/offline-complete.png'});
+ const response=await page.request.get(base+'api/jobs');const {jobs}=await response.json();
+ const latest=jobs[0];if(latest.state!=='file-saved')throw Error('Wrong backend job state');
+ await page.reload();
+ await page.keyboard.press('Control+Alt+s');
+ const again=page.getByRole('dialog',{name:'프린터 설정'});
+ await expect(again.getByLabel('출력 대상',{exact:true})).toHaveValue('개발용 PNG 저장');
+ await expect(again.getByLabel('글자 크기',{exact:true})).toHaveValue('1.15');
+ const report={base,internetRequests:external,failedRequests:failures,pageErrors:errors,localFontLoaded:await page.evaluate(()=>document.fonts.check('16px Pretendard')),menuImages:12,fullscreenKioskPage:true,previewToolbarHidden:true,topBackButtonRemoved:true,backendJobState:latest.state,settingsPersisted:true,browserPrintCalls:0,physicalOutputTested:false};
+ if(external.length||failures.length||errors.length)throw Error(JSON.stringify(report));
+ await fs.writeFile('qa/offline-local-check.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+}finally{await browser.close();}

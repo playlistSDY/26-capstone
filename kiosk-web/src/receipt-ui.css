@@ -1,0 +1,182 @@
+.receipt-modal {
+  max-height: 1150px;
+}
+.receipt-workspace {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.receipt-toolbar {
+  padding: 18px 27px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: #8b95a1;
+  flex-shrink: 0;
+}
+.receipt-toolbar > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.receipt-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7c8798;
+}
+.receipt-toolbar > button {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 13px;
+  padding: 7px;
+  color: #6b7684;
+}
+.receipt-variants {
+  display: flex;
+  gap: 12px;
+  margin: 18px 27px;
+  flex-shrink: 0;
+}
+.receipt-variants > button {
+  flex: 1;
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  text-align: left;
+  padding: 16px;
+  border: 1.5px solid #e5e8ed;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 650;
+}
+.receipt-variants small {
+  display: block;
+  color: #8b95a1;
+  font-size: 12px;
+  font-weight: 450;
+  margin-top: 5px;
+}
+.receipt-variants > button > svg:last-child:not(:first-child) {
+  margin-left: auto;
+}
+.receipt-variants > button.active {
+  border-color: #4a6bed;
+  color: #4a6bed;
+  background: #f7f9ff;
+}
+.receipt-preview-surface {
+  overflow: auto;
+  background: #f1f3f6;
+  padding: 22px 24px 25px;
+  min-height: 150px;
+  flex: 1;
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
+}
+.receipt-paper-holder {
+  width: calc(80mm * 1.35);
+  margin: auto;
+  box-shadow: 0 8px 24px #1823370b;
+  background: #fff;
+}
+.receipt-paper-holder > .thermal-receipt {
+  zoom: 1.35;
+}
+.receipt-paper-ruler {
+  position: relative;
+  width: calc(80mm * 1.35);
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9aa3af;
+  font-size: 11px;
+  gap: 10px;
+}
+.receipt-paper-ruler:before,
+.receipt-paper-ruler:after {
+  content: "";
+  height: 6px;
+  flex: 1;
+  border-top: 1px solid #cbd2dc;
+}
+.receipt-paper-ruler:before {
+  border-left: 1px solid #cbd2dc;
+}
+.receipt-paper-ruler:after {
+  border-right: 1px solid #cbd2dc;
+}
+.receipt-paper-ruler > i {
+  display: none;
+}
+.receipt-paper-caption {
+  text-align: center;
+  color: #9aa3af;
+  font-size: 12px;
+  margin-top: 16px;
+}
+.receipt-sample-note {
+  margin: 0 27px 16px;
+  color: #8b95a1;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.receipt-sample-note > a {
+  display: block;
+  width: fit-content;
+  margin-top: 8px;
+  color: #4a6bed;
+  text-underline-offset: 3px;
+}
+.receipt-print-actions {
+  border-top: 1px solid #e8ebef;
+  flex-shrink: 0;
+  padding: 20px 27px 26px;
+}
+.receipt-print-actions > div {
+  display: flex;
+  gap: 12px;
+}
+.receipt-print-actions .secondary {
+  width: 150px;
+}
+.receipt-print-actions .primary {
+  flex: 1;
+  font-size: 21px;
+}
+.receipt-print-status {
+  font-size: 14px;
+  color: #6b7684;
+  line-height: 1.6;
+  margin: 0 0 13px;
+}
+.receipt-print-error {
+  font-size: 14px;
+  color: #d46b50;
+  line-height: 1.6;
+  margin: 0 0 13px;
+}
+.receipt-print-guide {
+  margin: 0 27px 17px;
+  padding: 15px 18px;
+  background: #f7f8fa;
+  border-radius: 10px;
+  flex-shrink: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #6b7684;
+}
+.receipt-print-guide > b {
+  color: #4e5968;
+}
+.receipt-print-guide > p {
+  margin-top: 8px;
+}
+.receipt-print-spinner {
+  animation: spin 1s linear infinite;
+}

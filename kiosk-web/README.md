@@ -1,0 +1,142 @@
+# SWitch 로컬 키오스크
+
+React + TypeScript + Vite UI와 Python 로컬 백엔드로 구성합니다. Windows 오프라인 ZIP에는 웹 정적 자료, 메뉴 이미지, 글꼴, Python/Pillow, 전용 Chrome과 소스가 포함됩니다. 인터넷·Node.js·별도 Python/Chrome 설치 없이 실행합니다. 결제는 모의 결제입니다.
+
+## Windows 실행
+
+최종 파일: 프로젝트 루트 `output/windows/SWitch-Windows-Offline.zip`.
+
+1. ZIP 전체를 압축 해제하고 `실행.bat`을 엽니다.
+2. Windows 실행은 전체화면 고정이며 미리보기 도구줄을 숨깁니다. 최초 설정에서 Windows 등록 프린터 선택 → 자동 출력 → 설정 저장.
+3. `설정 적용 · 테스트 출력`으로 한글·용지·위치·절단을 확인합니다.
+4. 주문 완료 시 백엔드가 한글 영수증 이미지를 만들어 지정 프린터로 1회 전송합니다.
+5. 설정은 `설정.bat` 또는 `Ctrl+Alt+S`, 종료는 `종료.bat` 또는 백엔드 창에서 Ctrl+C입니다.
+
+Windows 11 x64, Windows 기본 PowerShell/.NET과 Epson 프린터 드라이버가 필요합니다. TM-m30 USB 프린터가 Windows에 등록되어 있어야 합니다. 실제 Windows USB 출력·자동 절단·터치·음량은 현장 검증이 필요합니다.
+
+## 구조와 설정
+
+- `backend/server.py`: 127.0.0.1:18731 로컬 호스트, SQLite 설정·출력 이력, 요청 검증과 중복 방지.
+- `backend/receipt_renderer.py`: Pillow + 포함한 Pretendard로 576px(72mm/203dpi) 흑백 PNG 생성.
+- `backend/windows_print.ps1`: Windows 프린터 목록과 PrintDocument/StandardPrintController 출력. Chrome 인쇄 창이나 자동 인쇄 플래그를 사용하지 않습니다.
+- `src/localBackend.ts`, `src/printReceipt.ts`: 동일 로컬 주소에서 설정 조회·저장·출력 요청.
+- `src/sounds.ts`: 터치·선택·담기·수량 증가/감소·취소·삭제·스크롤·카드 인식·완료·오류·출력을 서로 다른 원음 12종으로 재생합니다. `public/assets/sounds/v2`의 로컬 WAV를 사용하며 PC 스피커로 출력합니다. 새 설치 기본 볼륨은 75%이며 기존에 저장한 볼륨·음소거는 유지합니다. 원음 크기를 높이고 동시 재생을 제한해 겹침과 클리핑을 방지합니다. 설정에서 12종을 개별로 들어볼 수 있습니다. OS 볼륨은 변경하지 않습니다.
+- `scripts/build-sound-pack.py`: 효과음 원본 생성기(재생에는 불필요). NumPy가 있는 Python으로 다시 생성하며 48kHz/16bit 모노 WAV와 음량 분석 메타데이터를 만듭니다.
+
+설정은 프린터, 자동 출력, 영수증 종류, 글자 크기, 좌우 보정, 효과음/볼륨입니다. 설정·이력·PNG·로그는 `%LOCALAPPDATA%\SWitch\Kiosk`에 저장합니다. 장바구니·주문은 전용 브라우저 프로필에 보관합니다. 개발 컴퓨터의 설정·주문·로그는 ZIP에 포함하지 않습니다.
+
+80mm 용지, 72mm 인쇄 영역, 기본 좌우 여백 4mm. 자동 절단은 Epson 드라이버의 문서 종료 절단 설정을 사용합니다. 대기열 전송은 물리적 출력 완료를 의미하지 않습니다. 오류·상태 불명은 대기열을 확인한 뒤 수동 재출력합니다. 앱 종료 중 처리 중이던 요청도 자동 재시도하지 않습니다.
+
+주문 완료 화면은 10초 뒤 메인으로 복귀합니다. 출력 요청은 백엔드에서 이어지며, 영수증 창을 보는 동안은 화면 복귀를 대기합니다.
+
+자동 출력은 `auto:<주문 ID>`로 백엔드에서 중복을 차단합니다. 결제 실패·취소·주문 이력 조회·새로고침은 새 출력 요청을 만들지 않습니다.
+
+상단 이전 버튼은 주문 전체 확인 화면에서 제거했고 하단 `이전으로`는 유지합니다. 기존 영수증의 체험/샘플 표시는 제거한 상태입니다.
+
+## Mac 개발
+
+`npm run dev`로 화면을 실행합니다. Pillow가 설치된 Python에서 `python3 backend/server.py --file-mode --dev --no-browser`로 파일 출력용 백엔드를 켭니다. 이 모드는 실제 프린터를 쓰지 않고 `개발용 PNG 저장`을 명시적으로 선택합니다. Windows 운영 모드에서는 자동으로 켜지지 않습니다.
+
+`npm test`, `npm run test:e2e`, `npm run build`, `python3 -m unittest discover -s backend -v`로 검증합니다. 테스트의 Windows 인쇄 대기열은 모의 응답이며, Mac 통합 검증은 실제 로컬 백엔드의 PNG 저장을 사용합니다.
+
+`python3 scripts/build-windows-offline.py`로 패키지를 생성합니다. 빌드 때는 공식 런타임 다운로드에 인터넷이 필요합니다. 완성본 실행은 오프라인입니다. 버전/원본 URL/SHA-256은 ZIP의 `runtime-manifest.json`, ZIP 해시는 옆 `.sha256`에 기록합니다. 원본 소스·라이선스 포함.
+
+공식 근거: [PrintDocument.Print](https://learn.microsoft.com/en-us/dotnet/api/system.drawing.printing.printdocument.print), [StandardPrintController](https://learn.microsoft.com/en-us/dotnet/api/system.drawing.printing.standardprintcontroller), [TM-m30 규격](https://download4.epson.biz/sec_pubs/bs/pdf/TM-m30_trg_en_revL.pdf), [Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/).
+
+## sdylab 라이브 뷰
+
+`lab-online` MCP로 `ttl_hours: 0`인 UUID 주소를 등록했습니다. 만료 시각은 없으며, sdylab의 별도 사용자 서비스가 화면을 실행합니다. Mac이 꺼져도 sdylab이 실행 중이면 마지막으로 동기화한 버전은 유지됩니다.
+
+- 주소: https://temp.sdy.world/6bd53630-2b00-4d66-9bab-3810e1e0aa36/
+- 화면만 보기: https://temp.sdy.world/6bd53630-2b00-4d66-9bab-3810e1e0aa36/?kiosk=1
+- 등록 ID: `6bd53630-2b00-4d66-9bab-3810e1e0aa36`
+- sdylab 앱 경로: `/home/sdy/previews/switch-kiosk-20261119`
+- sdylab 서비스: `switch-kiosk-preview-20261119.service`, 내부 포트 `15173`
+- Mac 동기화 서비스: `world.sdy.switch-kiosk-preview-sync`
+- 설정: `dev/live-preview.json`
+- 동기화 상태와 로그: `.live-preview/`
+
+Mac에서 `src/`, `public/` 및 앱 설정을 저장하면 해당 앱 소스만 sdylab으로 자동 복사되고, 브라우저는 Vite HMR로 갱신됩니다. 의존성 목록을 바꾸면 해당 앱의 패키지 설치와 재시작도 수행합니다. Mac 동기화는 해당 Mac 사용자로 로그인한 동안 동작하며, 연결 실패 시 재시도합니다. 작업 문서·하드웨어 코드·다른 프로젝트는 복사하지 않습니다.
+
+게이트웨이의 UUID 경로에 맞춰 이미지·로고·글꼴 경로와 HMR을 설정했습니다. 라이브 뷰의 장바구니/주문 저장 키는 UUID별로 구분하며 Mac 로컬 화면의 주문 데이터와는 별개입니다.
+
+검증 기록은 `qa/live-preview-check.json`에 있습니다. 공개 주소에서 주문·모의 결제, 추천 메뉴 이미지 12개와 글꼴 로딩, Mac 편집 후 WebSocket을 통한 실제 HMR 갱신을 확인했습니다.
+
+
+## 디자인 근거
+
+- [창캡디 Frame 121, node 55:2](https://www.figma.com/design/HARxIO2grpHqAXfWeuFnOO/?node-id=55-2): 로고·카테고리·11개 기본 커피 메뉴·가격·원본 이미지.
+- 같은 파일의 `3:1056`, `3:1057`, `3:1059`: 초콜릿·말차·망고 이미지.
+- [토스 공식 키오스크 주문 가이드](https://guide.tossplace.com/operate/kiosk-order): 주문·옵션·품절·결제 흐름 참고.
+- 하단 주문 내역, 결제 전 전체 확인, 큰 이전 버튼, 위·아래 스크롤 버튼은 이번 대화의 사용자 요청을 반영했습니다.
+
+메뉴 사진은 사용자 제공 음료 폴더의 151장을 112개 상품으로 묶어 사용합니다. HOT/ICED 사진 쌍은 한 상품의 온도 옵션으로 전환하고, 사진이 한 장인 상품은 해당 온도만 제공합니다. 초기 레이아웃은 Figma를 참고했으며, 현재 음료 사진에는 이전 Figma 사진이나 아이콘 대체 이미지를 사용하지 않습니다. 기존 상품 가격은 유지했고 새 상품 가격은 시제품용 임시 값입니다.
+
+연결된 원격 Figma 계정에서는 권한 오류가 발생해, 사용자 승인 후 데스크톱 MCP 서버로 원본을 가져왔습니다. 허용한 저장 범위는 이 앱의 `public/assets/figma`입니다. Figma는 일반적인 디자인↔코드 작업에 [원격 MCP 연결](https://developers.figma.com/docs/figma-mcp-server/remote-server-installation/)을 권장합니다.
+
+
+## 출력 지연 및 안내 띠 개선
+
+전용 브라우저에 `--disable-infobars`를 적용합니다. 인쇄용 PowerShell은 백엔드 시작 때 준비해 JSON 라인 프로토콜로 계속 재사용하며, 주문마다 전체 프린터 목록을 조회하지 않습니다. 출력 기록에 생성/대기열 전송 시간(`renderMs`, `spoolMs`)을 남깁니다. 실제 Windows 장비의 전송 시간은 별도 확인이 필요합니다. 메뉴명과 옵션의 기본 출력 글자를 확대했습니다.
+
+## 원격 업데이트
+
+업데이트.bat은 고정 HTTPS 배포 주소의 manifest를 읽고 SHA-256으로 비교해 변경 파일만 받습니다. 다운로드·검증 후 앱을 종료하고 백업·적용·정적 파일 검증 후 종료합니다. 키오스크를 자동 실행하지 않으며 실행.bat으로 직접 실행합니다. 실패는 복구하며 중단 이력은 다음 업데이트 때 복구합니다. 복구 후에도 키오스크를 자동 실행하지 않습니다. 설정/주문 데이터와 runtime/browser는 변경하지 않습니다. 업데이트 시에만 인터넷이 필요합니다.
+
+배포자는 release.json 버전을 올리고 빌드·패키징 후 scripts/publish-local-release.py를 실행합니다. 변경 파일이 원격에 모두 동기화된 것을 검증한 뒤 stable-candidate.json을 public/updates/stable.json으로 게시합니다. 미완성 배포를 활성화하지 않습니다.
+
+완료 화면에는 완료 안내, 번호표 형태의 큰 주문번호, 호출 안내와 인사말, 영수증 출력 상태를 표시합니다. 출력 상태 문구는 영수증 출력 준비중이에요. / 영수증 출력중이에요. 두 가지입니다. 고객용 영수증 보기 버튼은 제거했고 관리자 재출력은 Ctrl+Alt+H로 접근합니다.
+
+## 결제 및 주문 완료 화면 (2026.11.19.7)
+
+- 신용·체크카드, 삼성페이, 애플페이, 카카오페이, 네이버페이를 선택합니다. 결제수단은 주문 기록과 영수증에 보존됩니다.
+- 대기 → 인식 → 승인 요청 → 승인 완료 → 주문 완료 단계를 표시합니다. 시제품의 결제 리더기는 모의 장치입니다. 대기 후 3초에 인식을 시작하며 그림을 터치해 바로 진행할 수도 있습니다. 실제 금융망 요청이나 카드 정보 수집은 하지 않습니다.
+- 인식 1.6초, 승인 1.8초, 승인 안내 1초 뒤 주문을 저장합니다. 인식·승인 중 취소 시 타이머를 정리하며 주문·출력을 생성하지 않습니다. 승인 완료 후에는 취소·닫기를 잠시 막고 완료 화면으로 전환합니다.
+- 미리보기 상단의 테스트 결과가 응답 없음이면 45초 대기 뒤 시간 초과를 표시합니다. 실패·시간 초과 시 장바구니를 보존하며 재시도·결제수단 변경이 가능합니다.
+- 완료 화면은 큰 주문번호와 호출 안내를 먼저 보여 줍니다. 영수증 출력 상태는 백엔드 전송 상태와 연결되며 실물 출력 완료 여부를 단정하지 않습니다. 5초 후 초기화하고 관리자 재출력은 Ctrl+Alt+H로 유지합니다.
+- Windows 기본 인코딩이 CP949여도 업데이트 기록·복구 기록을 항상 UTF-8로 읽습니다. 번들 CA와 Windows 인증서 저장소를 함께 사용하고 SSL 검증을 유지합니다. 기존 업데이터가 실행 전에 실패하면 SWitch-Updater-Setup.zip 전체를 기존 폴더에 한 번 덮어넣습니다.
+
+참고 자료:
+
+- [토스플레이스 결제수단 설정](https://guide.tossplace.com/operate/kiosk-payment-methods): 결제수단 분류와 키오스크의 결제 범위.
+- [토스플레이스 실물 카드·NFC 결제](https://guide.tossplace.com/start/card-payment): IC 카드 삽입, 휴대폰 접촉 안내.
+- [토스플레이스 간편결제 안내](https://guide.tossplace.com/operate/easy-pay): QR 결제 흐름.
+- [토스플레이스 고객 호출 설정](https://guide.tossplace.com/operate/call-settings): 주문번호와 인쇄된 주문서의 관계.
+- [ACRELEC Kiosk UX 원칙](https://acrelec.com/wp-content/uploads/2024/03/10-Guiding-Principles-for-Kiosk-UX_2024.pdf): 가독성, 명확한 완료 안내, 화면의 정보량 참고.
+- [Purchase Receipt UI 참고](https://dribbble.com/shots/26109950-Purchase-Receipt-UI-DailyUI-017): 디지털 영수증의 정보 계층과 행동 버튼 구성 참고. 외부 이미지나 코드를 제품에 복제하지 않았습니다.
+
+## 업데이트만 적용하기 (2026.11.19.8)
+
+업데이트.bat 및 이전 파일명인 업데이트후실행.bat은 변경 파일을 받고 검증·백업·적용 후 종료합니다. 필요한 파일 교체 전에 실행 중인 SWitch는 종료하지만, 성공·실패 복구·중단 복구 어느 경로에서도 백엔드나 브라우저를 실행하지 않습니다. 실행.bat으로 직접 실행하세요. 이전 업데이터는 자기 자신을 교체해도 이미 실행 중인 코드가 한 번 자동 실행하므로, 이번에는 SWitch-Updater-Setup.zip을 먼저 덮어넣어야 첫 실행부터 변경된 동작이 적용됩니다.
+
+## 제공 음료 사진과 카탈로그 (2026.11.19.9)
+
+- 원본 151장 → 상품 112개. HOT/ICE 쌍 39개, HOT 전용 2개, ICE 전용 71개입니다. 파일명에 온도가 없는 단일 음료 사진은 제공된 차가운 음료·병음료 구성에 따라 ICE 전용으로 분류합니다.
+- 주요 카테고리는 커피 24개, 논커피 21개, 티 22개, 에이드 6개, 블렌디드 14개, 과일 주스 9개, 병음료 16개입니다. 추천 12개와 디카페인 분류를 함께 제공합니다. 초기 시제품의 얼그레이 품절 설정은 유지했습니다.
+- 원본 파일은 픽셀 수정 없이 SHA-256 이름으로 복사합니다. PNG 확장자를 가진 JPEG 1장은 바이트를 유지한 채 실제 형식에 맞는 .jpg 이름으로 저장합니다. 사진은 contain으로 표시하여 컵·병을 자르지 않습니다.
+- Product.temperatures와 temperatureImages를 기준으로 옵션 이미지·주문 확인 이미지가 전환됩니다. 단일 온도는 자동 선택하고, 지원하지 않는 온도는 UI와 저장 데이터 검증에서 모두 막습니다. 병음료는 수량만 변경합니다.
+- src/drink-catalog.json은 상품·가격·이미지·카테고리 메타데이터입니다. priceSource=prototype이며 추가 가격은 공식 판매가가 아닙니다. scripts/import-drink-catalog.py <사진 폴더>로 다시 생성합니다.
+- 알려진 메뉴 ID와 가격을 유지해 장바구니·주문 이력과 호환합니다. 이전 주문의 확정 메뉴명·옵션·가격은 기존 스냅샷을 사용합니다.
+- 기존 자동 실행 금지 정책은 유지합니다. 업데이트 적용 후 실행.bat으로 직접 실행하세요.
+
+분류 참고: 사용자 파일명과 사진을 기준으로 분류했으며, 밤·흑임자 크림 라떼의 논커피 구분에는 [이디야 공식 메뉴 설명](https://ediya.com/contents/drink.html?proVal=374)을 참고했습니다. 가격이나 전체 옵션의 공식 지원 여부를 검증한 자료는 아닙니다.
+
+## 화면에서 키오스크 종료하기 (2026.11.19.11)
+
+첫 화면(매장/포장 선택)의 오른쪽 최상단 88×88 논리 픽셀 영역을 5초 안에 연속 5번 누르면 종료 확인창이 열립니다. 다른 곳을 누르거나 화면을 바꾸면 횟수가 초기화됩니다. 아니요·닫기는 계속 이용하고, 예를 누르면 인증된 로컬 종료 요청을 한 번 보냅니다. 오류는 확인창에 표시하며 재시도할 수 있습니다.
+
+종료를 시작하면 새 출력 요청을 막고 이미 진행 중인 영수증 대기열 전송과 결과 저장을 마친 뒤 PowerShell 인쇄 작업자의 stdin을 닫아 종료합니다. 응답이 없는 작업자는 제한 시간 뒤 종료·대기하며 핸들을 닫습니다. 백엔드가 직접 실행한 전용 Chrome PID 트리만 닫고 로그를 마무리한 뒤 프로세스가 종료됩니다. Windows 자체 전원이나 다른 Chrome·시스템 인쇄 서비스를 종료하지 않습니다. 주문 기록·설정·프린터 대기열은 유지합니다.
+
+실행.bat·설정.bat을 다시 실행해도 기존 백엔드의 인증된 창 열기 API로 요청하므로 전용 창의 수명은 백엔드가 함께 관리합니다. 업데이트는 계속 적용까지만 하고 종료하며 실행.bat으로 직접 실행합니다. [Microsoft taskkill 문서](https://learn.microsoft.com/windows-server/administration/windows-commands/taskkill)의 PID·T 옵션을 사용합니다.
+
+Mac 실제 종료 흐름 검증: SWITCH_QA_PYTHON=<Pillow가 설치된 Python> node scripts/check-shutdown-local.mjs. 임시 포트·별도 데이터로 확인 후 테스트 프로세스를 정리합니다. Windows 전용 프로세스 트리 정리는 단위 테스트로 검증했으며 실물 Windows 장비에서는 별도 확인이 필요합니다.
+
+## 인쇄 대기열 응답에 따른 완료 전환 (2026.11.20.1)
+
+정상 모의 리더기의 최초 대기는 3초입니다. 응답 없음 테스트의 45초 제한은 유지합니다. 결제 승인 후 주문을 저장하면 자동 영수증 요청을 즉시 시작하고, preparing·submitting 상태에서는 주문을 완료하고 있어요 화면을 유지합니다. 고정 대기 시간은 없습니다.
+
+Windows 작업자가 PrintDocument.Print()를 마치고 백엔드가 queued 상태를 저장하여 응답하면 주문번호 안내 화면으로 즉시 전환합니다. 이는 Windows 인쇄 대기열 전달 완료 기준이며 실제 용지가 나온 시점이나 프린터의 물리적 출력 완료까지 보증하지 않습니다. 개발용 파일 출력은 file-saved 응답을 같은 기준으로 사용합니다.
+
+요청 직전에 백엔드 설정을 조회합니다. 자동 출력이 꺼져 있으면 disabled로 마무리하여 기다리지 않고 주문번호를 안내합니다. 통신·인쇄 오류는 error로 마무리하고 주문은 유지한 채 직원에게 출력 상태 확인을 요청하는 문구를 표시합니다. 기존 요청 제한 시간은 유지하며 오류를 자동 재출력하지 않습니다. 실제 인쇄 전 종이가 나오는 애니메이션은 사용하지 않습니다.
+
+주문번호 안내 화면으로 전환한 시점부터 5초 뒤 첫 화면으로 복귀합니다. 로딩 중에는 복귀 시간이 차감되지 않습니다. 타이머와 무관하게 인쇄 대기열 응답이 전환 조건임을 지연 응답·빠른 응답·파일 출력·비활성화·실패 테스트로 검증합니다.

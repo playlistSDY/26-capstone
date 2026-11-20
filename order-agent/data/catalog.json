@@ -1,0 +1,2417 @@
+[
+  {
+    "id": "americano",
+    "name": "아메리카노",
+    "sourceName": "카페 아메리카노",
+    "price": 3200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "추천 메뉴",
+      "커피",
+      "디카페인"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": true,
+    "milk": false,
+    "decaf": true,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "latte",
+    "name": "카페라떼",
+    "sourceName": "카페 라떼",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "추천 메뉴",
+      "커피",
+      "디카페인"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": true,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "vanilla",
+    "name": "바닐라라떼",
+    "sourceName": "바닐라 라떼",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "추천 메뉴",
+      "커피",
+      "디카페인"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": true,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "condensed",
+    "name": "연유라떼",
+    "sourceName": "연유 카페 라떼",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "추천 메뉴",
+      "커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "caramel",
+    "name": "카라멜마끼아또",
+    "sourceName": "카라멜 마끼아또",
+    "price": 3200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "추천 메뉴",
+      "커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "mocha",
+    "name": "카페모카",
+    "sourceName": "카페 모카",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "추천 메뉴",
+      "커피",
+      "디카페인"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": true,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "white-mocha",
+    "name": "화이트초콜릿모카",
+    "sourceName": "화이트 초콜릿 모카",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "추천 메뉴",
+      "커피",
+      "디카페인"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": true,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "mint-mocha",
+    "name": "민트모카",
+    "sourceName": "민트 모카",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "추천 메뉴",
+      "커피",
+      "디카페인"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": true,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "coldbrew",
+    "name": "콜드브루",
+    "sourceName": "콜드브루",
+    "price": 3200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "추천 메뉴",
+      "커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": true,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "coldbrew-latte",
+    "name": "콜드브루라떼",
+    "sourceName": "콜드브루 라떼",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "추천 메뉴",
+      "커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "brown-coldbrew",
+    "name": "흑당콜드브루",
+    "sourceName": "흑당 콜드브루",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "추천 메뉴",
+      "커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "matcha",
+    "name": "말차라떼",
+    "sourceName": "말차라떼",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "추천 메뉴",
+      "논커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-f0c4d361ee36",
+    "name": "(병)프루츠 스파클링 복숭아",
+    "sourceName": "(병)프루츠 스파클링 복숭아",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-10c40c5149ef",
+    "name": "(병)프루츠 스파클링 사과",
+    "sourceName": "(병)프루츠 스파클링 사과",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-f61767a8f00a",
+    "name": "(병)프루츠 스파클링 체리",
+    "sourceName": "(병)프루츠 스파클링 체리",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-4804d1f2bbac",
+    "name": "가나 시그니처 초콜릿",
+    "sourceName": "가나 시그니처 초콜릿",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-5a356dd2e1db",
+    "name": "가나 초코 크림 오트",
+    "sourceName": "가나 초코 크림 오트",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "hot"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "lemon",
+    "name": "감귤 레몬 에이드",
+    "sourceName": "감귤 레몬 에이드",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "상큼한 과일과 청량한 탄산의 만남",
+    "categories": [
+      "에이드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-0655ec09102e",
+    "name": "고구마 라떼",
+    "sourceName": "고구마 라떼",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-803a11f43530",
+    "name": "구망추",
+    "sourceName": "구망추",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-069f92c18903",
+    "name": "구아바 자스민 에이드",
+    "sourceName": "구아바 자스민 에이드",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "상큼한 과일과 청량한 탄산의 만남",
+    "categories": [
+      "에이드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-dd03f1d1c090",
+    "name": "꿀복숭아 에이드",
+    "sourceName": "꿀복숭아 에이드",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "상큼한 과일과 청량한 탄산의 만남",
+    "categories": [
+      "에이드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-611eb4c3c4ec",
+    "name": "꿀복숭아 요거트 플랫치노",
+    "sourceName": "꿀복숭아 요거트 플랫치노",
+    "price": 5500,
+    "priceSource": "prototype",
+    "description": "시원하고 부드럽게 즐기는 블렌딩 음료",
+    "categories": [
+      "블렌디드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-a6f91ec084cd",
+    "name": "꿀복숭아 플랫치노",
+    "sourceName": "꿀복숭아 플랫치노",
+    "price": 5500,
+    "priceSource": "prototype",
+    "description": "시원하고 부드럽게 즐기는 블렌딩 음료",
+    "categories": [
+      "블렌디드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-960995f7d0ec",
+    "name": "꿀화이트 아메리카노",
+    "sourceName": "꿀화이트 아메리카노",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "커피",
+      "디카페인"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": true,
+    "milk": false,
+    "decaf": true,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-4d15ea90ed47",
+    "name": "넛츠 크림 라떼",
+    "sourceName": "넛츠 크림 라떼",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-9f13219230e9",
+    "name": "달고나 라떼",
+    "sourceName": "달고나 라떼",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-dcd2ae35b491",
+    "name": "달달커피",
+    "sourceName": "달달커피",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-a38eccb1f326",
+    "name": "달달퐁당 오트 피스타치오",
+    "sourceName": "달달퐁당 오트 피스타치오",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-818671a76c85",
+    "name": "딸기 듬뿍 라떼",
+    "sourceName": "딸기 듬뿍 라떼",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-2049bd3e4924",
+    "name": "딸기 쉐이크",
+    "sourceName": "딸기 쉐이크",
+    "price": 5500,
+    "priceSource": "prototype",
+    "description": "시원하고 부드럽게 즐기는 블렌딩 음료",
+    "categories": [
+      "블렌디드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-0d2888eb5b29",
+    "name": "딸기 요거트 플랫치노",
+    "sourceName": "딸기 요거트 플랫치노",
+    "price": 5500,
+    "priceSource": "prototype",
+    "description": "시원하고 부드럽게 즐기는 블렌딩 음료",
+    "categories": [
+      "블렌디드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-28b175946654",
+    "name": "딸기 초코 라떼",
+    "sourceName": "딸기 초코 라떼",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-37df9f1910f6",
+    "name": "딸기바나나주스",
+    "sourceName": "딸기바나나주스",
+    "price": 4800,
+    "priceSource": "prototype",
+    "description": "과일의 풍미를 시원하게 즐겨 보세요",
+    "categories": [
+      "과일 주스"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-6729564b4078",
+    "name": "딸기주스",
+    "sourceName": "딸기주스",
+    "price": 4800,
+    "priceSource": "prototype",
+    "description": "과일의 풍미를 시원하게 즐겨 보세요",
+    "categories": [
+      "과일 주스"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-dbfc3dcd5692",
+    "name": "딸기퐁당 오트 피스타치오",
+    "sourceName": "딸기퐁당 오트 피스타치오",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-ea3a245b5826",
+    "name": "레몬 아이스티",
+    "sourceName": "레몬 아이스티",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-81f053a2082b",
+    "name": "레몬차",
+    "sourceName": "레몬차",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-f896cafa8700",
+    "name": "로열 밀크티",
+    "sourceName": "로열 밀크티",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-744db51e0ad9",
+    "name": "루이보스",
+    "sourceName": "루이보스",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-d4a99dcc543d",
+    "name": "말차 초코 쉐이크",
+    "sourceName": "말차 초코 쉐이크",
+    "price": 5500,
+    "priceSource": "prototype",
+    "description": "시원하고 부드럽게 즐기는 블렌딩 음료",
+    "categories": [
+      "블렌디드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-b970b044f595",
+    "name": "말차초코라떼",
+    "sourceName": "말차초코라떼",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-79b5b5480b17",
+    "name": "말차폼 자스민티",
+    "sourceName": "말차폼 자스민티",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-05f1ea60d3c5",
+    "name": "망고 플랫치노",
+    "sourceName": "망고 플랫치노",
+    "price": 5500,
+    "priceSource": "prototype",
+    "description": "시원하고 부드럽게 즐기는 블렌딩 음료",
+    "categories": [
+      "블렌디드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-e00d72a4a0ec",
+    "name": "망고바나나주스",
+    "sourceName": "망고바나나주스",
+    "price": 4800,
+    "priceSource": "prototype",
+    "description": "과일의 풍미를 시원하게 즐겨 보세요",
+    "categories": [
+      "과일 주스"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "mango",
+    "name": "망고 주스",
+    "sourceName": "망고주스",
+    "price": 4800,
+    "priceSource": "prototype",
+    "description": "과일의 풍미를 시원하게 즐겨 보세요",
+    "categories": [
+      "과일 주스"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-e42475c63657",
+    "name": "머스캣 모히또 에이드",
+    "sourceName": "머스캣 모히또 에이드",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "상큼한 과일과 청량한 탄산의 만남",
+    "categories": [
+      "에이드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-f7416514b8e4",
+    "name": "모구모구(리치)",
+    "sourceName": "모구모구(리치)",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-9a130870ddc3",
+    "name": "모구모구(복숭아)",
+    "sourceName": "모구모구(복숭아)",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-d32732f7f924",
+    "name": "미숫가루 라떼",
+    "sourceName": "미숫가루 라떼",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-067a6dc428fb",
+    "name": "민트 초콜릿",
+    "sourceName": "민트 초콜릿",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-d464c439e92d",
+    "name": "민트 초콜릿칩 플랫치노",
+    "sourceName": "민트 초콜릿칩 플랫치노",
+    "price": 5500,
+    "priceSource": "prototype",
+    "description": "시원하고 부드럽게 즐기는 블렌딩 음료",
+    "categories": [
+      "블렌디드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-74a96aa4f21c",
+    "name": "밀크 쉐이크",
+    "sourceName": "밀크 쉐이크",
+    "price": 5500,
+    "priceSource": "prototype",
+    "description": "시원하고 부드럽게 즐기는 블렌딩 음료",
+    "categories": [
+      "블렌디드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-5a5a75a4b36b",
+    "name": "밤 크림 라떼",
+    "sourceName": "밤 크림 라떼",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-1c1292ddd4ab",
+    "name": "배모과차",
+    "sourceName": "배모과차",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-60a6bf4ee08c",
+    "name": "버블 흑당 라떼",
+    "sourceName": "버블 흑당 라떼",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-e6aebdf81ef2",
+    "name": "복분자 뱅쇼",
+    "sourceName": "복분자 뱅쇼",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-923f76a2129e",
+    "name": "복숭아 아이스티",
+    "sourceName": "복숭아 아이스티",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-6fda6ad38b82",
+    "name": "블루베리 요거트 플랫치노",
+    "sourceName": "블루베리 요거트 플랫치노",
+    "price": 5500,
+    "priceSource": "prototype",
+    "description": "시원하고 부드럽게 즐기는 블렌딩 음료",
+    "categories": [
+      "블렌디드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-5fef48d8cfa5",
+    "name": "블루베리바나나주스",
+    "sourceName": "블루베리바나나주스",
+    "price": 4800,
+    "priceSource": "prototype",
+    "description": "과일의 풍미를 시원하게 즐겨 보세요",
+    "categories": [
+      "과일 주스"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-0962920dfba0",
+    "name": "블루베리주스",
+    "sourceName": "블루베리주스",
+    "price": 4800,
+    "priceSource": "prototype",
+    "description": "과일의 풍미를 시원하게 즐겨 보세요",
+    "categories": [
+      "과일 주스"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-f8e7552f9bf4",
+    "name": "비타민 주스 믹스베리",
+    "sourceName": "비타민 주스 믹스베리",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-701a982f9f3d",
+    "name": "비타민 주스 애플망고",
+    "sourceName": "비타민 주스 애플망고",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-24b1ca7690d3",
+    "name": "사과당근클렌즈주스",
+    "sourceName": "사과당근클렌즈주스",
+    "price": 4800,
+    "priceSource": "prototype",
+    "description": "과일의 풍미를 시원하게 즐겨 보세요",
+    "categories": [
+      "과일 주스"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-30f3faa214ee",
+    "name": "살얼음 식혜",
+    "sourceName": "살얼음 식혜",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-44f164037fe7",
+    "name": "생강차",
+    "sourceName": "생강차",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-ba77464783c3",
+    "name": "생수박 과일 화채",
+    "sourceName": "생수박 과일 화채",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-9038e70d22b5",
+    "name": "샹그리아 에이드",
+    "sourceName": "샹그리아 에이드",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "상큼한 과일과 청량한 탄산의 만남",
+    "categories": [
+      "에이드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-a643355ee7f0",
+    "name": "시그니처 라떼",
+    "sourceName": "시그니처 라떼",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "커피",
+      "디카페인"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": true,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-15f525b347d9",
+    "name": "쌍화차",
+    "sourceName": "쌍화차",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-6ac3a1c8e640",
+    "name": "아망추 복숭아",
+    "sourceName": "아망추 복숭아",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-49d217e368a1",
+    "name": "아샷추 복숭아",
+    "sourceName": "아샷추 복숭아",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": true,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-f4e3868eabab",
+    "name": "아포가토 오리지널",
+    "sourceName": "아포가토 오리지널",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "earlgrey",
+    "name": "얼그레이 티",
+    "sourceName": "얼그레이",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true,
+    "soldOut": true
+  },
+  {
+    "id": "drink-ef019d117703",
+    "name": "에스프레소",
+    "sourceName": "에스프레소",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "커피",
+      "디카페인"
+    ],
+    "temperatures": [
+      "hot"
+    ],
+    "coffee": true,
+    "milk": false,
+    "decaf": true,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-8ac283be588f",
+    "name": "에스프레소 쉐이크",
+    "sourceName": "에스프레소 쉐이크",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-150871649273",
+    "name": "연유 콜드브루",
+    "sourceName": "연유 콜드브루",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-075ddf8822b0",
+    "name": "오트 커피",
+    "sourceName": "오트 커피",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-866e5b56e88b",
+    "name": "오트 콜드브루",
+    "sourceName": "오트 콜드브루",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-df5a2152ac9f",
+    "name": "유자몽 플랫치노",
+    "sourceName": "유자몽 플랫치노",
+    "price": 5500,
+    "priceSource": "prototype",
+    "description": "시원하고 부드럽게 즐기는 블렌딩 음료",
+    "categories": [
+      "블렌디드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-189f7feeead9",
+    "name": "유자차",
+    "sourceName": "유자차",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-32a33155b5f1",
+    "name": "이디야 감귤&한라봉 주스",
+    "sourceName": "이디야 감귤&한라봉 주스",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-c1398bcdc3dc",
+    "name": "이디야 사과주스",
+    "sourceName": "이디야 사과주스",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-93a6ef6430f6",
+    "name": "이디야 워터",
+    "sourceName": "이디야 워터",
+    "price": 1500,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-cd7837e424ad",
+    "name": "이디야 콤부차 복숭아 망고",
+    "sourceName": "이디야 콤부차 복숭아 망고",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-4107937edeb8",
+    "name": "이디야 콤부차 석류애플라임",
+    "sourceName": "이디야 콤부차 석류애플라임",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-5e7e780262f4",
+    "name": "이디야 콤부차 청포도 레몬",
+    "sourceName": "이디야 콤부차 청포도 레몬",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-96bafc1486eb",
+    "name": "이디야키즈 뽀로로 사과매실",
+    "sourceName": "이디야키즈 뽀로로 사과매실",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-72d7145c24ea",
+    "name": "이디야키즈 뽀로로 오렌지",
+    "sourceName": "이디야키즈 뽀로로 오렌지",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-d92493ba6675",
+    "name": "이디야키즈 뽀로로 포도블루베리",
+    "sourceName": "이디야키즈 뽀로로 포도블루베리",
+    "price": 2800,
+    "priceSource": "prototype",
+    "description": "간편하게 즐기는 완제품 음료",
+    "categories": [
+      "병음료"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": true,
+    "fixedOptions": true,
+    "fixedSize": true,
+    "iceAdjustable": false
+  },
+  {
+    "id": "drink-8f03db79a369",
+    "name": "자몽 포멜로 에이드",
+    "sourceName": "자몽 포멜로 에이드",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "상큼한 과일과 청량한 탄산의 만남",
+    "categories": [
+      "에이드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-7fb0e790b34c",
+    "name": "자몽차",
+    "sourceName": "자몽차",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-386592639b03",
+    "name": "제로슈가 달달커피",
+    "sourceName": "제로슈가 달달커피",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-128ba39fd143",
+    "name": "제로슈가 아샷추 복숭아",
+    "sourceName": "제로슈가 아샷추 복숭아",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": true,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-14fd451e8366",
+    "name": "제로슈가 아이스티 복숭아",
+    "sourceName": "제로슈가 아이스티 복숭아",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-21993b99b4d9",
+    "name": "청도홍시주스",
+    "sourceName": "청도홍시주스",
+    "price": 4800,
+    "priceSource": "prototype",
+    "description": "과일의 풍미를 시원하게 즐겨 보세요",
+    "categories": [
+      "과일 주스"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-07a8094cd820",
+    "name": "초코쿠키 쉐이크",
+    "sourceName": "초코쿠키 쉐이크",
+    "price": 5500,
+    "priceSource": "prototype",
+    "description": "시원하고 부드럽게 즐기는 블렌딩 음료",
+    "categories": [
+      "블렌디드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "chocolate",
+    "name": "초콜릿라떼",
+    "sourceName": "초콜릿",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-66b35451ca07",
+    "name": "초콜릿 칩 플랫치노",
+    "sourceName": "초콜릿 칩 플랫치노",
+    "price": 5500,
+    "priceSource": "prototype",
+    "description": "시원하고 부드럽게 즐기는 블렌딩 음료",
+    "categories": [
+      "블렌디드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-55f4066820e0",
+    "name": "카푸치노",
+    "sourceName": "카푸치노",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "커피",
+      "디카페인"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": true,
+    "milk": true,
+    "decaf": true,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "chamomile",
+    "name": "캐모마일 티",
+    "sourceName": "캐모마일",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-1e380ee907bf",
+    "name": "키위케일셀러리클렌즈주스",
+    "sourceName": "키위케일셀러리클렌즈주스",
+    "price": 4800,
+    "priceSource": "prototype",
+    "description": "과일의 풍미를 시원하게 즐겨 보세요",
+    "categories": [
+      "과일 주스"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-305eff0d6c59",
+    "name": "토피넛 라떼",
+    "sourceName": "토피넛 라떼",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-f3322c85dd23",
+    "name": "토피넛 플랫치노",
+    "sourceName": "토피넛 플랫치노",
+    "price": 5500,
+    "priceSource": "prototype",
+    "description": "시원하고 부드럽게 즐기는 블렌딩 음료",
+    "categories": [
+      "블렌디드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-5f403fb0be54",
+    "name": "페퍼민트",
+    "sourceName": "페퍼민트",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "yogurt",
+    "name": "플레인 요거트 플랫치노",
+    "sourceName": "플레인 요거트 플랫치노",
+    "price": 4900,
+    "priceSource": "prototype",
+    "description": "시원하고 부드럽게 즐기는 블렌딩 음료",
+    "categories": [
+      "블렌디드"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-3f416068c3ae",
+    "name": "헤이즐넛 아메리카노",
+    "sourceName": "헤이즐넛 아메리카노",
+    "price": 4200,
+    "priceSource": "prototype",
+    "description": "커피의 풍미를 즐기는 한 잔",
+    "categories": [
+      "커피",
+      "디카페인"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": true,
+    "milk": false,
+    "decaf": true,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-239a729f88de",
+    "name": "화이트 초콜릿",
+    "sourceName": "화이트 초콜릿",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-267a6e96d395",
+    "name": "흑당 라떼",
+    "sourceName": "흑당 라떼",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-ccb9813f0a19",
+    "name": "흑임자 크림 라떼",
+    "sourceName": "흑임자 크림 라떼",
+    "price": 4500,
+    "priceSource": "prototype",
+    "description": "커피 없이 즐기는 부드럽고 달콤한 한 잔",
+    "categories": [
+      "논커피"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": true,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-03713fee3353",
+    "name": "히비스커스",
+    "sourceName": "히비스커스",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  },
+  {
+    "id": "drink-c2a35fe849d8",
+    "name": "히비스커스 청귤티",
+    "sourceName": "히비스커스 청귤티",
+    "price": 3500,
+    "priceSource": "prototype",
+    "description": "차의 향과 과일의 풍미를 즐겨 보세요",
+    "categories": [
+      "티"
+    ],
+    "temperatures": [
+      "ice",
+      "hot"
+    ],
+    "coffee": false,
+    "milk": false,
+    "decaf": false,
+    "packaged": false,
+    "fixedOptions": false,
+    "fixedSize": false,
+    "iceAdjustable": true
+  }
+]
