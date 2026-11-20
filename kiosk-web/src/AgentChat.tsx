@@ -40,6 +40,7 @@ type Pending = {
 };
 type Result = {
   ok: boolean;
+  code?: string;
   text?: string;
   error?: string;
   state?: AgentState;
@@ -71,7 +72,12 @@ async function request<T>(
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(body === undefined ? 5000 : 105000),
   });
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new TypeError("Agent connection interrupted");
+  }
   if (!response.ok)
     throw new Error(data.error || "에이전트 서버에 연결하지 못했어요.");
   return data as T;
@@ -129,7 +135,21 @@ export function AgentChat({
     setChecking(true);
     setError("");
     try {
-      setStatus(await request<Status>("status"));
+      const fresh = await request<Status>("status");
+      setStatus(fresh);
+      if (status && fresh.token !== status.token) {
+        speech.current!.stop();
+        delivery.current = null;
+        generation.current++;
+        streamAbort.current?.abort();
+        sending.current = false;
+        setBusy(false);
+        setPending(null);
+        setSession(null);
+        setError(
+          "서버에 다시 연결했어요. 담긴 주문은 유지돼요. 결제 전에는 주문을 다시 확인할게요.",
+        );
+      }
     } catch {
       setStatus(null);
       setError(
@@ -155,7 +175,10 @@ export function AgentChat({
 
   function close() {
     if (!sending.current) {
-      if (speaking) void interrupt();
+      if (speaking)
+        void interrupt().catch(() =>
+          setError("음성을 멈췄어요. 다시 연결해 주세요."),
+        );
       setOpen(false);
     }
   }
@@ -276,6 +299,11 @@ export function AgentChat({
       );
       if (!started.ok) {
         setPending(null);
+        if (started.code === "SESSION_EXPIRED") {
+          setSession(null);
+          speech.current!.stop();
+          delivery.current = null;
+        }
         throw new Error(started.error);
       }
       if (generation.current !== turnGeneration) {
@@ -372,6 +400,22 @@ export function AgentChat({
         );
     } catch (cause) {
       if (cause instanceof Error && cause.name === "AbortError") return;
+      try {
+        const fresh = await request<Status>("status");
+        setStatus(fresh);
+        if (fresh.token !== status.token) {
+          setSession(null);
+          setPending(null);
+          speech.current!.stop();
+          delivery.current = null;
+          setError(
+            "서버에 다시 연결했어요. 담긴 주문은 유지돼요. 마지막 요청은 자동 반복하지 않았어요.",
+          );
+          return;
+        }
+      } catch {
+        /* Keep the same request ID for recovery when the server returns. */
+      }
       setError(
         cause instanceof Error &&
           cause.name !== "TimeoutError" &&

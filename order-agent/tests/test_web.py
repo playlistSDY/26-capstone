@@ -81,6 +81,12 @@ class BridgeTest(unittest.TestCase):
         payload["text"] = "다른 요청"
         self.assertFalse(self.bridge.submit(self.bridge.turn(self.session, payload))["ok"])
 
+    def test_expired_session_is_reported_without_replaying_order(self):
+        result = self.bridge.submit(self.bridge.turn("expired-session", {"request_id": "retry", "text": "그래", "cart": cart()}))
+        self.assertEqual(result["code"], "SESSION_EXPIRED")
+        self.assertFalse(result["ok"])
+        self.assertEqual(self.bridge.sessions[self.session]["conversation"].calls, 0)
+
     def test_invalid_import_does_not_replace_kiosk_cart_with_old_state(self):
         payload = {"request_id": "turn-1", "text": "안녕", "cart": {"lines": [], "place": "bad", "screen": "menu"}}
         self.bridge.submit(self.bridge.turn(self.session, payload)); self.finish()

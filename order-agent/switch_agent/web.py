@@ -95,7 +95,7 @@ class Bridge:
     async def turn(self, session_id, payload):
         session = self.sessions.get(session_id)
         if session is None:
-            return {"ok": False, "error": "대화 세션이 만료됐어요. 새 대화를 시작해 주세요."}
+            return {"ok": False, "code": "SESSION_EXPIRED", "error": "대화 연결을 새로 시작해 주세요. 현재 주문은 유지돼요."}
         session["touched"] = time.monotonic()
         request_id, text = payload.get("request_id"), payload.get("text")
         if not isinstance(request_id, str) or not 1 <= len(request_id) <= 100 or not isinstance(text, str) or not 1 <= len(text.strip()) <= 4000:
