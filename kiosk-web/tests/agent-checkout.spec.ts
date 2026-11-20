@@ -94,7 +94,6 @@ async function fixture(page: Page, standalone = true) {
     .click();
   await page.getByRole("button", { name: /차갑게/ }).click();
   await page.getByRole("button", { name: "3,200원 담기", exact: true }).click();
-  await page.getByRole("button", { name: /주문 대화 테스트/ }).click();
   await page.getByRole("button", { name: "음성 끄기", exact: true }).click();
   async function say(text: string) {
     await page.getByRole("textbox", { name: "주문 메시지" }).fill(text);
@@ -155,7 +154,10 @@ test("Conversation opens review then method, waits for reader and finishes one o
   expect(orders).toHaveLength(1);
   expect(orders[0].method).toBe("card");
   await expect.poll(() => f.backend.jobs.length).toBe(1);
-  await expect(page.locator(".agent-chat-dialog")).not.toBeVisible();
+  await expect(page.locator(".agent-chat-dialog")).toBeVisible();
+  await expect(page.getByRole("log", { name: "주문 대화" })).toContainText(
+    "안녕하세요",
+  );
 });
 
 test("Failure is announced and conversation can retry and cancel without losing cart", async ({
@@ -200,4 +202,35 @@ test("Failure is announced and conversation can retry and cancel without losing 
       JSON.parse(localStorage.getItem("switch.kiosk.orders.v1") || "[]"),
     ),
   ).toHaveLength(0);
+});
+
+test("Chat stays beside the kiosk without covering it at every viewport width", async ({
+  page,
+}) => {
+  await fixture(page, false);
+  for (const width of [1360, 820, 430]) {
+    await page.setViewportSize({ width, height: 1040 });
+    await expect
+      .poll(async () => {
+        const kiosk = await page.locator(".kiosk-space").boundingBox();
+        const chat = await page.locator(".agent-chat-dialog").boundingBox();
+        const nav = await page.locator(".studio-bar").boundingBox();
+        return (
+          !!kiosk &&
+          !!chat &&
+          !!nav &&
+          kiosk.x + kiosk.width <= chat.x &&
+          nav.y + nav.height <= chat.y &&
+          nav.x + nav.width >= chat.x + chat.width
+        );
+      })
+      .toBe(true);
+  }
+  await page.setViewportSize({ width: 1360, height: 1040 });
+  await expect(page.locator("dialog:modal")).toHaveCount(0);
+  await page.getByRole("button", { name: "결제하기", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "확인하고 결제하기", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".agent-chat-dialog")).toBeVisible();
 });

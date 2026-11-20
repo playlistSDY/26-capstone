@@ -289,7 +289,7 @@ function PaymentPanel({
 }
 
 export default function App() {
-  const [chatOpen, setChatOpen] = useState(false);
+  const [chatActive, setChatActive] = useState(false);
   const [chatGeneration, setChatGeneration] = useState(0);
   const [initial] = useState(() => readDraft(localStorage));
   const [screen, setScreen] = useState<Screen>(initial ? "menu" : "home");
@@ -383,7 +383,7 @@ export default function App() {
     };
     window.addEventListener("pointerdown", resetTaps);
     return () => window.removeEventListener("pointerdown", resetTaps);
-  }, [screen, overlay, chatOpen]);
+  }, [screen, overlay, chatActive]);
   const surface = useRef<HTMLDivElement>(null);
   const catalogScroll = useRef<HTMLDivElement>(null);
   const dockScroll = useRef<HTMLDivElement>(null);
@@ -527,10 +527,10 @@ export default function App() {
       setScreen("completed");
   }, [screen, order?.id, autoPrint?.state]);
   useEffect(() => {
-    if (screen !== "completed" || overlay || chatOpen) return;
+    if (screen !== "completed" || overlay || chatActive) return;
     const timer = setInterval(() => setFinishSeconds((n) => n - 1), 1000);
     return () => clearInterval(timer);
-  }, [screen, overlay, chatOpen]);
+  }, [screen, overlay, chatActive]);
   useEffect(() => {
     if (screen === "completed" && finishSeconds <= 0) reset();
   }, [finishSeconds, screen]);
@@ -549,7 +549,7 @@ export default function App() {
         screen === "finalizing" ||
         screen === "payment" ||
         overlay ||
-        chatOpen
+        chatActive
       )
         return;
       if (Date.now() - lastActivity.current > 120000) {
@@ -561,7 +561,7 @@ export default function App() {
       events.forEach((name) => window.removeEventListener(name, record));
       clearInterval(timer);
     };
-  }, [screen, overlay, chatOpen]);
+  }, [screen, overlay, chatActive]);
   useEffect(() => {
     if (overlay !== "idle") return;
     const timer = setInterval(() => setIdleSeconds((n) => n - 1), 1000);
@@ -573,7 +573,7 @@ export default function App() {
 
   function reset() {
     lastAgentPaymentAction.current = null;
-    setChatOpen(false);
+    setChatActive(false);
     setChatGeneration((value) => value + 1);
     setCart([]);
     setScreen("home");
@@ -767,7 +767,7 @@ export default function App() {
     </div>
   );
   return (
-    <div className={`studio ${standalone ? "standalone" : ""}`}>
+    <div className={`studio demo-layout ${standalone ? "standalone" : ""}`}>
       {!standalone && (
         <div className="studio-bar">
           <div className="studio-title">
@@ -819,6 +819,7 @@ export default function App() {
                   document.exitFullscreen().catch(() => {});
                 else
                   surface.current
+                    ?.closest(".demo-layout")
                     ?.requestFullscreen()
                     .catch(() =>
                       setToast("브라우저에서 전체화면을 지원하지 않아요."),
@@ -1014,7 +1015,9 @@ export default function App() {
                   <div className="completion-countdown">
                     <span className="countdown-track" aria-hidden="true">
                       <i
-                        style={{ width: `${Math.max(0, finishSeconds) * 20}%` }}
+                        style={{
+                          width: `${Math.max(0, finishSeconds) * 20}%`,
+                        }}
                       />
                     </span>
                     <small>{finishSeconds}초 후 처음 화면으로 돌아가요.</small>
@@ -1870,9 +1873,9 @@ export default function App() {
           screen === "completed"
         }
         onState={applyAgentState}
-        onOpenChange={setChatOpen}
+        onConversationActiveChange={setChatActive}
         onSessionEnd={() => {
-          setChatOpen(false);
+          setChatActive(false);
           setChatGeneration((value) => value + 1);
         }}
       />

@@ -1,13 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  MessageCircle,
-  Send,
-  X,
-  RotateCcw,
-  Square,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
+import { Send, RotateCcw, Square, Volume2, VolumeX } from "lucide-react";
 import { assetUrl } from "./catalog";
 import { findProduct, money } from "./catalog";
 import type { Payment } from "./PaymentFlow";
@@ -104,13 +96,13 @@ export function AgentChat({
   cart,
   disabled,
   onState,
-  onOpenChange,
+  onConversationActiveChange,
   onSessionEnd,
 }: {
   cart: ChatCart;
   disabled: boolean;
   onState: (state: AgentState) => void;
-  onOpenChange: (open: boolean) => void;
+  onConversationActiveChange: (active: boolean) => void;
   onSessionEnd: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -121,7 +113,7 @@ export function AgentChat({
   const checkoutView = ["cart", "payment", "finalizing", "completed"].includes(
     cart.screen,
   );
-  const [open, setOpen] = useState(false);
+  const open = true;
   const [messages, setMessages] = useState<Message[]>([greeting]);
   const [text, setText] = useState("");
   const [status, setStatus] = useState<Status | null>(null);
@@ -222,27 +214,19 @@ export function AgentChat({
   useEffect(() => {
     if (open) {
       dialog.current?.close();
-      if (checkoutView) dialog.current?.show();
-      else dialog.current?.showModal();
+      dialog.current?.show();
       void connect();
       input.current?.focus();
     } else dialog.current?.close();
-    onOpenChange(open);
-  }, [open, checkoutView]);
+  }, [open]);
+
+  useEffect(() => {
+    onConversationActiveChange(!!session);
+  }, [session, onConversationActiveChange]);
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: "nearest" });
   }, [messages, busy, error]);
-
-  function close() {
-    if (!sending.current) {
-      if (speaking)
-        void interrupt().catch(() =>
-          setError("음성을 멈췄어요. 다시 연결해 주세요."),
-        );
-      setOpen(false);
-    }
-  }
 
   function apply(state: AgentState) {
     onState(state);
@@ -517,21 +501,16 @@ export function AgentChat({
   }
 
   return (
-    <>
-      <button
-        className="agent-chat-launcher"
-        disabled={disabled}
-        onClick={() => setOpen(true)}
-      >
-        <MessageCircle size={21} /> 주문 대화 테스트
-      </button>
+    <aside
+      className={`agent-chat-pane${open ? " is-open" : ""}`}
+      aria-label="주문 대화 패널"
+    >
       <dialog
         ref={dialog}
         className={`agent-chat-dialog${checkoutView ? " is-checkout" : ""}`}
         aria-labelledby="agent-chat-title"
         onCancel={(event) => {
           event.preventDefault();
-          close();
         }}
       >
         <div className="agent-chat-header">
@@ -541,14 +520,6 @@ export function AgentChat({
             </span>
             <h2 id="agent-chat-title">점원에게 말하듯 주문하세요</h2>
           </div>
-          <button
-            className="agent-chat-icon"
-            aria-label="대화 닫기"
-            disabled={busy}
-            onClick={close}
-          >
-            <X size={22} />
-          </button>
         </div>
         <div className="agent-chat-connection">
           <span>
@@ -741,6 +712,6 @@ export function AgentChat({
           </button>
         </div>
       </dialog>
-    </>
+    </aside>
   );
 }
