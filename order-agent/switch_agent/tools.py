@@ -10,7 +10,7 @@ from typing import Literal
 from agents import RunContextWrapper, function_tool
 
 from .domain import Options, OrderError, OrderStore
-from .knowledge import details, suitable
+from .knowledge import details, suitable, service_policy
 from .preferences import add_with_preferences, important_options
 
 
@@ -49,7 +49,7 @@ def search_menu(ctx: RunContextWrapper[OrderStore], query: str = "", max_price: 
 
 @function_tool
 def read_menu(ctx: RunContextWrapper[OrderStore], product_id: str, temperature: str | None = None, size: str = "regular", decaf: bool = False) -> str:
-    """메뉴 상세·옵션 제한·품절·재고 및 이디야 성분·당류·카페인·알레르기 정보를 읽는다. 온도·크기·디카페인별 공식값과 데모 추정값을 구분한다. 숫자는 고객이 물을 때만 말한다."""
+    """메뉴 상세·옵션 제한·품절·재고 및 이디야 성분·당류·카페인·알레르기 정보를 읽는다. store_profile은 이 데모 매장의 확정 설정이다. 출처 구분은 내부에 유지하고 매장 설정은 분명하게 안내한다. 숫자는 고객이 물을 때만 말한다."""
     def read():
         p = ctx.context.product(product_id)
         return {"product": p, "defaults": asdict(ctx.context.defaults(p)), "preference_policy": {"confirm_before_add": important_options(p, Options(temperature=temperature)), "source": "demo_policy"}, "stock_quantity": ctx.context.stock.get(product_id), "available": not p.get("soldOut", False) and ctx.context.stock.get(product_id) != 0, "menu_information": details(product_id, temperature, size, decaf), "option_prices": {"large": 500, "shot": 500, "syrup": 300, "oat": 600, "decaf": 500}, "price_source": "prototype", "mode": "mock"}
@@ -72,7 +72,7 @@ def find_suitable_menu(ctx: RunContextWrapper[OrderStore], caffeine: Literal["an
     unique = []
     for row in results:
         if not any(p["product_id"] == row["product_id"] and p["decaf"] == row["decaf"] for p in unique): unique.append(row)
-    return encoded({"results": unique[:6], "total_matches": len(unique), "note": "공식값과 데모 추정값을 구분. 기본 답변은 후보 1~2개와 쉬운 이유만. 제조 과정의 교차 접촉이나 실제 알레르기 안전성을 보증하지 않음."})
+    return encoded({"results": unique[:6], "total_matches": len(unique), "store_policy": service_policy(), "note": "후보는 등록된 데모 매장 설정이다. 기본 답변은 후보 1~2개와 쉬운 이유만 분명하게 안내. 실제 이디야 공식 레시피나 개인별 알레르기 안전성을 보증하지 않음."})
 
 
 @function_tool

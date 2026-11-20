@@ -26,6 +26,30 @@ class KnowledgeTest(unittest.TestCase):
                     self.assertGreaterEqual(value, 0)
                     self.assertIn(variant["value_origins"][key], {"official", "demo_estimate"})
 
+    def test_each_menu_has_complete_scoped_store_profile(self):
+        for pid in OrderStore.demo().catalog:
+            profile = details(pid)["store_profile"]
+            self.assertEqual(profile["scope"], "fictional_demo_store_only")
+            self.assertTrue(profile["recipe"])
+            self.assertTrue(profile["variants"])
+            self.assertTrue(profile["preparation"]["less_sweet"])
+            self.assertTrue(profile["allergy_handling"]["guarantee_statement"])
+            for ingredient in profile["recipe"]:
+                self.assertTrue(ingredient["ingredient"])
+                self.assertIsInstance(ingredient["amount"], (int, float))
+                self.assertTrue(ingredient["unit"])
+
+    def test_store_profile_keeps_reference_provenance_separate(self):
+        menu = details("drink-93a6ef6430f6", "ice")
+        self.assertEqual(menu["store_profile"]["variants"][0]["nutrition"], menu["variants"][0]["values"])
+        self.assertTrue(all(v == "demo_estimate" for v in menu["variants"][0]["value_origins"].values()))
+
+    def test_store_policy_does_not_guarantee_allergy_safety(self):
+        profile = details("latte", "ice")["store_profile"]
+        self.assertTrue(profile["allergy_handling"]["shared_equipment"])
+        self.assertIn("차단", profile["allergy_handling"]["guarantee_statement"])
+        self.assertIn("제거되지", profile["preparation"]["oat_milk"])
+
     def test_decaf_is_not_reported_as_caffeine_free(self):
         decaf = details("americano", "ice", decaf=True)["variants"][0]
         self.assertGreater(decaf["values"]["caffeine_mg"], 0)

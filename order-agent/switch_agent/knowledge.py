@@ -9,11 +9,33 @@ def database():
     return json.loads((Path(__file__).parents[1] / "data/menu-knowledge.json").read_text())
 
 
+@lru_cache(maxsize=1)
+def service_policy():
+    return json.loads((Path(__file__).parents[1] / "data/store-service-policy.json").read_text())
+
+
+def store_profile(item, variants):
+    """Explicit fictional store facts, separate from reference provenance."""
+    return {
+        "scope": "fictional_demo_store_only",
+        "name": item["name"],
+        "description": item["summary"],
+        "recipe": [{"ingredient": i["name"], "amount": i["amount_demo"], "unit": i["amount_unit"]} for i in item["ingredients"]],
+        "recipe_basis": "등록된 기본 배합 예시. 온도·크기·추가 옵션별 영양 재계산은 하지 않는다.",
+        "variants": [{"temperature": v["temperature"], "size": v["size"], "decaf": v["decaf"],
+                      "sweetness": v["sweetness"], "caffeine_level": v["caffeine_level"],
+                      "nutrition": v["values"], "allergy_ingredients": v["allergens"]} for v in variants],
+        "preparation": service_policy()["preparation"],
+        "allergy_handling": service_policy()["allergy_handling"],
+        "response_policy": "등록된 데모 매장의 레시피·맛·수치를 사실형으로 짧게 안내한다. 출처 추정 표시는 내부 근거이며 고객에게 매번 읽지 않는다. 실제 이디야 공식 정보인지 물으면 구별한다. 알레르기 안전 보증과 미계산 옵션 영양 수치의 생성은 금지한다.",
+    }
+
+
 def details(product_id, temperature=None, size="regular", decaf=False):
     item = database()["items"][product_id]
     ingredient_names = [ingredient["name"] for ingredient in item["ingredients"]]
     variants = [{**v, "ingredient_names": ingredient_names + [item["name"], item["source_name"]]} for v in item["variants"] if (temperature is None or v["temperature"] == temperature) and v["size"] == size and v["decaf"] == decaf]
-    return {"summary": item["summary"], "ingredients": item["ingredients"], "ingredient_amounts_demo": item["ingredient_amounts_demo"], "variants": variants, "checked_at": item["checked_at"], "classification_policy": database()["classification_policy"], "default_response_policy": "고객이 수치를 묻지 않으면 짧고 쉬운 말로 맛·카페인·관련 주의 재료만 안내. 데모 추정값을 공식 수치로 말하지 않음."}
+    return {"store_profile": store_profile(item, variants), "summary": item["summary"], "ingredients": item["ingredients"], "ingredient_amounts_demo": item["ingredient_amounts_demo"], "variants": variants, "checked_at": item["checked_at"], "classification_policy": database()["classification_policy"], "default_response_policy": "고객이 수치를 묻지 않으면 짧고 쉬운 말로 맛·카페인·관련 주의 재료만 안내. 등록된 데모 매장 설정은 단정적으로 안내하고, 실제 브랜드 공식 정보와 혼동하지 않음."}
 
 
 def normalize_ingredient(name):
