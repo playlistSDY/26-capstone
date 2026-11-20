@@ -47,6 +47,7 @@ import {
   totalPrice,
   unitPrice,
   writeDraft,
+  validateOptions,
   type CartLine,
   type Options,
   type Order,
@@ -66,6 +67,7 @@ import {
 import { playSound, useKioskSounds } from "./sounds";
 import { PaymentPanelBody, paymentMethods, type Payment } from "./PaymentFlow";
 import { paymentMethodName } from "./domain";
+import { AgentChat, type AgentState } from "./AgentChat";
 
 type Screen = "home" | "menu" | "cart" | "payment" | "finalizing" | "completed";
 type Outcome = "success" | "failure" | "timeout";
@@ -286,6 +288,8 @@ function PaymentPanel({
 }
 
 export default function App() {
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatGeneration, setChatGeneration] = useState(0);
   const [initial] = useState(() => readDraft(localStorage));
   const [screen, setScreen] = useState<Screen>(initial ? "menu" : "home");
   const [place, setPlace] = useState<Place>(initial?.place ?? "store");
@@ -542,7 +546,8 @@ export default function App() {
         screen === "completed" ||
         screen === "finalizing" ||
         screen === "payment" ||
-        overlay
+        overlay ||
+        chatOpen
       )
         return;
       if (Date.now() - lastActivity.current > 120000) {
@@ -554,7 +559,7 @@ export default function App() {
       events.forEach((name) => window.removeEventListener(name, record));
       clearInterval(timer);
     };
-  }, [screen, overlay]);
+  }, [screen, overlay, chatOpen]);
   useEffect(() => {
     if (overlay !== "idle") return;
     const timer = setInterval(() => setIdleSeconds((n) => n - 1), 1000);
@@ -565,6 +570,8 @@ export default function App() {
   }, [idleSeconds, overlay]);
 
   function reset() {
+    setChatOpen(false);
+    setChatGeneration((value) => value + 1);
     setCart([]);
     setScreen("home");
     setEditor(null);
@@ -580,6 +587,40 @@ export default function App() {
   function start(p: Place) {
     setPlace(p);
     setScreen("menu");
+    lastActivity.current = Date.now();
+  }
+  function applyAgentState(state: AgentState) {
+    const lines: CartLine[] = state.lines.map((line) => ({
+      id: line.id,
+      productId: line.product_id,
+      quantity: line.quantity,
+      options: line.options,
+    }));
+    if (
+      lines.some((line) => {
+        const product = findProduct(line.productId);
+        return (
+          !product ||
+          product.soldOut ||
+          validateOptions(product, line.options) ||
+          !Number.isInteger(line.quantity) ||
+          line.quantity < 1 ||
+          line.quantity > 20
+        );
+      }) ||
+      totalPrice(lines) !== state.total
+    )
+      throw new Error(
+        "메뉴 데이터가 달라 주문을 적용하지 않았어요. 에이전트와 키오스크의 카탈로그를 확인해 주세요.",
+      );
+    setCart(lines);
+    if (state.place) setPlace(state.place);
+    setEditor(null);
+    if (state.phase === "checkout") setScreen("payment");
+    else if (state.place)
+      setScreen((previous) =>
+        previous === "home" || previous === "payment" ? "menu" : previous,
+      );
     lastActivity.current = Date.now();
   }
   function configure(product: Product, line?: CartLine) {
@@ -1783,6 +1824,24 @@ export default function App() {
           onPhase={(state, message) => setAutoPrint({ state, message })}
         />
       )}
+      <AgentChat
+        key={chatGeneration}
+        cart={{
+          lines: cart,
+          place: screen === "home" ? null : place,
+          screen:
+            screen === "finalizing" || screen === "completed" ? "home" : screen,
+        }}
+        disabled={
+          !!overlay ||
+          !!editor ||
+          !!payment ||
+          screen === "finalizing" ||
+          screen === "completed"
+        }
+        onState={applyAgentState}
+        onOpenChange={setChatOpen}
+      />
     </div>
   );
 }

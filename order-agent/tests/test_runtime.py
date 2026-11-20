@@ -6,7 +6,7 @@ import unittest
 
 from agents import ModelResponse, Usage
 from agents.models.interface import Model
-from openai.types.responses import ResponseFunctionToolCall, ResponseOutputMessage, ResponseOutputText
+from openai.types.responses import ResponseFunctionToolCall, ResponseOutputMessage, ResponseOutputText, Response, ResponseTextDeltaEvent, ResponseCompletedEvent
 
 from switch_agent.domain import Options, OrderStore
 from switch_agent.runtime import Conversation
@@ -31,8 +31,13 @@ class ScriptedModel(Model):
         return ModelResponse(output=next(self.outputs), usage=Usage(), response_id=None)
 
     async def stream_response(self, *args, **kwargs):
-        raise NotImplementedError
-        yield
+        output = next(self.outputs)
+        for item in output:
+            if item.type == "message":
+                text = item.content[0].text
+                for index, delta in enumerate((text[:5], text[5:])):
+                    yield ResponseTextDeltaEvent(type="response.output_text.delta", delta=delta, content_index=0, item_id=item.id, output_index=0, sequence_number=index, logprobs=[])
+        yield ResponseCompletedEvent(type="response.completed", sequence_number=10, response=Response(id="resp_test", created_at=0, model="test", object="response", output=output, parallel_tool_calls=False, tool_choice="auto", tools=[], status="completed"))
 
 
 class RuntimeTest(unittest.IsolatedAsyncioTestCase):
@@ -57,6 +62,15 @@ class RuntimeTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["state"]["phase"], "ordering")
         self.assertIn("최종", result["text"])
 
+    async def test_clear_order_removes_lines_and_invalidates_confirmation(self):
+        s = OrderStore.demo(); s.set_place("store")
+        s.add("latte", 1, Options(temperature="hot")); s.request_confirmation(); s.delivered()
+        c = Conversation(store=s, model=ScriptedModel([[call("clear_order")], [speech("주문을 비웠어요.")]]))
+        result = await c.reply("전부 취소해 주세요")
+        self.assertEqual(result["state"]["lines"], [])
+        self.assertEqual(result["state"]["place"], "store")
+        self.assertIsNone(s.pending)
+
     async def test_failed_mutation_returns_result_for_model_recovery(self):
         model = ScriptedModel([
             [call("add_item", {"product_id": "latte", "quantity": 1, "options": asdict(Options())})],
@@ -79,6 +93,44 @@ class RuntimeTest(unittest.IsolatedAsyncioTestCase):
         for tool in TOOLS:
             self.assertTrue(tool.strict_json_schema)
             self.assertFalse(tool.params_json_schema["additionalProperties"])
+
+    async def test_streaming_emits_deltas_and_preserves_final_text(self):
+        c = Conversation(model=ScriptedModel([[speech("천천히 고르세요. 기다릴게요.")]]))
+        events = []
+        result = await c.reply("잠깐만", emit=events.append)
+        self.assertEqual("".join(event["text"] for event in events), result["text"])
+        self.assertEqual(len(events), 2)
+
+    async def test_streamed_final_confirmation_waits_for_playback_ack(self):
+        s = OrderStore.demo()
+        s.set_place("store"); s.add("latte", 1, Options(temperature="hot"))
+        c = Conversation(store=s, model=ScriptedModel([[call("request_final_confirmation")]]))
+        await c.reply("끝", emit=lambda event: None, defer_delivery=True)
+        self.assertFalse(s.pending["delivered"])
+        s.begin_turn("네")
+        with self.assertRaises(Exception): s.checkout()
+
+    async def test_cancel_sdk_stream_retains_completed_tools_and_stops_run(self):
+        started = asyncio.Event()
+
+        class SlowStream(ScriptedModel):
+            async def stream_response(self, *args, **kwargs):
+                if self.outputs is not None:
+                    async for event in super().stream_response(*args, **kwargs): yield event
+                    self.outputs = None
+                else:
+                    started.set()
+                    await asyncio.Event().wait()
+
+        s = OrderStore.demo(); s.set_place("store")
+        model = SlowStream([[call("add_item", {"product_id": "latte", "quantity": 1, "options": asdict(Options(temperature="hot"))})]])
+        c = Conversation(store=s, model=model)
+        task = asyncio.create_task(c.reply("따뜻한 라떼", emit=lambda event: None))
+        await asyncio.wait_for(started.wait(), timeout=2)
+        task.cancel()
+        with self.assertRaises(asyncio.CancelledError): await task
+        self.assertEqual(len(s.lines), 1)
+        self.assertIsNone(s.pending)
 
 
 if __name__ == "__main__": unittest.main()

@@ -1,0 +1,354 @@
+"""Loopback HTTP bridge for the local kiosk chat test modal."""
+from __future__ import annotations
+
+import argparse
+import asyncio
+from concurrent.futures import TimeoutError as FutureTimeout
+from copy import deepcopy
+import hashlib
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import json
+import os
+from pathlib import Path
+import secrets
+import threading
+import time
+from urllib.parse import urlsplit, parse_qs
+from uuid import uuid4
+
+from .domain import Line, Options, OrderError, OrderStore
+
+
+def load_config():
+    """Read only a task-local dotenv; never execute shell syntax."""
+    path = Path(__file__).parents[1] / ".env"
+    if path.exists():
+        for raw in path.read_text().splitlines():
+            key, sep, value = raw.strip().removeprefix("export ").partition("=")
+            if sep and key in {"OPENAI_API_KEY", "OPENAI_MODEL", "OPENAI_TTS_MODEL", "OPENAI_TTS_VOICE"}:
+                value = value.strip()
+                if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+                    value = value[1:-1]
+                os.environ.setdefault(key, value)
+
+
+def sync_cart(store, cart):
+    """Import a touch-edited cart atomically; keep confirmations if unchanged."""
+    if not isinstance(cart, dict) or cart.get("screen") not in {"home", "menu", "cart", "payment"}:
+        raise OrderError("현재 화면에서는 주문 대화를 시작할 수 없어요.")
+    place, rows = cart.get("place"), cart.get("lines")
+    if place not in {None, "store", "takeout"} or not isinstance(rows, list) or len(rows) > 99:
+        raise OrderError("키오스크 주문 형식을 확인해 주세요.")
+    candidate = []
+    ids = set()
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("id"), str) or not row["id"] or row["id"] in ids:
+            raise OrderError("중복되거나 잘못된 주문 항목이에요.")
+        ids.add(row["id"])
+        try:
+            candidate.append(Line(row["id"], row["productId"], row["quantity"], Options(**row["options"])))
+        except (KeyError, TypeError):
+            raise OrderError("메뉴 옵션 형식을 확인해 주세요.") from None
+    if cart["screen"] == "home" and (candidate or place is not None):
+        raise OrderError("시작 화면의 주문 정보를 확인해 주세요.")
+    store.validate_cart(candidate)
+    phase = "checkout" if cart["screen"] == "payment" else "ordering"
+    if candidate != store.lines or place != store.place or (store.phase != "handoff" and phase != store.phase):
+        store.lines, store.place, store.phase = deepcopy(candidate), place, phase
+        if store.focus not in ids:
+            store.focus = None
+        store.changed()
+
+
+class Bridge:
+    def __init__(self, conversation_factory=None, speaker_factory=None):
+        from .speech import RealtimeSpeaker
+        self.token = secrets.token_urlsafe(32)
+        self.factory = conversation_factory
+        self.speaker_factory = speaker_factory or RealtimeSpeaker
+        self.loop = asyncio.new_event_loop()
+        self.thread = threading.Thread(target=self.loop.run_forever, daemon=True)
+        self.thread.start()
+        self.sessions = {}
+
+    @property
+    def ready(self):
+        return self.factory is not None or bool(os.environ.get("OPENAI_API_KEY") and os.environ.get("OPENAI_MODEL"))
+
+    async def create(self):
+        now = time.monotonic()
+        expired = [key for key, value in self.sessions.items() if now - value["touched"] >= 3600 and not value["busy"]]
+        for key in expired:
+            await self.sessions[key]["speaker"].disconnect()
+            del self.sessions[key]
+        if len(self.sessions) >= 32:
+            raise OrderError("테스트 세션이 많아요. 잠시 후 다시 시도해 주세요.")
+        if not self.ready:
+            raise OrderError("order-agent/.env에 OPENAI_API_KEY와 OPENAI_MODEL을 설정하고 에이전트 서버를 다시 실행해 주세요.")
+        from .runtime import Conversation
+        session_id = uuid4().hex
+        speaker = self.speaker_factory()
+        warmup = asyncio.create_task(speaker.warmup()) if not self.factory else None
+        self.sessions[session_id] = {"conversation": (self.factory or Conversation)(), "turns": {}, "busy": False, "touched": now, "speaker": speaker, "warmup": warmup}
+        return {"session_id": session_id}
+
+    async def turn(self, session_id, payload):
+        session = self.sessions.get(session_id)
+        if session is None:
+            return {"ok": False, "error": "대화 세션이 만료됐어요. 새 대화를 시작해 주세요."}
+        session["touched"] = time.monotonic()
+        request_id, text = payload.get("request_id"), payload.get("text")
+        if not isinstance(request_id, str) or not 1 <= len(request_id) <= 100 or not isinstance(text, str) or not 1 <= len(text.strip()) <= 4000:
+            return {"ok": False, "error": "메시지와 요청 ID를 확인해 주세요."}
+        fingerprint = hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+        if request_id in session["turns"]:
+            record = session["turns"][request_id]
+            if record["hash"] != fingerprint:
+                return {"ok": False, "error": "같은 요청 ID의 메시지가 달라요."}
+            return {"ok": True, "request_id": request_id}
+        if session["busy"]:
+            return {"ok": False, "error": "이전 답변을 처리하고 있어요. 잠시 기다려 주세요."}
+        session["busy"] = True
+        record = {"hash": fingerprint, "events": [], "done": False, "task": None, "audio": {}, "interrupted": False}
+
+        def emit(event):
+            record["events"].append({**event, "sequence": len(record["events"]) + 1})
+
+        async def run():
+            conversation = session["conversation"]
+            synced = False
+            try:
+                sync_cart(conversation.store, payload.get("cart"))
+                synced = True
+                result = await asyncio.wait_for(conversation.reply(text, emit=emit, defer_delivery=True), timeout=90)
+                emit({"type": "final", "ok": True, **result, "needs_delivery": conversation.store.final_confirmation_text is not None})
+            except asyncio.CancelledError:
+                conversation.store.pending = conversation.store.confirmation_at_turn_start = None
+                conversation.store.final_confirmation_text = None
+                emit({"type": "interrupted", "state": conversation.store.snapshot()})
+            except OrderError as error:
+                emit({"type": "error", "error": str(error), **({"state": conversation.store.snapshot()} if synced else {})})
+            except Exception:
+                # Provider messages may contain sensitive headers/URLs. Return no raw error.
+                emit({"type": "error", "error": "에이전트 응답을 완료하지 못했어요. API 키·모델·사용 한도를 확인해 주세요. 반영된 주문은 유지했어요.", "state": conversation.store.snapshot()})
+            finally:
+                session["busy"] = False
+                record["done"] = True
+
+        task = asyncio.create_task(run())
+        record["task"] = task
+        session["turns"][request_id] = record
+        while len(session["turns"]) > 32:
+            del session["turns"][next(iter(session["turns"]))]
+        return {"ok": True, "request_id": request_id}
+
+    async def events(self, session_id, request_id, after):
+        session = self.sessions.get(session_id)
+        record = session and session["turns"].get(request_id)
+        if record is None:
+            return {"events": [{"type": "error", "error": "대화 요청이 만료됐어요. 새 대화를 시작해 주세요."}], "done": True}
+        return {"events": deepcopy(record["events"][after:]), "done": record["done"]}
+
+    async def interrupt(self, session_id):
+        session = self.sessions.get(session_id)
+        if not session:
+            raise OrderError("대화 세션이 만료됐어요.")
+        for record in session["turns"].values():
+            record["interrupted"] = True
+            task = record["task"]
+            if not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+            for audio in record["audio"].values():
+                audio_task = audio["task"]
+                if not audio_task.done(): audio_task.cancel()
+            await asyncio.gather(*(audio["task"] for audio in record["audio"].values()), return_exceptions=True)
+        s = session["conversation"].store
+        s.pending = s.confirmation_at_turn_start = None
+        s.final_confirmation_text = None
+        return {"ok": True, "state": s.snapshot()}
+
+    async def speech(self, session_id, request_id, text):
+        session = self.sessions.get(session_id)
+        record = session and session["turns"].get(request_id)
+        if not record or not isinstance(text, str) or not 1 <= len(text.strip()) <= 1500:
+            raise OrderError("음성 안내 요청을 확인해 주세요.")
+        if record["interrupted"] or (record["events"] and record["events"][-1]["type"] in {"error", "interrupted"}):
+            raise OrderError("중단된 안내는 재생할 수 없어요.")
+        emitted = "".join(event.get("text", "") for event in record["events"] if event["type"] == "text.delta")
+        final = next((event.get("text", "") for event in reversed(record["events"]) if event["type"] == "final"), "")
+        if text.strip() not in emitted and text.strip() not in final:
+            raise OrderError("에이전트가 안내한 문장만 읽을 수 있어요.")
+        if text not in record["audio"]:
+            audio = {"events": [], "done": False}
+            def emit(event): audio["events"].append(event)
+            async def run():
+                try:
+                    await session["speaker"].stream(text, emit)
+                    emit({"type": "audio.done"})
+                except (Exception, asyncio.CancelledError):
+                    emit({"type": "audio.error", "error": "음성 안내가 중단됐어요."})
+                finally: audio["done"] = True
+            audio["task"] = asyncio.create_task(run())
+            record["audio"][text] = audio
+        return record["audio"][text]
+
+    async def audio_events(self, session_id, request_id, text, after):
+        audio = self.sessions[session_id]["turns"][request_id]["audio"][text]
+        return {"events": list(audio["events"][after:]), "done": audio["done"]}
+
+    async def delivered(self, session_id, request_id):
+        session = self.sessions.get(session_id)
+        if not session or session["busy"] or not session["turns"] or next(reversed(session["turns"])) != request_id:
+            raise OrderError("최신 응답의 전달 상태만 확인할 수 있어요.")
+        record = session["turns"][request_id]
+        if record["interrupted"] or not record["done"] or not record["events"] or record["events"][-1]["type"] != "final":
+            raise OrderError("완료된 안내만 전달 확인할 수 있어요.")
+        session["conversation"].store.delivered()
+        return {"ok": True}
+
+    def submit(self, coroutine):
+        return asyncio.run_coroutine_threadsafe(coroutine, self.loop).result(timeout=100)
+
+    def close(self):
+        async def cancel():
+            tasks = [record["task"] for session in self.sessions.values() for record in session["turns"].values() if not record["task"].done()]
+            tasks += [audio["task"] for session in self.sessions.values() for record in session["turns"].values() for audio in record["audio"].values() if not audio["task"].done()]
+            tasks += [session["warmup"] for session in self.sessions.values() if session["warmup"] and not session["warmup"].done()]
+            for task in tasks: task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+            await asyncio.gather(*(session["speaker"].disconnect() for session in self.sessions.values()), return_exceptions=True)
+        self.submit(cancel())
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        self.thread.join(timeout=3)
+        self.loop.close()
+
+
+def handler_for(bridge):
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, format, *args):
+            pass  # Do not persist customer utterances or session tokens.
+
+        def send_json(self, status, value):
+            data = json.dumps(value, ensure_ascii=False).encode()
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.end_headers()
+            try:
+                self.wfile.write(data)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+
+        def allowed(self):
+            host = self.headers.get("Host", "").split(":")[0]
+            origin = self.headers.get("Origin")
+            return host in {"127.0.0.1", "localhost"} and (not origin or origin in {"http://127.0.0.1:5173", "http://localhost:5173", "http://127.0.0.1:18732", "http://localhost:18732"})
+
+        def do_GET(self):
+            if not self.allowed():
+                return self.send_json(403, {"error": "로컬 테스트 화면에서만 연결할 수 있어요."})
+            if urlsplit(self.path).path == "/agent-api/status":
+                message = "모형 응답으로 UI를 시험 중이에요" if bridge.factory else "OpenAI 에이전트 연결됨 · 가상 주문" if bridge.ready else "OpenAI 설정이 필요해요. order-agent/.env에 API 키와 모델을 설정해 주세요."
+                return self.send_json(200, {"ready": bridge.ready, "token": bridge.token, "mode": "mock-kiosk", "message": message})
+            parts = urlsplit(self.path).path.strip("/").split("/")
+            if len(parts) == 6 and parts[:2] == ["agent-api", "sessions"] and parts[3] == "turns" and parts[5] == "events":
+                if not secrets.compare_digest(self.headers.get("X-Switch-Agent-Token", ""), bridge.token):
+                    return self.send_json(403, {"error": "연결 상태를 다시 확인해 주세요."})
+                try:
+                    after = int(parse_qs(urlsplit(self.path).query).get("after", ["0"])[0])
+                    if after < 0: raise ValueError()
+                except ValueError:
+                    return self.send_json(400, {"error": "잘못된 이벤트 순서예요."})
+                self.send_response(200)
+                self.send_header("Content-Type", "application/x-ndjson; charset=utf-8")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Connection", "close")
+                self.end_headers()
+                while True:
+                    batch = bridge.submit(bridge.events(parts[2], parts[4], after))
+                    try:
+                        for event in batch["events"]:
+                            self.wfile.write((json.dumps(event, ensure_ascii=False) + "\n").encode())
+                            self.wfile.flush()
+                            after += 1
+                    except (BrokenPipeError, ConnectionResetError):
+                        return
+                    if batch["done"]: return
+                    time.sleep(0.05)
+            self.send_json(404, {"error": "존재하지 않는 경로예요."})
+
+        def do_POST(self):
+            if not self.allowed() or not secrets.compare_digest(self.headers.get("X-Switch-Agent-Token", ""), bridge.token):
+                return self.send_json(403, {"error": "연결 상태를 다시 확인해 주세요."})
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if not 0 < length <= 128_000:
+                    return self.send_json(413, {"error": "메시지가 너무 길어요."})
+                payload = json.loads(self.rfile.read(length))
+                if not isinstance(payload, dict): raise ValueError()
+                path = urlsplit(self.path).path
+                if path == "/agent-api/sessions":
+                    result = bridge.submit(bridge.create())
+                else:
+                    parts = path.strip("/").split("/")
+                    if len(parts) != 4 or parts[:2] != ["agent-api", "sessions"] or parts[3] not in {"turns", "interrupt", "delivered", "speech"}:
+                        return self.send_json(404, {"error": "존재하지 않는 경로예요."})
+                    if parts[3] == "speech":
+                        try:
+                            bridge.submit(bridge.speech(parts[2], payload.get("request_id"), payload.get("text")))
+                            self.send_response(200)
+                            self.send_header("Content-Type", "application/x-ndjson; charset=utf-8")
+                            self.send_header("Cache-Control", "no-store")
+                            self.send_header("Connection", "close")
+                            self.end_headers()
+                            after = 0
+                            while True:
+                                batch = bridge.submit(bridge.audio_events(parts[2], payload.get("request_id"), payload.get("text"), after))
+                                try:
+                                    for event in batch["events"]:
+                                        self.wfile.write((json.dumps(event, ensure_ascii=False) + "\n").encode())
+                                        self.wfile.flush()
+                                        after += 1
+                                except (BrokenPipeError, ConnectionResetError): return
+                                if batch["done"]: break
+                                time.sleep(0.02)
+                        except Exception:
+                            self.send_json(502, {"error": "음성을 만들지 못했어요. TTS 연결·모델 권한을 확인해 주세요."})
+                        return
+                    elif parts[3] == "interrupt":
+                        result = bridge.submit(bridge.interrupt(parts[2]))
+                    elif parts[3] == "delivered":
+                        result = bridge.submit(bridge.delivered(parts[2], payload.get("request_id")))
+                    else:
+                        result = bridge.submit(bridge.turn(parts[2], payload))
+                self.send_json(200, result)
+            except (ValueError, UnicodeError):
+                self.send_json(400, {"error": "요청 형식을 확인해 주세요."})
+            except OrderError as error:
+                self.send_json(503, {"error": str(error)})
+            except FutureTimeout:
+                self.send_json(504, {"error": "아직 응답을 기다리고 있어요. 같은 요청으로 다시 확인해 주세요."})
+    return Handler
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=18732)
+    args = parser.parse_args()
+    load_config()
+    bridge = Bridge()
+    server = ThreadingHTTPServer(("127.0.0.1", args.port), handler_for(bridge))
+    print(f"SWitch agent: http://127.0.0.1:{args.port} (OpenAI configured: {bridge.ready})", flush=True)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+        bridge.close()
+
+
+if __name__ == "__main__": main()

@@ -13,6 +13,10 @@ export default defineConfig({
       }
     : {
         proxy: {
+          "/agent-api": {
+            target: "http://127.0.0.1:18732",
+            changeOrigin: true,
+          },
           "/api": { target: "http://127.0.0.1:18731", changeOrigin: true },
         },
       },

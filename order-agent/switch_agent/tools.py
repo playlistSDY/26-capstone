@@ -5,10 +5,12 @@ from dataclasses import asdict
 from difflib import SequenceMatcher
 import json
 import re
+from typing import Literal
 
 from agents import RunContextWrapper, function_tool
 
 from .domain import Options, OrderError, OrderStore
+from .knowledge import details, suitable
 
 
 def encoded(value):
@@ -45,12 +47,31 @@ def search_menu(ctx: RunContextWrapper[OrderStore], query: str = "", max_price: 
 
 
 @function_tool
-def read_menu(ctx: RunContextWrapper[OrderStore], product_id: str) -> str:
-    """메뉴 상세·온도·옵션 제한·품절·재고를 읽는다. 성분과 알레르기 정보는 없으므로 추측하지 않는다."""
+def read_menu(ctx: RunContextWrapper[OrderStore], product_id: str, temperature: str | None = None, size: str = "regular", decaf: bool = False) -> str:
+    """메뉴 상세·옵션 제한·품절·재고 및 이디야 성분·당류·카페인·알레르기 정보를 읽는다. 온도·크기·디카페인별 공식값과 데모 추정값을 구분한다. 숫자는 고객이 물을 때만 말한다."""
     def read():
         p = ctx.context.product(product_id)
-        return {"product": p, "defaults": asdict(ctx.context.defaults(p)), "stock_quantity": ctx.context.stock.get(product_id), "available": not p.get("soldOut", False) and ctx.context.stock.get(product_id) != 0, "allergens": None, "caffeine_mg": None, "option_prices": {"large": 500, "shot": 500, "syrup": 300, "oat": 600, "decaf": 500}, "price_source": "prototype", "mode": "mock"}
+        return {"product": p, "defaults": asdict(ctx.context.defaults(p)), "stock_quantity": ctx.context.stock.get(product_id), "available": not p.get("soldOut", False) and ctx.context.stock.get(product_id) != 0, "menu_information": details(product_id, temperature, size, decaf), "option_prices": {"large": 500, "shot": 500, "syrup": 300, "oat": 600, "decaf": 500}, "price_source": "prototype", "mode": "mock"}
     return guarded(read)
+
+
+@function_tool
+def find_suitable_menu(ctx: RunContextWrapper[OrderStore], caffeine: Literal["any", "none", "low"] = "any", sweetness: Literal["any", "less", "sweet"] = "any", avoid_allergens: list[str] | None = None, max_price: int | None = None) -> str:
+    """조건별 추천 후보를 찾는다. caffeine=any/none/low, sweetness=any/less/sweet. 우유·달걀·대두·밀·견과류·복숭아 등 피할 재료를 넘긴다. 추정값도 포함된 데모 정보이며 무알레르기 안전 보증은 아니다. 추천은 자동 주문이 아니다."""
+    results = []
+    for p in ctx.context.catalog.values():
+        if p.get("soldOut") or ctx.context.stock.get(p["id"]) == 0: continue
+        for decaf in [False, True] if p["decaf"] else [False]:
+            for v in details(p["id"], decaf=decaf)["variants"]:
+                price = p["price"] + (500 if decaf else 0)
+                if max_price is not None and price > max_price: continue
+                if not suitable(v, caffeine, sweetness, avoid_allergens or []): continue
+                results.append({"product_id": p["id"], "name": p["name"], "temperature": v["temperature"], "decaf": decaf, "price": price, "sweetness": v["sweetness"], "caffeine_level": v["caffeine_level"], "allergens": v["allergens"], "allergen_origin": v["allergen_origin"], "value_origins": v["value_origins"], "source_url": v["source_url"], "caffeine_mg": v["values"]["caffeine_mg"], "sugar_g": v["values"]["sugar_g"]})
+    results.sort(key=lambda row: (row["allergen_origin"] != "official" if avoid_allergens else False, sum(value != "official" for value in row["value_origins"].values()), row["price"]))
+    unique = []
+    for row in results:
+        if not any(p["product_id"] == row["product_id"] and p["decaf"] == row["decaf"] for p in unique): unique.append(row)
+    return encoded({"results": unique[:6], "total_matches": len(unique), "note": "공식값과 데모 추정값을 구분. 기본 답변은 후보 1~2개와 쉬운 이유만. 제조 과정의 교차 접촉이나 실제 알레르기 안전성을 보증하지 않음."})
 
 
 @function_tool
@@ -81,6 +102,19 @@ def split_item(ctx: RunContextWrapper[OrderStore], line_id: str, quantity: int, 
 def remove_item(ctx: RunContextWrapper[OrderStore], line_id: str) -> str:
     """대상이 명확한 주문 항목을 삭제한다. 하나만 줄이는 요청에는 edit_item으로 수량을 바꾼다."""
     return guarded(lambda: ctx.context.remove(line_id))
+
+
+@function_tool
+def clear_order(ctx: RunContextWrapper[OrderStore]) -> str:
+    """고객이 전체 주문을 비우거나 처음부터 다시 고르겠다고 명확히 요청할 때 모든 항목을 비운다. 특정 메뉴 취소와 구별한다. 매장/포장 선택은 유지한다."""
+    def clear():
+        s = ctx.context
+        s.editable()
+        s.lines = []
+        s.focus = None
+        s.changed()
+        return s.snapshot()
+    return guarded(clear)
 
 
 @function_tool
@@ -120,7 +154,7 @@ def return_to_order(ctx: RunContextWrapper[OrderStore]) -> str:
 
 @function_tool
 def handoff_to_staff(ctx: RunContextWrapper[OrderStore], reason: str, unresolved: str) -> str:
-    """도움을 요청하거나 반복 실패하면 현재 주문과 미해결 사항을 담아 직원 인계 이벤트를 만든다. 현재는 직원 호출 시스템에 연결되지 않은 가상 이벤트다."""
+    """고객이 직원을 명시적으로 요청하거나 반복 복구로도 해결할 수 없는 시스템 장애일 때만 인계 이벤트를 만든다. 일반 메뉴·추천·성분 질문은 직접 처리한다. 현재는 실제 직원 호출에 연결되지 않은 가상 이벤트다."""
     s = ctx.context
     if s.phase == "handoff":
         return encoded({"ok": True, "event": "staff.handoff_requested", "mode": "mock", "staff_notified": False})
@@ -130,4 +164,4 @@ def handoff_to_staff(ctx: RunContextWrapper[OrderStore], reason: str, unresolved
     return encoded({"ok": True, "event": "staff.handoff_requested", "mode": "mock", "staff_notified": False})
 
 
-TOOLS = [search_menu, read_menu, get_cart, add_item, edit_item, split_item, remove_item, select_item, set_order_type, request_final_confirmation, open_checkout, return_to_order, handoff_to_staff]
+TOOLS = [search_menu, read_menu, find_suitable_menu, get_cart, add_item, edit_item, split_item, remove_item, clear_order, select_item, set_order_type, request_final_confirmation, open_checkout, return_to_order, handoff_to_staff]
