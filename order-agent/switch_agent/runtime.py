@@ -59,7 +59,10 @@ class Conversation:
                             answer = tool_result["message"]
                     except (ValueError, TypeError):
                         pass
-                if not self.history or self.history[-1].get("role") != "assistant" or self.history[-1].get("content") != answer:
+                last = self.history[-1] if self.history else {}
+                content = last.get("content", "")
+                previous_text = content if isinstance(content, str) else "".join(part.get("text", "") for part in content if isinstance(part, dict))
+                if last.get("role") != "assistant" or previous_text != answer:
                     self.history.append({"role": "assistant", "content": answer})
                 return {"text": answer, "state": self.store.snapshot()}
             except (Exception, asyncio.CancelledError):

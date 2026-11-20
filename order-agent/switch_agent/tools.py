@@ -46,7 +46,7 @@ def search_menu(ctx: RunContextWrapper[OrderStore], query: str = "", max_price: 
 
 @function_tool
 def read_menu(ctx: RunContextWrapper[OrderStore], product_id: str) -> str:
-    """メニュー詳細・温度・オプション制限・品切れ・在庫を読む。成分とアレルギーは不明であり推測しない。"""
+    """메뉴 상세·온도·옵션 제한·품절·재고를 읽는다. 성분과 알레르기 정보는 없으므로 추측하지 않는다."""
     def read():
         p = ctx.context.product(product_id)
         return {"product": p, "defaults": asdict(ctx.context.defaults(p)), "stock_quantity": ctx.context.stock.get(product_id), "available": not p.get("soldOut", False) and ctx.context.stock.get(product_id) != 0, "allergens": None, "caffeine_mg": None, "option_prices": {"large": 500, "shot": 500, "syrup": 300, "oat": 600, "decaf": 500}, "price_source": "prototype", "mode": "mock"}

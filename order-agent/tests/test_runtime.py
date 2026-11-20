@@ -46,6 +46,7 @@ class RuntimeTest(unittest.IsolatedAsyncioTestCase):
         ])
         c = Conversation(model=model)
         self.assertIn("담았어요", (await c.reply("따뜻한 라떼 하나 포장해줘"))["text"])
+        self.assertEqual(sum(item.get("role") == "assistant" for item in c.history), 1)
         self.assertIn("이대로 결제할까요", (await c.reply("끝"))["text"])
         self.assertEqual((await c.reply("네"))["state"]["phase"], "checkout")
         self.assertTrue(any(item.get("role") == "user" and item.get("content") == "끝" for item in model.inputs[-1]))
