@@ -58,5 +58,21 @@ class KnowledgeTest(unittest.TestCase):
         self.assertEqual(v["sweetness"], "달아요")
         self.assertFalse(suitable(v, "any", "less", []))
 
+    def test_nonstandard_allergy_excludes_ingredient_even_without_listed_allergens(self):
+        chamomile = details("chamomile", "hot")["variants"][0]
+        self.assertEqual(chamomile["allergens"], [])
+        self.assertFalse(suitable(chamomile, "none", "any", ["캐모마일"]))
+        self.assertFalse(suitable(chamomile, "none", "any", ["카모마일"]))
+        self.assertFalse(suitable(chamomile, "none", "any", ["Chamomile"]))
+
+    def test_excluded_ingredient_in_mixed_drink_name_is_filtered(self):
+        for name in ["사과 캐모마일 블렌딩 티", "우유 캐모마일 블렌딩"]:
+            mixed = {**details("chamomile", "hot")["variants"][0], "ingredient_names": [name]}
+            self.assertFalse(suitable(mixed, "any", "any", ["캐모마일"]))
+
+    def test_chamomile_exclusion_keeps_other_warm_caffeine_free_tea(self):
+        rooibos = details("drink-744db51e0ad9", "hot")["variants"][0]
+        self.assertTrue(suitable(rooibos, "none", "less", ["캐모마일"]))
+
 
 if __name__ == "__main__": unittest.main()

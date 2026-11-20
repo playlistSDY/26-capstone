@@ -130,7 +130,7 @@ for p in products:
                     'sweetness':taste_label(p,values['sugar_g']),'sweetness_origin':'demo_estimate','sugar_level':'당류 없음' if values['sugar_g']==0 else '당류 적은 편' if values['sugar_g']<=15 else '당류 보통' if values['sugar_g']<=35 else '당류 많은 편',
                     'caffeine_level':'없음' if values['caffeine_mg']==0 else '적음' if values['caffeine_mg']<=50 else '보통' if values['caffeine_mg']<150 else '많음',
                     'allergens':contains,'allergen_origin':'official' if allergy else 'demo_estimate','allergen_note':allergy or ('데모 예상 주의 재료: '+', '.join(contains) if contains else '데모 예상: 알려진 주요 주의 재료 없음. 실제 제품의 무알레르기를 보장하는 뜻은 아님.'),
-                    'cross_contact_note':'동일 제조 공간·도구를 통한 교차 접촉 가능성은 수치로 확정하지 않음',
+                    'cross_contact_note':'매장별 제조 도구·공용 설비 정보가 제공되지 않음. 공용 사용이나 교차 접촉을 사실로 단정하지 않음.',
                     'official_name':r['name'] if r else '해당 온도·크기·레시피의 공식 수치를 확인하지 못해 데모 추정',
                     'source_url':r['source_url'] if r else 'https://ediya.com/contents/drink.html?skeyword='+urllib.parse.quote(p['sourceName']),
                     'official_id':r['official_id'] if r else 'not_matched',
