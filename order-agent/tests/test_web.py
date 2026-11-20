@@ -116,6 +116,24 @@ class BridgeTest(unittest.TestCase):
         self.assertEqual([e["type"] for e in first["events"]], ["audio.delta", "audio.done"])
         with self.assertRaises(OrderError): self.bridge.submit(self.bridge.speech(self.session, "turn-1", "임의의 다른 문장"))
 
+    def test_new_turn_during_cancellation_does_not_break_interrupt(self):
+        async def scenario():
+            session = self.bridge.sessions[self.session]
+            async def active():
+                try:
+                    await asyncio.sleep(10)
+                except asyncio.CancelledError:
+                    session["turns"]["new-turn"] = {"task": asyncio.current_task(), "audio": {}, "interrupted": False}
+                    raise
+            task = asyncio.create_task(active())
+            session["turns"]["old-turn"] = {"task": task, "audio": {}, "interrupted": False}
+            await asyncio.sleep(0)
+            result = await self.bridge.interrupt(self.session)
+            self.assertTrue(result["ok"])
+            self.assertIn("new-turn", session["turns"])
+            self.assertFalse(session["turns"]["new-turn"]["interrupted"])
+        self.bridge.submit(scenario())
+
     def test_interrupt_after_generation_blocks_late_tts_and_delivery(self):
         self.start(); self.finish()
         self.bridge.submit(self.bridge.interrupt(self.session))

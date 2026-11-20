@@ -153,7 +153,7 @@ class Bridge:
         session = self.sessions.get(session_id)
         if not session:
             raise OrderError("대화 세션이 만료됐어요.")
-        for record in session["turns"].values():
+        for record in list(session["turns"].values()):
             record["interrupted"] = True
             task = record["task"]
             if not task.done():
