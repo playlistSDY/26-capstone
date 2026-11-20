@@ -44,13 +44,13 @@ class RuntimeTest(unittest.IsolatedAsyncioTestCase):
     async def test_sdk_executes_tool_and_keeps_context_between_turns(self):
         model = ScriptedModel([
             [call("set_order_type", {"place": "takeout"})],
-            [call("add_item", {"product_id": "latte", "quantity": 1, "options": asdict(Options(temperature="hot"))})],
+            [call("add_item", {"product_id": "latte", "quantity": 1, "options": asdict(Options(temperature="hot")), "confirmed_options": ["temperature"], "use_defaults": True})],
             [speech("따뜻한 라떼 한 잔 담았어요.")],
             [call("request_final_confirmation")],
             [call("open_checkout")],
         ])
         c = Conversation(model=model)
-        self.assertIn("담았어요", (await c.reply("따뜻한 라떼 하나 포장해줘"))["text"])
+        self.assertIn("담았어요", (await c.reply("따뜻한 라떼 하나 포장, 나머지는 기본으로 해줘"))["text"])
         self.assertEqual(sum(item.get("role") == "assistant" for item in c.history), 1)
         self.assertIn("이대로 결제할까요", (await c.reply("끝"))["text"])
         self.assertEqual((await c.reply("네"))["state"]["phase"], "checkout")
@@ -65,11 +65,22 @@ class RuntimeTest(unittest.IsolatedAsyncioTestCase):
     async def test_clear_order_removes_lines_and_invalidates_confirmation(self):
         s = OrderStore.demo(); s.set_place("store")
         s.add("latte", 1, Options(temperature="hot")); s.request_confirmation(); s.delivered()
+        s.item_drafts["latte"] = {"next_option": "size"}
         c = Conversation(store=s, model=ScriptedModel([[call("clear_order")], [speech("주문을 비웠어요.")]]))
         result = await c.reply("전부 취소해 주세요")
         self.assertEqual(result["state"]["lines"], [])
         self.assertEqual(result["state"]["place"], "store")
         self.assertIsNone(s.pending)
+        self.assertEqual(s.item_drafts, {})
+
+    async def test_cancel_pending_item_keeps_cart(self):
+        s = OrderStore.demo()
+        s.add("latte", 1, Options(temperature="hot"))
+        s.item_drafts["americano"] = {"next_option": "size"}
+        c = Conversation(store=s, model=ScriptedModel([[call("cancel_pending_item", {"product_id": "americano"})], [speech("아메리카노는 취소했어요.")]]))
+        await c.reply("담기 전 아메리카노는 취소해줘")
+        self.assertEqual(s.item_drafts, {})
+        self.assertEqual(len(s.lines), 1)
 
     async def test_failed_mutation_returns_result_for_model_recovery(self):
         model = ScriptedModel([
@@ -123,7 +134,7 @@ class RuntimeTest(unittest.IsolatedAsyncioTestCase):
                     await asyncio.Event().wait()
 
         s = OrderStore.demo(); s.set_place("store")
-        model = SlowStream([[call("add_item", {"product_id": "latte", "quantity": 1, "options": asdict(Options(temperature="hot"))})]])
+        model = SlowStream([[call("add_item", {"product_id": "latte", "quantity": 1, "options": asdict(Options(temperature="hot")), "confirmed_options": ["temperature"], "use_defaults": True})]])
         c = Conversation(store=s, model=model)
         task = asyncio.create_task(c.reply("따뜻한 라떼", emit=lambda event: None))
         await asyncio.wait_for(started.wait(), timeout=2)

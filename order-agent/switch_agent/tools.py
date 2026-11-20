@@ -11,6 +11,7 @@ from agents import RunContextWrapper, function_tool
 
 from .domain import Options, OrderError, OrderStore
 from .knowledge import details, suitable
+from .preferences import add_with_preferences, important_options
 
 
 def encoded(value):
@@ -51,7 +52,7 @@ def read_menu(ctx: RunContextWrapper[OrderStore], product_id: str, temperature: 
     """메뉴 상세·옵션 제한·품절·재고 및 이디야 성분·당류·카페인·알레르기 정보를 읽는다. 온도·크기·디카페인별 공식값과 데모 추정값을 구분한다. 숫자는 고객이 물을 때만 말한다."""
     def read():
         p = ctx.context.product(product_id)
-        return {"product": p, "defaults": asdict(ctx.context.defaults(p)), "stock_quantity": ctx.context.stock.get(product_id), "available": not p.get("soldOut", False) and ctx.context.stock.get(product_id) != 0, "menu_information": details(product_id, temperature, size, decaf), "option_prices": {"large": 500, "shot": 500, "syrup": 300, "oat": 600, "decaf": 500}, "price_source": "prototype", "mode": "mock"}
+        return {"product": p, "defaults": asdict(ctx.context.defaults(p)), "preference_policy": {"confirm_before_add": important_options(p, Options(temperature=temperature)), "source": "demo_policy"}, "stock_quantity": ctx.context.stock.get(product_id), "available": not p.get("soldOut", False) and ctx.context.stock.get(product_id) != 0, "menu_information": details(product_id, temperature, size, decaf), "option_prices": {"large": 500, "shot": 500, "syrup": 300, "oat": 600, "decaf": 500}, "price_source": "prototype", "mode": "mock"}
     return guarded(read)
 
 
@@ -81,9 +82,22 @@ def get_cart(ctx: RunContextWrapper[OrderStore]) -> str:
 
 
 @function_tool
-def add_item(ctx: RunContextWrapper[OrderStore], product_id: str, quantity: int, options: Options) -> str:
-    """요청한 메뉴를 추가한다. 필수 온도는 확인하고 나머지는 등록 기본값을 사용한다. 추천만 한 메뉴는 추가하지 않는다."""
-    return guarded(lambda: ctx.context.add(product_id, quantity, options))
+def add_item(ctx: RunContextWrapper[OrderStore], product_id: str, quantity: int, options: Options, confirmed_options: list[str] | None = None, use_defaults: bool = False) -> str:
+    """메뉴 추가 또는 미확정 메뉴 옵션 갱신. confirmed_options에는 손님이 직접 지정·동의한 temperature/size/ice/sweetness만 넣는다. use_defaults는 손님이 '나머지는 기본/알아서'라고 위임했을 때만 참. needs_preference면 아직 추가되지 않았으므로 반환 question 하나를 묻고 답을 기다린다. 다음 발화에 같은 product_id와 전체 옵션으로 다시 호출한다. 이전 동의는 같은 값일 때 유지된다. 추천만으로 호출하지 않는다."""
+    return guarded(lambda: add_with_preferences(ctx.context, product_id, quantity, options, confirmed_options or [], use_defaults))
+
+
+@function_tool
+def cancel_pending_item(ctx: RunContextWrapper[OrderStore], product_id: str) -> str:
+    """고객이 아직 담기 전인 메뉴를 취소하거나 다른 메뉴로 바꿀 때 미확정 요청을 지운다. 담긴 메뉴 삭제는 remove_item을 사용한다."""
+    def cancel():
+        ctx.context.editable()
+        if product_id not in ctx.context.item_drafts:
+            raise OrderError("취소할 미확정 메뉴를 다시 확인해 주세요.")
+        del ctx.context.item_drafts[product_id]
+        ctx.context.changed()
+        return ctx.context.snapshot()
+    return guarded(cancel)
 
 
 @function_tool
@@ -111,6 +125,7 @@ def clear_order(ctx: RunContextWrapper[OrderStore]) -> str:
         s = ctx.context
         s.editable()
         s.lines = []
+        s.item_drafts.clear()
         s.focus = None
         s.changed()
         return s.snapshot()
@@ -164,4 +179,4 @@ def handoff_to_staff(ctx: RunContextWrapper[OrderStore], reason: str, unresolved
     return encoded({"ok": True, "event": "staff.handoff_requested", "mode": "mock", "staff_notified": False})
 
 
-TOOLS = [search_menu, read_menu, find_suitable_menu, get_cart, add_item, edit_item, split_item, remove_item, clear_order, select_item, set_order_type, request_final_confirmation, open_checkout, return_to_order, handoff_to_staff]
+TOOLS = [search_menu, read_menu, find_suitable_menu, get_cart, add_item, cancel_pending_item, edit_item, split_item, remove_item, clear_order, select_item, set_order_type, request_final_confirmation, open_checkout, return_to_order, handoff_to_staff]

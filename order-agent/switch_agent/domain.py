@@ -50,6 +50,7 @@ class OrderStore:
     # Explicitly simulated stock, not inferred from kiosk catalog data.
     stock: dict[str, int | None] = field(default_factory=dict)
     utterance: str = ""
+    item_drafts: dict = field(default_factory=dict)
 
     @classmethod
     def demo(cls):
@@ -153,6 +154,7 @@ class OrderStore:
             "total": sum(self.unit_price(l) * l.quantity for l in self.lines),
             "confirmation_pending": self.pending is not None,
             "handoff": deepcopy(self.handoff),
+            "item_drafts": deepcopy(list(self.item_drafts.values())),
         }
 
     def add(self, product_id, quantity, options: Options):
@@ -224,6 +226,8 @@ class OrderStore:
 
     def request_confirmation(self):
         self.editable()
+        if self.item_drafts:
+            raise OrderError("아직 담기 전인 메뉴의 옵션을 선택하거나 그 메뉴를 취소해 주세요.")
         if not self.lines or self.place is None:
             raise OrderError("메뉴와 매장/포장 선택을 먼저 마쳐 주세요.")
         self.validate_cart(self.lines)
