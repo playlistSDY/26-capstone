@@ -299,6 +299,10 @@ export default function App() {
   const [initial] = useState(() => readDraft(localStorage));
   const [screen, setScreen] = useState<Screen>(initial ? "menu" : "home");
   const [place, setPlace] = useState<Place>(initial?.place ?? "store");
+  const [placeChosen, setPlaceChosen] = useState(
+    !!initial && initial.placeChosen !== false,
+  );
+  const [choosePlaceForPayment, setChoosePlaceForPayment] = useState(false);
   const [cart, setCart] = useState<CartLine[]>(initial?.lines ?? []);
   const [category, setCategory] = useState<Category>("추천 메뉴");
   const [editor, setEditor] = useState<Editor | null>(null);
@@ -412,7 +416,7 @@ export default function App() {
   useEffect(() => {
     const snapshot: UiSnapshot = {
       lines: cart,
-      place,
+      place: placeChosen ? place : null,
       screen,
       payment,
       editor: editor
@@ -438,7 +442,7 @@ export default function App() {
     }
     previousUi.current = structuredClone(snapshot);
     uiSource.current = "ui_or_device";
-  }, [cart, place, screen, payment, editor, category, overlay]);
+  }, [cart, place, placeChosen, screen, payment, editor, category, overlay]);
 
   useEffect(() => {
     const element = surface.current!;
@@ -454,8 +458,8 @@ export default function App() {
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    setStorageError(!writeDraft(localStorage, place, cart));
-  }, [place, cart]);
+    setStorageError(!writeDraft(localStorage, place, cart, placeChosen));
+  }, [place, placeChosen, cart]);
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(""), 2600);
@@ -618,6 +622,8 @@ export default function App() {
     setChatGeneration((value) => value + 1);
     setCart([]);
     setScreen("home");
+    setPlaceChosen(false);
+    setChoosePlaceForPayment(false);
     setEditor(null);
     setOverlay(null);
     setPayment(null);
@@ -629,6 +635,7 @@ export default function App() {
     lastActivity.current = Date.now();
   }
   function start(p: Place) {
+    setPlaceChosen(true);
     setPlace(p);
     setScreen("menu");
     lastActivity.current = Date.now();
@@ -670,6 +677,7 @@ export default function App() {
     setCart((previous) =>
       JSON.stringify(previous) === JSON.stringify(lines) ? previous : lines,
     );
+    setPlaceChosen(state.place !== null);
     if (state.place) setPlace(state.place);
     if (
       JSON.stringify(cart) !== JSON.stringify(lines) ||
@@ -682,7 +690,7 @@ export default function App() {
       setPayment(null);
       processing.current = false;
       setScreen("cart");
-    } else if (state.place)
+    } else if (state.view === "menu" || state.place || lines.length > 0)
       setScreen((previous) =>
         previous === "home" || previous === "payment" ? "menu" : previous,
       );
@@ -760,6 +768,7 @@ export default function App() {
   function closeOverlay() {
     if (exitRequested.current) return;
     setOverlay(null);
+    setChoosePlaceForPayment(false);
     lastActivity.current = Date.now();
   }
   function tapExitCorner() {
@@ -1105,7 +1114,7 @@ export default function App() {
                       setOverlay("place");
                     }}
                   >
-                    {placeName(place)}
+                    {placeChosen ? placeName(place) : "매장·포장 선택"}
                     <ChevronDown size={15} />
                   </button>
                 </header>
@@ -1398,7 +1407,13 @@ export default function App() {
                         <button
                           className="primary"
                           disabled={!cart.length}
-                          onClick={() => setScreen("payment")}
+                          onClick={() => {
+                            if (placeChosen) setScreen("payment");
+                            else {
+                              setChoosePlaceForPayment(true);
+                              setOverlay("place");
+                            }
+                          }}
                         >
                           확인하고 결제하기
                           <ArrowRight size={23} />
@@ -1591,9 +1606,14 @@ export default function App() {
                       {(["store", "takeout"] as const).map((p) => (
                         <button
                           key={p}
-                          className={place === p ? "primary" : "secondary"}
+                          className={
+                            placeChosen && place === p ? "primary" : "secondary"
+                          }
                           onClick={() => {
                             setPlace(p);
+                            setPlaceChosen(true);
+                            if (choosePlaceForPayment) setScreen("payment");
+                            setChoosePlaceForPayment(false);
                             closeOverlay();
                           }}
                         >
@@ -1899,7 +1919,7 @@ export default function App() {
             (screen === "finalizing" || screen === "completed") && order
               ? order.lines
               : cart,
-          place: screen === "home" ? null : place,
+          place: placeChosen ? place : null,
           screen,
           payment,
           receipt:
@@ -1928,6 +1948,9 @@ export default function App() {
         }}
         disabled={
           !!overlay || screen === "finalizing" || screen === "completed"
+        }
+        onBeginOrdering={() =>
+          setScreen((previous) => (previous === "home" ? "menu" : previous))
         }
         onState={applyAgentState}
         onConversationActiveChange={setChatActive}

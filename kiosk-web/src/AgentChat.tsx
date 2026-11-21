@@ -122,6 +122,7 @@ export function AgentChat({
   cart,
   disabled,
   onState,
+  onBeginOrdering,
   onConversationActiveChange,
   onSessionEnd,
   previousUsage,
@@ -129,6 +130,7 @@ export function AgentChat({
   cart: ChatCart;
   disabled: boolean;
   onState: (state: AgentState) => void;
+  onBeginOrdering: () => void;
   onConversationActiveChange: (active: boolean) => void;
   onSessionEnd: (usage?: UsageReport) => void;
   previousUsage?: UsageReport | null;
@@ -290,7 +292,7 @@ export function AgentChat({
           ? "payment"
           : state.view === "review" || state.confirmation_pending
             ? "cart"
-            : state.place
+            : state.view === "menu" || state.place || state.lines.length > 0
               ? current.current.screen === "cart"
                 ? "cart"
                 : "menu"
@@ -361,6 +363,10 @@ export function AgentChat({
     if (disabled && !paymentEvent) return;
     const submission = ++submissionSequence.current;
     const submittedAt = performance.now();
+    if (!retry && !paymentEvent && current.current.screen === "home") {
+      onBeginOrdering();
+      current.current = { ...current.current, screen: "menu" };
+    }
     if (ttsEnabled) unlockAgentAudio();
     if (!status?.ready || (!retry && !paymentEvent && !text.trim())) return;
     if (sending.current || speaking || delivery.current) {

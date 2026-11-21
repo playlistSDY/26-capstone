@@ -181,7 +181,7 @@ const DRAFT = `${storageNamespace}.draft.v1`,
   ORDERS = `${storageNamespace}.orders.v1`;
 export function readDraft(
   storage: Storage,
-): { place: Place; lines: CartLine[] } | null {
+): { place: Place; lines: CartLine[]; placeChosen?: boolean } | null {
   try {
     const data = JSON.parse(storage.getItem(DRAFT) || "null");
     if (
@@ -193,14 +193,33 @@ export function readDraft(
       return null;
     let valid: CartLine[] = [];
     for (const line of data.lines) valid = putLine(valid, line);
-    return valid.length ? { place: data.place, lines: valid } : null;
+    return valid.length
+      ? {
+          place: data.place,
+          lines: valid,
+          ...(data.placeChosen === false ? { placeChosen: false } : {}),
+        }
+      : null;
   } catch {
     return null;
   }
 }
-export function writeDraft(storage: Storage, place: Place, lines: CartLine[]) {
+export function writeDraft(
+  storage: Storage,
+  place: Place,
+  lines: CartLine[],
+  placeChosen = true,
+) {
   try {
-    if (lines.length) storage.setItem(DRAFT, JSON.stringify({ place, lines }));
+    if (lines.length)
+      storage.setItem(
+        DRAFT,
+        JSON.stringify({
+          place,
+          lines,
+          ...(!placeChosen ? { placeChosen: false } : {}),
+        }),
+      );
     else storage.removeItem(DRAFT);
     return true;
   } catch {

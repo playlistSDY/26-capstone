@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mockBackend } from "./backend-fixture";
 
-async function fixture(page: Page, standalone = true) {
+async function fixture(page: Page, standalone = true, startAtHome = false) {
   const backend = await mockBackend(page, { autoPrint: true });
   const turns = new Map<string, Record<string, unknown>>();
   const requests: any[] = [];
@@ -35,7 +35,11 @@ async function fixture(page: Page, standalone = true) {
         total: c.lines.reduce((n: number, l: any) => n + 3200 * l.quantity, 0),
       };
       let text = "아메리카노 한 잔, 총 3,200원이에요. 이대로 결제할까요?";
-      if (p.payment_event) {
+      if (p.text === "메뉴판 보여줘") {
+        state.view = "menu";
+        state.confirmation_pending = false;
+        text = "메뉴판을 열었어요.";
+      } else if (p.payment_event) {
         state.phase = c.receipt ? "completed" : "checkout";
         text = c.receipt
           ? `결제가 완료됐어요. 주문번호는 ${c.receipt.number}번이에요.`
@@ -107,12 +111,16 @@ async function fixture(page: Page, standalone = true) {
   });
   await page.clock.install();
   await page.goto(standalone ? "/?kiosk=1" : "/");
-  await page.getByRole("button", { name: /포장할게요/ }).click();
-  await page
-    .getByRole("button", { name: "아메리카노 3,200원", exact: true })
-    .click();
-  await page.getByRole("button", { name: /차갑게/ }).click();
-  await page.getByRole("button", { name: "3,200원 담기", exact: true }).click();
+  if (!startAtHome) {
+    await page.getByRole("button", { name: /포장할게요/ }).click();
+    await page
+      .getByRole("button", { name: "아메리카노 3,200원", exact: true })
+      .click();
+    await page.getByRole("button", { name: /차갑게/ }).click();
+    await page
+      .getByRole("button", { name: "3,200원 담기", exact: true })
+      .click();
+  }
   await page.getByRole("button", { name: "음성 끄기", exact: true }).click();
   async function say(text: string) {
     await page.getByRole("textbox", { name: "주문 메시지" }).fill(text);
@@ -412,4 +420,90 @@ test("Per-reply tokens and session totals are shown without counting UI events a
   await expect(page.getByLabel("세션 토큰 사용량")).toContainText(
     "세션 대화 240",
   );
+});
+
+test("A home recommendation immediately opens the menu before choosing dine-in or takeaway", async ({
+  page,
+}) => {
+  const f = await fixture(page, true, true);
+  let release!: () => void;
+  const waiting = new Promise<void>((resolve) => (release = resolve));
+  let first = true;
+  await page.route("**/agent-api/sessions/*/turns", async (route) => {
+    const p = route.request().postDataJSON();
+    f.requests.push(p);
+    const place = p.text === "포장이요" ? "takeout" : p.cart.place;
+    f.turns.set(p.request_id, {
+      type: "final",
+      sequence: 1,
+      ok: true,
+      text: place
+        ? "포장으로 해 드릴게요."
+        : "따뜻한 카라멜마끼아또를 추천해요.",
+      state: {
+        phase: "ordering",
+        view: "menu",
+        place,
+        lines: p.cart.lines.map((l: any) => ({
+          ...l,
+          product_id: l.productId,
+        })),
+        total: 0,
+      },
+    });
+    await route.fulfill({ json: { ok: true, request_id: p.request_id } });
+  });
+  await page.route("**/agent-api/sessions/*/turns/*/events*", async (route) => {
+    if (first) {
+      first = false;
+      await waiting;
+    }
+    const id = new URL(route.request().url()).pathname.split("/").at(-2)!;
+    await route.fulfill({
+      contentType: "application/x-ndjson",
+      body: JSON.stringify(f.turns.get(id)) + "\n",
+    });
+  });
+  const input = page.getByRole("textbox", { name: "주문 메시지" });
+  await input.fill("달달한 뜨거운 커피 추천해줘");
+  await page
+    .getByRole("button", { name: "메시지 보내기", exact: true })
+    .click();
+  await expect(page.locator(".product-card").first()).toBeVisible();
+  await expect(page.locator(".home-screen")).toHaveCount(0);
+  await expect(page.locator(".place-switch")).toHaveText("매장·포장 선택");
+  await expect.poll(() => f.requests.length).toBe(1);
+  expect(f.requests[0].cart.place).toBe(null);
+  expect(f.requests[0].cart.screen).toBe("menu");
+  release();
+  await expect(page.locator(".agent-chat-thinking")).toHaveCount(0);
+  await f.say("그걸로 줘");
+  expect(f.requests[1].cart.place).toBe(null);
+  await expect(page.locator(".product-card").first()).toBeVisible();
+  await f.say("포장이요");
+  await expect(page.locator(".place-switch")).toHaveText("포장");
+  await expect(page.locator(".home-screen")).toHaveCount(0);
+});
+
+test("Manual checkout asks for an unchosen order type without losing items", async ({
+  page,
+}) => {
+  const f = await fixture(page, true, true);
+  await f.say("메뉴판 보여줘");
+  await expect(page.locator(".product-card").first()).toBeVisible();
+  await page
+    .getByRole("button", { name: "아메리카노 3,200원", exact: true })
+    .click();
+  await page.getByRole("button", { name: /차갑게/ }).click();
+  await page.getByRole("button", { name: "3,200원 담기", exact: true }).click();
+  await page.getByRole("button", { name: "결제하기", exact: true }).click();
+  await page
+    .getByRole("button", { name: "확인하고 결제하기", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "어디서 즐기실 건가요?" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "포장", exact: true }).click();
+  await expect(page.locator(".payment-method")).toHaveCount(5);
+  await expect(page.locator(".payment-total")).toContainText("3,200원");
 });

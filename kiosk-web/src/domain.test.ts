@@ -196,3 +196,11 @@ test("failed persistence never silently clears a draft", () => {
   );
   assert.equal(readDraft(storage)?.lines.length, 1);
 });
+
+test("An unchosen order type survives draft restoration without becoming store", () => {
+  const storage = new MemoryStorage();
+  writeDraft(storage, "store", [line()], false);
+  assert.equal(readDraft(storage)?.placeChosen, false);
+  writeDraft(storage, "takeout", [line()], true);
+  assert.notEqual(readDraft(storage)?.placeChosen, false);
+});
