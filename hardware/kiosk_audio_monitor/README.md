@@ -4,42 +4,47 @@ ICS-43434의 소리를 USB 시리얼로 보내고, PC 프로그램에서 재생�
 USB 마이크 장치로 등록되는 방식이 아니라, 전용 수신 프로그램을 사용하는 테스트입니다.
 기존 재생 프로그램은 음성을 파일에 저장하거나 서버로 보내지 않습니다.
 
-## ESP32 수음 → 한국어 STT 테스트
+## ESP32 수음 → 대화 입력 웹 화면
 
-`마이크_STT.command`를 더블클릭합니다. `order-agent/.env`의 기존 `OPENAI_API_KEY`를 읽으며 키를 출력하지 않습니다. ESP32 오디오 전송 스케치가 올라가 있으면 재업로드할 필요가 없습니다. 시리얼 모니터와 기존 마이크 듣기 프로그램은 먼저 닫아 주세요.
+`마이크_웹.command`를 더블클릭하면 `http://127.0.0.1:18733/`에 로컬 화면이 열립니다. 가운데 ‘나’ 아바타 위 말풍선에는 에이전트에 전달할 말만 표시하고, 오른쪽에는 인식 후보·처리 단계·시간·로그를 나눠 표시합니다. 원래 CLI는 `마이크_STT.command`로 계속 사용할 수 있습니다. 두 프로그램은 같은 USB 포트를 동시에 사용하지 마세요.
 
-기본은 버튼 없이 수음합니다. 로컬 Silero VAD와 동적 소음 문턱으로 말소리 후보를 잡고, 약 0.65초 무음에서 STT 조각을 나눕니다. 이는 명령 완료가 아닙니다. 추가 발화를 1.4초 더 기다리며 새 말이 들어오면 이어 붙입니다. 미완성으로 판단하면 마지막 조각 뒤 최대 6초까지 기다립니다. 터미널에 `인식 후보`와 최종 `전달할 문장 / 무시 / 대기 / 확인 필요`를 구분해 표시합니다.
+웹 화면 오른쪽 위에서 수음을 시작/중지합니다. 웹 서버는 터미널에서 Ctrl+C로 종료하며 자신이 실행한 수음기도 정리합니다. 같은 웹 실행 파일을 다시 열면 기존 서버를 재사용합니다. 새로고침해도 서버가 실행 중이면 최근 전달 이력이 유지됩니다. 이력은 메모리에만 있으며 서버를 종료하면 사라집니다. 원음은 저장하지 않습니다.
 
-목소리 크기·음높이로 주문자를 고르지 않습니다. 말소리 여부와 주문 대상을 별도로 판단하며, 여러 사람의 메뉴 의논이 주문으로 전달되지 않도록 의미 필터를 거칩니다. 단일 마이크만으로 화자 신원을 확정할 수는 없습니다. [필터 구성과 현장 평가 계획](../../docs/agent/음성입력_필터_시제품.md)을 확인하세요.
+### 대화 범위와 지연
 
-실제 ESP의 낮은 입력 레벨을 위해 VAD 모델에 들어가는 신호만 기본 8배 보정하고 피크를 제한합니다. 저장/전송용 원음과 스피커 볼륨은 이 보정으로 바뀌지 않습니다. 동적 에너지 문턱은 VAD 점수의 보조 조건이며, 배경 문턱보다 작다는 이유만으로 음성을 탈락시키지 않습니다. `--vad-gain 1`로 보정 전과 비교할 수 있습니다. 음량을 키우는 보정이 음성과 소음의 비율 자체를 개선하는 것은 아닙니다.
+필터는 메뉴 허용 목록이나 완성된 주문 문장 검사기가 아닙니다. “그거 말고 다른 걸로 주세요”, “해줘. 2개.”, “아니”, “라떼”, 인사·도움 요청·매장 문의 같은 말을 원문 그대로 전달 대상으로 남깁니다. 명백한 방송/비음성/동행자끼리의 대화만 제외하며, 뜻과 참조는 뒤의 에이전트가 문맥으로 해석합니다. 단일 마이크만으로 대상을 확정할 수는 없습니다.
 
-```sh
-./마이크_STT.command                    # 자동 수음
-./마이크_STT.command --button           # 버튼을 누르고 말한 뒤 놓으면 인식
-./마이크_STT.command --join-wait 2     # 천천히 끊어 말할 때 추가 대기
-./마이크_STT.command --filter rules    # 외부 의미 모델 없이 보수적인 규칙 비교
-./마이크_STT.command --filter jev      # TYPESAFE_API_KEY를 설정한 경우
-./마이크_STT.command --probe-seconds 4  # STT 호출 없이 USB 수음만 확인
-```
+로컬 Silero VAD·동적 소음 문턱을 사용합니다. 기본 0.45초 무음에서 STT 조각을 나누고, 추가 발화 확인 1초와 의미 판단을 병렬로 진행합니다. 판단 중 말이 다시 시작되면 이전 결과를 폐기합니다. 분명한 단일 메뉴 요청과 일부 단답은 로컬에서 빠르게 판별하고, 나머지는 의미 모델로 전달 대상을 확인합니다. 로컬 패턴에 맞지 않는 말을 차단하지 않습니다. ‘그리고…’ 같은 조각은 최대 6초까지 이어 듣고, 더 말하지 않으면 그 원문도 에이전트의 문맥 해석 대상으로 남깁니다.
 
-STT는 OpenAI의 `gpt-transcribe` 모델로 인터넷을 통해 처리합니다. 발화 오디오는 메모리의 WAV로 전송하며 원본 녹음은 디스크에 저장하지 않습니다. 기본 의미 필터는 OpenAI `gpt-5.6-luna`이며, `TYPESAFE_API_KEY`가 있으면 Jev로 전환합니다. STT 요금 외에 의미 필터의 텍스트 API 요금이 추가됩니다. 규칙·비활성 비교는 `--filter rules` / `--filter none`으로 구분합니다. `none`은 필터 없이 후보를 통과시키는 비교용입니다.
-
-주문 에이전트·장바구니·결제로 전달하지 않고 텍스트와 판단만 표시합니다. `OPENAI_STT_MODEL`이나 `--model`로 STT 모델을, `OPENAI_FILTER_MODEL`로 OpenAI 의미 필터 모델을 바꿀 수 있습니다. [공식 파일 음성 인식 문서](https://developers.openai.com/api/docs/guides/speech-to-text)
-
-종료는 Ctrl+C이며 USB 포트를 해제합니다. 기본은 텍스트도 저장하지 않습니다. 진단이 필요할 때만 `--event-log <경로.jsonl>`로 수음 수치·인식 결과·판단·필터 사용량을 로컬에 남길 수 있습니다. STT는 조각당 최대 12초이며, 길이 제한으로 자른 조각은 명령 완료로 처리하지 않습니다. STT 요청은 한 번에 하나, 대기 조각은 두 개입니다. 의미 판단은 별도 스레드에서 처리하며 새 말이 들어오면 늦은 판단을 폐기합니다. 전송 누락·큐 초과·STT/필터 오류에는 부분 주문을 자동 전달하지 않습니다.
-
-수동 설치는 `requirements-stt.txt`를 사용합니다. `numpy`, `pyserial`, `openai`, `onnxruntime`이 필요하며 PyTorch나 GPU는 사용하지 않습니다. `models/`의 고정 버전 모델과 MIT 라이선스를 포함하고 런타임에 모델을 다운로드하지 않습니다. PC 스피커로 재생하지 않습니다.
-
-검증:
+실제 ESP 감도 개선을 위해 VAD 모델 입력만 기본 8배 보정하고 피크를 제한합니다. 원음·RMS·스피커 음량을 바꾸지 않습니다. 에너지 문턱이 높다는 이유만으로 작은 발화를 차단하지 않습니다. `--vad-gain 1`로 보정 전을 비교할 수 있으며, 음량 보정이 SNR 자체를 개선하는 것은 아닙니다.
 
 ```sh
-.venv/bin/python -m unittest test_voice_frontend test_serial_stt test_audio_protocol
-.venv/bin/python check_voice_noise.py             # 로컬 합성 소음 혼합, API 호출 없음
-.venv/bin/python check_speech_gate.py --live       # 실제 의미 필터 호출, 추가 요금
+./마이크_웹.command                      # 웹 화면 + 수음기
+./마이크_웹.command --no-start           # 웹만 열고 수음은 버튼으로 시작
+./마이크_STT.command                     # 기존 CLI
+./마이크_STT.command --button            # 버튼을 누르고 말하기
+./마이크_STT.command --join-wait 2        # 추가 발화 대기를 길게 비교
+./마이크_STT.command --filter rules       # 보수적인 로컬 규칙 비교
+./마이크_STT.command --filter jev         # TYPESAFE_API_KEY를 설정한 경우
+./마이크_STT.command --probe-seconds 4    # API 없이 USB 수음만 확인
 ```
 
-`check_voice_noise.py --speech-wav <실제발화.wav> --noise-wav <현장소음.wav>`로 같은 조건을 반복할 수 있습니다. 입력은 48kHz·16bit·모노 WAV입니다. 결과는 Git에서 제외한 `tmp/voice-gate/`에 남습니다. 합성 시험은 현장 성능·음성 인식 정확도·모든 화자 특성을 검증하지 않습니다.
+`order-agent/.env`의 `OPENAI_API_KEY`를 읽으며 키를 화면/로그에 표시하지 않습니다. STT 기본 모델은 `gpt-transcribe`, 의미 필터는 `gpt-5.6-luna`입니다. `TYPESAFE_API_KEY`가 있으면 auto 모드가 Jev로 전환됩니다. STT 오디오 API와 의미 필터 텍스트 API에는 각각 요금이 있고, 로컬 빠른 판별에는 별도 의미 API 요금이 없습니다. `OPENAI_STT_MODEL` / `OPENAI_FILTER_MODEL`로 변경할 수 있습니다. Jev 어댑터의 실제 호출은 키가 없어 미검증입니다.
+
+현재 웹은 에이전트 호출 전 입력 미리보기입니다. `전달할 말` 이벤트를 표시하며 주문 도구·결제를 실행하지 않습니다. [구성·평가 조건](../../docs/agent/음성입력_필터_시제품.md), [웹 화면 안내](../../docs/agent/음성입력_웹화면.md)를 참조하세요.
+
+### 설치와 검증
+
+`requirements-stt.txt`의 numpy·pyserial·openai·onnxruntime이 필요합니다. GPU·PyTorch는 사용하지 않습니다. 고정 버전 VAD 모델·SHA-256·MIT 라이선스를 `models/`에 포함합니다. 수음 스케치가 이미 올라가 있으면 재업로드할 필요가 없습니다. CLI 선택 옵션 `--event-log`만 로컬 진단 JSONL을 저장하며, 기본 웹은 로그와 대화를 메모리에서 관리합니다.
+
+```sh
+.venv/bin/python -m unittest discover -p 'test_*.py'
+.venv/bin/python check_voice_noise.py
+.venv/bin/python check_speech_gate.py --live       # 실제 모델 호출, 추가 요금
+node check_voice_dashboard.mjs                   # kiosk-web의 npm 의존성 사용
+```
+
+소음 반복 시험은 `check_voice_noise.py --speech-wav <48kHz 모노 WAV> --noise-wav <현장 소음 WAV>`로 바꿀 수 있습니다. 기본 합성 시험은 실제 카페·다양한 화자 검증을 대신하지 않습니다. 큰 USB 누락·STT 실패·큐 초과·필터 서비스 오류에는 불완전한 말을 임의로 주문으로 만들지 않고 화면에 상태를 표시합니다.
 
 ## 1 보드에 오디오 전송 코드 업로드
 

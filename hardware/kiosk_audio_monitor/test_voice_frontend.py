@@ -5,7 +5,7 @@ from unittest.mock import patch
 import numpy as np
 
 from voice_frontend import Candidate, Decision, NoiseFloor, SpeechCapture, TurnBuffer, Silero, FRAME_SAMPLES
-from speech_decisions import rules, jev_decision, OpenAIGate, preserve_short_reply
+from speech_decisions import rules, jev_decision, OpenAIGate, preserve_short_reply, explicit_single_order
 
 FRAME = (np.sin(np.arange(FRAME_SAMPLES) * .08) * 1000).astype("<i2").tobytes()
 SILENCE = bytes(FRAME_SAMPLES * 2)
@@ -114,6 +114,43 @@ class AcousticTests(unittest.TestCase):
 
 
 class TurnTests(unittest.TestCase):
+    def test_filter_runs_before_join_deadline_but_accept_still_waits(self):
+        buffer = TurnBuffer(join_wait=1)
+        buffer.speech_started(0)
+        token = buffer.audio_finished(1, voice_end=.5)
+        buffer.transcript(token, "아메리카노 한 잔 주세요", now=1.2, stt_seconds=.2)
+        candidate = buffer.poll(1.2)
+        self.assertIsInstance(candidate, Candidate)
+        result = buffer.apply(candidate, Decision("accept", "ready"), 1.3, filter_seconds=.1)
+        self.assertEqual(result[0], "hold")
+        self.assertIsNone(buffer.poll(1.9))
+        result = buffer.poll(2.01)
+        self.assertEqual(result[0], "accept")
+        self.assertAlmostEqual(result[3]["after_stt_seconds"], .81)
+        self.assertEqual(result[3]["filter_seconds"], .1)
+
+    def test_new_speech_revokes_an_already_classified_held_result(self):
+        buffer = TurnBuffer(join_wait=1)
+        self.add(buffer, 0, 1, "라떼 두 잔 주세요")
+        candidate = buffer.poll(1.1)
+        self.assertEqual(buffer.apply(candidate, Decision("accept", "ready"), 1.2)[0], "hold")
+        buffer.speech_started(1.5)
+        self.assertIsNone(buffer.poll(3))
+        token = buffer.audio_finished(3.5)
+        buffer.transcript(token, "아니 한 잔 주세요")
+        current = buffer.poll(3.6)
+        self.assertIn("아니 한 잔 주세요", current.text)
+        self.assertIsNone(buffer.apply(candidate, Decision("accept", "ready"), 3.7))
+
+    def test_model_time_overlaps_the_join_window_instead_of_adding_to_it(self):
+        buffer = TurnBuffer(join_wait=1)
+        self.add(buffer, 0, 1, "아메리카노 주세요")
+        candidate = buffer.poll(1.2)
+        self.assertEqual(buffer.apply(candidate, Decision("accept", "ready"), 1.8, filter_seconds=.6)[0], "hold")
+        self.assertEqual(buffer.poll(2.01)[0], "accept")
+        # A serialized wait-then-classify would finish at 2.6 seconds.
+        self.assertLess(2.01, 2.6)
+
     def add(self, buffer, start, end, text, continuing=False):
         buffer.speech_started(start)
         token = buffer.audio_finished(end, continuing)
@@ -164,20 +201,25 @@ class TurnTests(unittest.TestCase):
         buffer.transcript(token, "", failed=True)
         self.assertEqual(buffer.poll(5)[0], "clarify")
 
-    def test_unknown_target_times_out_without_interrupting_bystanders(self):
+    def test_unknown_target_is_not_silently_discarded_after_the_wait(self):
         buffer = TurnBuffer()
         self.add(buffer, 0, 1, "네")
         candidate = buffer.poll(2.5)
         buffer.apply(candidate, Decision("wait", "unclear_target"), 2.6)
         self.assertIsNone(buffer.poll(5))
-        self.assertEqual(buffer.poll(8)[0], "ignore")
+        result = buffer.poll(8)
+        self.assertEqual(result[0], "accept")
+        self.assertEqual(result[1], "네")
 
-    def test_incomplete_request_needs_clarification_instead_of_guessing(self):
+    def test_incomplete_request_is_forwarded_verbatim_for_agent_context(self):
         buffer = TurnBuffer()
         self.add(buffer, 0, 1, "그리고")
         candidate = buffer.poll(2.5)
         buffer.apply(candidate, Decision("wait", "needs_more_words"), 2.6)
-        self.assertEqual(buffer.poll(8)[0], "clarify")
+        result = buffer.poll(8)
+        self.assertEqual(result[0], "accept")
+        self.assertEqual(result[1], "그리고")
+        self.assertEqual(result[2], "partial_for_agent")
 
     def test_empty_result_and_disconnected_audio_do_not_leave_old_requests(self):
         buffer = TurnBuffer()
@@ -199,14 +241,48 @@ class TurnTests(unittest.TestCase):
 
 
 class SemanticTests(unittest.TestCase):
-    def test_short_reply_without_context_is_preserved_without_model_cost(self):
-        for text in ["네", "예.", "아니요", "따뜻하게"]:
-            self.assertEqual(preserve_short_reply(text, {}).action, "wait")
-        self.assertIsNone(preserve_short_reply("네", {"last_question": "차갑게 드릴까요?"}))
+    def test_local_fast_lane_is_anchored_and_does_not_accept_discussion_or_corrections(self):
+        context = {"session_active": True}
+        for text in ["아이스 아메리카노 한 잔 주세요.", "라떼 줘", "따뜻한 카페라떼 두 잔으로 할게요"]:
+            self.assertEqual(explicit_single_order(text, context).action, "accept")
+        for text in ["너 라떼 주세요", "너 뭐 먹을래? 라떼 줘", "나는 라떼, 너는?", "라떼 두 잔 아니 한 잔 주세요", "아메리카노 한 잔 주세요 그리고", "라떼", "'라떼 줘'라고 했어", "라떼 주세요. 아메리카노도 주세요", "네"]:
+            self.assertIsNone(explicit_single_order(text, context))
+        self.assertIsNone(explicit_single_order("라떼 주세요", {"session_active": False}))
+
+    def test_clear_requests_skip_the_model_but_ambiguous_requests_still_use_it(self):
         with patch("openai.OpenAI") as factory:
             gate = OpenAIGate("test-key", "gpt-5.6-luna")
-            self.assertEqual(gate.decide("네", {}).action, "wait")
+            decision = gate.decide("아이스 아메리카노 한 잔 주세요", {"session_active": True})
+            self.assertEqual(decision.usage["route"], "local_explicit_order")
             factory.return_value.responses.create.assert_not_called()
+            factory.return_value.responses.create.return_value = SimpleNamespace(output_text='{"action":"ignore","reason":"unrelated_speech"}', usage=SimpleNamespace(input_tokens=600, output_tokens=20))
+            self.assertEqual(gate.decide("너 뭐 먹을래? 나는 라떼", {"session_active": True}).action, "ignore")
+            factory.return_value.responses.create.assert_called_once()
+
+    def test_short_dialogue_is_forwarded_without_a_menu_or_question_requirement(self):
+        for text in ["네", "예.", "아니요", "따뜻하게"]:
+            self.assertEqual(preserve_short_reply(text, {}).action, "accept")
+        self.assertEqual(preserve_short_reply("네", {"last_question": "차갑게 드릴까요?"}).action, "accept")
+        with patch("openai.OpenAI") as factory:
+            gate = OpenAIGate("test-key", "gpt-5.6-luna")
+            self.assertEqual(gate.decide("네", {}).action, "accept")
+            factory.return_value.responses.create.assert_not_called()
+
+    def test_reference_quantity_and_correction_words_are_not_filtered_out(self):
+        for text in ["2개", "2개.", "두 잔요", "해줘", "해줘. 2개.", "아니", "그거 말고", "다른 걸로", "라떼", "아이스", "잠깐만", "포장"]:
+            self.assertEqual(preserve_short_reply(text, {"session_active": True}).action, "accept", text)
+        buffer = TurnBuffer()
+        buffer.speech_started(0)
+        token = buffer.audio_finished(1)
+        buffer.transcript(token, "해줘. 2개.")
+        candidate = buffer.poll(1.2)
+        buffer.apply(candidate, Decision("accept", "context_for_agent"), 1.3)
+        result = buffer.poll(3)
+        self.assertEqual(result[1], "해줘. 2개.")
+        buffer.speech_started(4)
+        token = buffer.audio_finished(5)
+        buffer.transcript(token, "그거 말고 다른 걸로 주세요")
+        self.assertIn("해줘. 2개.", buffer.poll(6).context["recent_user_turns"])
 
     def test_provider_is_tool_free_structured_and_does_not_store_the_request(self):
         with patch("openai.OpenAI") as factory:
@@ -226,20 +302,20 @@ class SemanticTests(unittest.TestCase):
 
     def test_rules_baseline_separates_discussion_and_short_contextual_answers(self):
         self.assertEqual(rules("너 뭐 먹을래? 난 라떼", {}).action, "ignore")
-        self.assertEqual(rules("아이스", {}).action, "wait")
+        self.assertEqual(rules("아이스", {}).action, "accept")
         self.assertEqual(rules("아이스 아메리카노 한 잔 주세요", {}).action, "accept")
-        self.assertEqual(rules("네", {}).action, "wait")
+        self.assertEqual(rules("네", {}).action, "accept")
         self.assertEqual(rules("네", {"last_question": "차갑게 드릴까요?"}).action, "accept")
 
     def response(self, target, complete, certainty=.95):
         return {"answers": {"target": {"choice": target, "confidence": certainty, "probabilities": {target: certainty}}, "completion": {"choice": complete, "confidence": certainty, "probabilities": {complete: certainty}}}}
 
-    def test_jev_requires_both_target_and_completeness(self):
+    def test_jev_only_drops_confident_other_person_speech(self):
         self.assertEqual(jev_decision(self.response("kiosk", "complete")).action, "accept")
         self.assertEqual(jev_decision(self.response("other", "complete")).action, "ignore")
         self.assertEqual(jev_decision(self.response("kiosk", "incomplete")).action, "wait")
-        self.assertEqual(jev_decision(self.response("kiosk", "complete", .4)).action, "wait")
-        self.assertEqual(jev_decision(self.response("uncertain", "complete")).reason, "unclear_target")
+        self.assertEqual(jev_decision(self.response("kiosk", "complete", .4)).action, "accept")
+        self.assertEqual(jev_decision(self.response("uncertain", "complete")).reason, "context_for_agent")
 
     def test_bad_jev_values_are_rejected(self):
         for value in [float("nan"), 2, -1, "0.9", True]:

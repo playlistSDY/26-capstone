@@ -112,18 +112,20 @@ class Utterances:
 
 
 class Display:
-    def __init__(self, log=None):
+    def __init__(self, log=None, json_events=False):
         self.lock = threading.Lock()
         self.log = log
+        self.json_events = json_events
         if log:
             log.parent.mkdir(parents=True, exist_ok=True)
 
     def emit(self, kind, message, **fields):
         with self.lock:
-            print(message, flush=True)
+            event = {"time": time.time(), "event": kind, "message": message.strip(), **fields}
+            print(json.dumps(event, ensure_ascii=False) if self.json_events else message, flush=True)
             if self.log:
                 with self.log.open("a", encoding="utf-8") as stream:
-                    stream.write(json.dumps({"time": time.time(), "event": kind, **fields}, ensure_ascii=False) + "\n")
+                    stream.write(json.dumps(event, ensure_ascii=False) + "\n")
 
 
 def transcribe(client, model, pcm):
@@ -148,14 +150,15 @@ def main():
     parser.add_argument("--button", action="store_true", help="버튼을 누른 동안만 수음하고 놓으면 인식")
     parser.add_argument("--threshold", type=float, default=70, help="동적 에너지 문턱의 최솟값. 신경망 말소리 판정과 함께 사용")
     parser.add_argument("--vad-gain", type=float, default=8, help="VAD 모델 입력만 보정하는 배율, 기본 8. 녹음·스피커 음량은 그대로")
-    parser.add_argument("--silence", type=float, default=.65, help="STT 조각 분리용 무음 시간(명령 완료 아님)")
-    parser.add_argument("--join-wait", type=float, default=1.4, help="추가 발화 합치기 대기(초)")
+    parser.add_argument("--silence", type=float, default=.45, help="STT 조각 분리용 무음 시간(명령 완료 아님)")
+    parser.add_argument("--join-wait", type=float, default=1.0, help="추가 발화 합치기 대기(초), 의미 판단과 병렬")
     parser.add_argument("--incomplete-wait", type=float, default=6, help="미완성 문장 최대 대기(초)")
     parser.add_argument("--filter", choices=["auto", "openai", "jev", "rules", "none"], default="auto")
     parser.add_argument("--last-question", default="", help="테스트 문맥: 직전 점원의 질문")
     parser.add_argument("--model", help="기본 OPENAI_STT_MODEL 또는 gpt-transcribe")
     parser.add_argument("--env", type=Path, default=ROOT / "order-agent/.env")
     parser.add_argument("--event-log", type=Path, help="선택: 상태·인식 텍스트를 로컬 JSONL에 기록, 원음 제외")
+    parser.add_argument("--json-events", action="store_true", help="웹 화면 연결용 구조화 이벤트 출력")
     parser.add_argument("--probe-seconds", type=float, default=0, help="API 호출 없이 수음 수치만 확인 후 종료")
     parser.add_argument("--list", action="store_true")
     args = parser.parse_args()
@@ -185,7 +188,7 @@ def main():
     if not args.probe_seconds and not os.environ.get("OPENAI_API_KEY"):
         parser.error("order-agent/.env 또는 환경변수에 OPENAI_API_KEY가 필요합니다.")
     model = args.model or os.environ.get("OPENAI_STT_MODEL", "gpt-transcribe")
-    display = Display(args.event_log)
+    display = Display(args.event_log, args.json_events)
     stopped = threading.Event()
     signal.signal(signal.SIGTERM, lambda *_: stopped.set())
     client = None if args.probe_seconds else OpenAI(timeout=25, max_retries=0)
@@ -212,11 +215,11 @@ def main():
                 pending.task_done()
                 continue
             started = time.monotonic()
-            display.emit("recognizing", "\n… 음성을 글자로 바꾸는 중", seconds=round(len(pcm) / 96000, 2))
+            display.emit("recognizing", "\n… 음성을 글자로 바꾸는 중", seconds=round(len(pcm) / 96000, 2), turn_id=token[0], segment=token[1])
             try:
                 text = transcribe(client, model, pcm)
-                if not stopped.is_set() and turns.transcript(token, text):
-                    elapsed = round(time.monotonic() - started, 2)
+                elapsed = round(time.monotonic() - started, 3)
+                if not stopped.is_set() and turns.transcript(token, text, now=time.monotonic(), stt_seconds=elapsed):
                     display.emit("transcript", f"\n  인식 후보 > {text or '(인식된 말 없음)'}\n  STT {elapsed}초 · 아직 에이전트에 전달하지 않음\n", text=text, elapsed=elapsed, turn_id=token[0], segment=token[1])
             except Exception as error:
                 turns.transcript(token, "", failed=True)
@@ -226,9 +229,10 @@ def main():
                 pending.task_done()
 
     def emit_turn(result, candidate=None, usage=None, elapsed=None):
-        action, text, reason = result
-        labels = {"accept": "✓ 전달할 문장", "ignore": "○ 무시", "wait": "… 이어지는 말 대기", "clarify": "? 확인 필요 · 전달 보류"}
-        display.emit("turn." + action, f"\n{labels[action]} > {text}\n  판단: {reason}\n", text=text, reason=reason, turn_id=candidate.turn_id if candidate else None, revision=candidate.revision if candidate else None, usage=usage or {}, filter_seconds=elapsed)
+        action, text, reason = result[:3]
+        metadata = result[3] if len(result) > 3 else {}
+        labels = {"accept": "✓ 전달할 문장", "ignore": "○ 무시", "wait": "… 이어지는 말 대기", "hold": "… 추가 발화 확인 중", "clarify": "? 확인 필요 · 전달 보류"}
+        display.emit("turn." + action, f"\n{labels[action]} > {text}\n  판단: {reason}\n", text=text, reason=reason, **metadata)
 
     def decide_turns():
         while not stopped.wait(.05):
@@ -239,6 +243,7 @@ def main():
                 emit_turn(candidate)
                 continue
             started = time.monotonic()
+            display.emit("filter_started", "의도 필터 판단 중", text=candidate.text, turn_id=candidate.turn_id, revision=candidate.revision)
             try:
                 if provider == "none":
                     decision = Decision("accept", "filter_disabled")
@@ -251,7 +256,7 @@ def main():
                 decision = Decision("clarify", "filter_unavailable")
             if stopped.is_set():
                 return
-            result = turns.apply(candidate, decision, time.monotonic())
+            result = turns.apply(candidate, decision, time.monotonic(), filter_seconds=round(time.monotonic() - started, 3))
             if result:
                 emit_turn(result, candidate, decision.usage, round(time.monotonic() - started, 3))
             else:
@@ -266,6 +271,7 @@ def main():
     packets = gaps = 0
     previous = None
     level_rms_peak = level_speech_peak = 0.0
+    last_meter = 0.0
     began = last_valid = last_status = time.monotonic()
     link = serial.Serial(port=None, baudrate=921600, timeout=.05, exclusive=os.name != "nt")
     # Native USB/JTAG: do not assert RTS and DTR together and reset the board.
@@ -321,11 +327,12 @@ def main():
                     was_active = utterances.active
                     chunk = utterances.feed(raw, rms, probability, frame.pressed)
                     if utterances.active and not was_active and client:
-                        turns.speech_started(time.monotonic())
-                        display.emit("speech_started", "\n● 말소리 후보 수음 중…")
+                        turn_id, revision = turns.speech_started(time.monotonic())
+                        display.emit("speech_started", "\n● 말소리 후보 수음 중…", turn_id=turn_id, revision=revision)
                     if chunk and client:
-                        token = turns.audio_finished(time.monotonic(), chunk.continuing)
+                        token = turns.audio_finished(time.monotonic(), chunk.continuing, voice_end=time.monotonic() - chunk.quiet_seconds)
                         if token and chunk.pcm:
+                            display.emit("audio_segment", "음성 구간 수집 완료", turn_id=token[0], segment=token[1], endpoint_seconds=round(chunk.quiet_seconds, 3), continuing=chunk.continuing)
                             try:
                                 pending.put_nowait((token, chunk.pcm))
                             except queue.Full:
@@ -334,6 +341,9 @@ def main():
                         elif token:
                             turns.transcript(token, "")
                             display.emit("audio_rejected", "짧은 비음성 후보를 STT 전에 걸렀어요.")
+                    if args.json_events and last_valid - last_meter >= .12:
+                        display.emit("meter", "", rms=round(rms), threshold=round(utterances.threshold), probability=round(probability, 3), active=utterances.active, noise=round(utterances.floor.noise))
+                        last_meter = last_valid
                     if last_valid - last_status >= 1:
                         bar = "█" * min(24, int(rms / max(utterances.threshold, 1) * 6))
                         display.emit("level", f"마이크 {bar:<24} RMS 최대 {level_rms_peak:6.0f} / 문턱 {utterances.threshold:.0f} / 말소리 최대 {level_speech_peak:.2f} / 배경 {utterances.floor.noise:.0f} / BTN {int(frame.pressed)} / 누락 {gaps} / CRC {decoder.bad_frames}", rms=round(rms), rms_peak=round(level_rms_peak), threshold=round(utterances.threshold), speech_probability=round(probability, 3), speech_probability_peak=round(level_speech_peak, 3), noise=round(utterances.floor.noise), packets=packets, gaps=gaps, bad=decoder.bad_frames)

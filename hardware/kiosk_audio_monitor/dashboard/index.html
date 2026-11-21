@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SWitch · 내 목소리</title><link rel="stylesheet" href="/styles.css"><script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="SWitch 음성 화면"><span class="brand-icon">S<span>↗</span></span><b>SWitch</b><i></i><span>음성 입력 스튜디오</span></a>
+    <div class="top-actions"><span class="connection" id="connection"><i></i>연결 중</span><button id="record-button" class="record-button" disabled><span id="record-icon">■</span><span id="record-label">연결 중</span></button></div>
+  </header>
+  <main class="workspace">
+    <section class="conversation" aria-label="내가 전달할 문장">
+      <div class="conversation-heading"><div><span class="eyebrow">MY VOICE</span><h1>내가 건넨 말,<br>그대로 이어지도록.</h1></div><span class="preview-tag">에이전트 호출 전 미리보기</span></div>
+      <div class="stage">
+        <div class="bubble-history" id="bubbles" role="log" aria-live="polite" aria-label="필터가 통과시킨 문장"><div class="empty-bubble" id="empty-bubble"><span class="bubble-kicker">이제 편하게 말해 보세요</span><p>확정된 문장이<br>여기에 나타나요.</p><span class="small-note">인식 중인 말과 로그는 오른쪽에서 볼 수 있어요.</span></div></div>
+        <div class="person-area"><div class="avatar-wrap" id="avatar-wrap"><div class="avatar-halo"></div><img src="/avatar.svg" alt="나를 나타내는 서 있는 아바타" class="avatar"><div class="floor-shadow"></div></div><span class="name-tag">나 <i></i>말하는 사람</span></div>
+      </div>
+      <div class="listening-footer"><div class="input-wave" id="wave" aria-hidden="true"></div><div class="listening-line"><span class="live-dot" id="live-dot"></span><strong id="listening-state">마이크를 연결하고 있어요</strong></div><p id="stage-caption">ESP 마이크에서 직접 들어온 음성을 표시해요.</p></div>
+    </section>
+    <aside class="inspector" aria-label="처리 상태와 로그">
+      <div class="inspector-title"><div><span class="eyebrow">LIVE INSPECTOR</span><h2>지금 처리 중인 일</h2></div><span class="live-label">LIVE</span></div>
+      <section class="pipeline" aria-label="음성 처리 흐름">
+        <div class="pipeline-step" data-step="capture"><span class="step-icon">01</span><div><b>말소리 수집</b><span class="step-description">마이크 연결 대기</span></div><span class="step-time">—</span></div>
+        <div class="pipeline-step" data-step="stt"><span class="step-icon">02</span><div><b>음성을 글자로</b><span class="step-description">STT 대기</span></div><span class="step-time">—</span></div>
+        <div class="parallel-label"><span>아래 두 단계는 함께 처리해요</span></div>
+        <div class="pipeline-step" data-step="merge"><span class="step-icon">03</span><div><b>이어지는 말 합치기</b><span class="step-description">발화 흐름 확인</span></div><span class="step-time">—</span></div>
+        <div class="pipeline-step" data-step="filter"><span class="step-icon">04</span><div><b>주변 대화 확인</b><span class="step-description">뜻과 문맥은 에이전트에게</span></div><span class="step-time">—</span></div>
+      </section>
+      <section class="candidate-card"><div class="section-line"><h3>인식 중인 말</h3><span id="candidate-badge">후보</span></div><p id="candidate">아직 인식한 말이 없어요.</p><div class="candidate-result" id="candidate-result">최종 확정된 말만 왼쪽에 표시해요.</div></section>
+      <section class="timing-card" aria-label="처리 시간"><div class="section-line"><h3>STT 다음에 얼마나 걸렸을까?</h3><span id="route">—</span></div><div class="timing-primary"><strong id="after-stt">—</strong><span>STT 완료 → 최종 판단</span></div><div class="timing-detail"><div><span>STT</span><b id="stt-time">—</b></div><div><span>의미 판단</span><b id="filter-time">—</b></div><div><span>발화 끝부터</span><b id="total-time">—</b></div></div></section>
+      <section class="logs-section"><div class="section-line"><h3>처리 로그 <span id="log-count">0</span></h3><div class="log-actions"><button id="detail-button" aria-pressed="false">자세히</button><button id="clear-log">비우기</button></div></div><div id="logs" class="logs" role="log" aria-live="off"><p class="logs-empty">처리가 시작되면 로그가 쌓여요.</p></div></section>
+      <details class="diagnostics"><summary>마이크 세부 수치</summary><dl><div><dt>입력 RMS</dt><dd id="rms">—</dd></div><div><dt>배경 / 문턱</dt><dd id="noise">—</dd></div><div><dt>말소리 점수</dt><dd id="probability">—</dd></div><div><dt>패킷 누락 / CRC 오류</dt><dd id="packet-errors">—</dd></div></dl></details>
+    </aside>
+  </main>
+  <div id="error-banner" role="alert" hidden></div>
+</body>
+</html>

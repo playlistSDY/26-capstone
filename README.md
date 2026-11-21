@@ -33,6 +33,8 @@ STT 이후 텍스트 기반 주문 에이전트는 [설계 문서](docs/agent/RE
 
 ## 마이크 테스트 실행
 
+음성 입력과 처리 로그를 웹에서 보려면 [마이크 웹 화면](hardware/kiosk_audio_monitor/마이크_웹.command)을 실행하세요. [화면 안내](docs/agent/음성입력_웹화면.md)에 동작과 검증 범위를 정리했습니다.
+
 키오스크 UI 개발은 [실행·수정 안내](kiosk-web/README.md)를 확인하세요. `kiosk-web/키오스크_개발.command` 또는 `npm run dev`로 실행하며 기본 주소는 http://127.0.0.1:5173/ 입니다.
 
 - 버튼을 누를 때만 듣기: [마이크 듣기](hardware/kiosk_audio_monitor/마이크_듣기.command)
