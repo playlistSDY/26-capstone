@@ -1,0 +1,16 @@
+[Unit]
+Description=SWitch centralized ordering and speech agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/sdy/previews/switch-agent-20261121/order-agent
+EnvironmentFile=/home/sdy/.config/switch-agent/agent.env
+ExecStart=/home/sdy/previews/switch-agent-20261121/order-agent/.venv/bin/python -m switch_agent.web --port 18732
+Restart=on-failure
+RestartSec=3
+UMask=0077
+
+[Install]
+WantedBy=default.target

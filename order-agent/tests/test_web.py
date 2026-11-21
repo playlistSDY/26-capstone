@@ -1,6 +1,8 @@
 import asyncio
 from dataclasses import asdict
 import json
+import os
+from unittest.mock import patch
 import threading
 import unittest
 import urllib.request
@@ -158,6 +160,21 @@ class BridgeTest(unittest.TestCase):
         self.bridge.submit(self.bridge.interrupt(self.session))
         with self.assertRaises(OrderError): self.bridge.submit(self.bridge.speech(self.session, "turn-1", "따뜻한 라떼"))
         with self.assertRaises(OrderError): self.bridge.submit(self.bridge.delivered(self.session, "turn-1"))
+
+    def test_configured_proxy_origin_is_allowed_without_allowing_arbitrary_origins(self):
+        server = ThreadingHTTPServer(("127.0.0.1",0),handler_for(self.bridge))
+        worker = threading.Thread(target=server.serve_forever,daemon=True);worker.start()
+        url = f"http://127.0.0.1:{server.server_port}/agent-api/status"
+        try:
+            with patch.dict(os.environ,{"SWITCH_ALLOWED_ORIGINS":"https://temp.sdy.world"}):
+                with urllib.request.urlopen(urllib.request.Request(url,headers={"Origin":"https://temp.sdy.world"})) as response:
+                    self.assertTrue(json.load(response)["ready"])
+                with self.assertRaises(urllib.error.HTTPError) as denied:
+                    urllib.request.urlopen(urllib.request.Request(url,headers={"Origin":"https://unrelated.example"}))
+                self.assertEqual(denied.exception.code,403)
+                denied.exception.close()
+        finally:
+            server.shutdown();server.server_close();worker.join()
 
     def test_http_stream_and_origin_token_checks(self):
         server = ThreadingHTTPServer(("127.0.0.1", 0), handler_for(self.bridge))

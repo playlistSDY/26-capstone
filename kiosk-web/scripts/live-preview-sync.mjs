@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
@@ -7,12 +8,30 @@ import { promisify } from 'node:util';
 const run = promisify(execFile);
 const root = fileURLToPath(new URL('../', import.meta.url));
 const config = JSON.parse(fs.readFileSync(path.join(root, 'dev/live-preview.json'), 'utf8'));
+const agentRoot = fileURLToPath(new URL('../../order-agent/', import.meta.url));
 const stateDirectory = path.join(root, '.live-preview');
 fs.mkdirSync(stateDirectory, { recursive: true });
 const rootFiles = new Set(['index.html', 'vite.config.ts', 'package.json', 'package-lock.json', 'tsconfig.json']);
 const sshOptions = ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=8'];
 const quote = value => "'" + value.replaceAll("'", "'\\''") + "'";
 let timer, running = false, pending = false, dependenciesChanged = false, lastSuccess = null;
+
+function agentFingerprint() {
+  const hash = createHash('sha256');
+  function visit(relative) {
+    const full = path.join(agentRoot, relative);
+    if (fs.statSync(full).isDirectory()) {
+      for (const entry of fs.readdirSync(full).sort()) {
+        if (entry !== '__pycache__') visit(path.join(relative, entry));
+      }
+    } else {
+      hash.update(relative);
+      hash.update(fs.readFileSync(full));
+    }
+  }
+  for (const name of ['switch_agent', 'data', 'requirements.txt']) visit(name);
+  return hash.digest('hex');
+}
 
 async function synchronize() {
   if (running) { pending = true; return; }
@@ -23,6 +42,7 @@ async function synchronize() {
   try {
     await run('/usr/bin/rsync', [
       '-az', '-e', '/usr/bin/ssh -o BatchMode=yes -o ConnectTimeout=8',
+      '--exclude=/public/downloads/***', '--exclude=/public/updates/***',
       '--include=/src/***', '--include=/public/***',
       ...[...rootFiles].map(name => `--include=/${name}`), '--exclude=*',
       root, `${config.host}:${config.remoteDirectory}/`,
@@ -30,6 +50,18 @@ async function synchronize() {
     if (installDependencies) {
       await run('/usr/bin/ssh', [...sshOptions, config.host,
         `cd ${quote(config.remoteDirectory)} && PATH=/home/sdy/.local/share/mise/installs/node/24.22.0/bin:/usr/bin:/bin npm ci && systemctl --user restart ${quote(config.service)}`,
+      ], { timeout: 180000, maxBuffer: 512 * 1024 });
+    }
+    if (config.agentDirectory && config.agentService) {
+      await run('/usr/bin/rsync', [
+        '-az', '-e', '/usr/bin/ssh -o BatchMode=yes -o ConnectTimeout=8',
+        '--exclude=__pycache__/', '--include=/switch_agent/***', '--include=/data/***',
+        '--include=/tests/***', '--include=/requirements.txt', '--exclude=*',
+        agentRoot, `${config.host}:${config.agentDirectory}/`,
+      ], { timeout: 90000, maxBuffer: 256 * 1024 });
+      const fingerprint = agentFingerprint();
+      await run('/usr/bin/ssh', [...sshOptions, config.host,
+        `cd ${quote(config.agentDirectory)} && if test "$(cat .source-fingerprint 2>/dev/null)" != ${quote(fingerprint)}; then .venv/bin/python -m pip install -q -r requirements.txt && systemctl --user restart ${quote(config.agentService)} && printf '%s' ${quote(fingerprint)} > .source-fingerprint; fi`,
       ], { timeout: 180000, maxBuffer: 512 * 1024 });
     }
     lastSuccess = new Date().toISOString();
@@ -56,6 +88,8 @@ function schedule(filename = '') {
 const watchers = [
   ...['src', 'public'].map(directory => fs.watch(path.join(root, directory), { recursive: true }, () => schedule())),
   fs.watch(root, (_event, name) => { if (rootFiles.has(String(name))) schedule(String(name)); }),
+  ...['switch_agent', 'data'].map(directory => fs.watch(path.join(agentRoot, directory), { recursive: true }, (_event, name) => { if (!String(name).includes('__pycache__')) schedule(); })),
+  fs.watch(agentRoot, (_event, name) => { if (String(name) === 'requirements.txt') schedule(); }),
 ];
 for (const watcher of watchers) watcher.on('error', error => console.error(error.message));
 process.on('SIGTERM', () => { watchers.forEach(w => w.close()); clearTimeout(timer); process.exit(0); });

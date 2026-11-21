@@ -1,10 +1,13 @@
 {
   "host": "sdylab",
-  "remoteDirectory": "/home/sdy/previews/switch-kiosk-20261119",
-  "service": "switch-kiosk-preview-20261119.service",
-  "mountId": "6bd53630-2b00-4d66-9bab-3810e1e0aa36",
-  "basePath": "/6bd53630-2b00-4d66-9bab-3810e1e0aa36/",
-  "url": "https://temp.sdy.world/6bd53630-2b00-4d66-9bab-3810e1e0aa36/",
+  "remoteDirectory": "/home/sdy/previews/switch-agent-20261121/kiosk-web",
+  "service": "switch-agent-preview-20261121.service",
+  "mountId": "980d563c-35d0-4ee2-9de0-161a08901e29",
+  "basePath": "/980d563c-35d0-4ee2-9de0-161a08901e29/",
+  "url": "https://temp.sdy.world/980d563c-35d0-4ee2-9de0-161a08901e29/",
   "ttlHours": 0,
-  "port": 15173
+  "port": 15174,
+  "agentDirectory": "/home/sdy/previews/switch-agent-20261121/order-agent",
+  "agentService": "switch-order-agent.service",
+  "agentPort": 18732
 }

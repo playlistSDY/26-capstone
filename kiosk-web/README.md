@@ -45,23 +45,16 @@ Windows 11 x64, Windows 기본 PowerShell/.NET과 Epson 프린터 드라이버�
 
 ## sdylab 라이브 뷰
 
-`lab-online` MCP로 `ttl_hours: 0`인 UUID 주소를 등록했습니다. 만료 시각은 없으며, sdylab의 별도 사용자 서비스가 화면을 실행합니다. Mac이 꺼져도 sdylab이 실행 중이면 마지막으로 동기화한 버전은 유지됩니다.
+AI 키오스크와 기본 키오스크를 별도 주소·서비스로 실행한다. 두 주소 모두 ttl_hours=0으로 등록되어 만료 시각이 없다.
 
-- 주소: https://temp.sdy.world/6bd53630-2b00-4d66-9bab-3810e1e0aa36/
-- 화면만 보기: https://temp.sdy.world/6bd53630-2b00-4d66-9bab-3810e1e0aa36/?kiosk=1
-- 등록 ID: `6bd53630-2b00-4d66-9bab-3810e1e0aa36`
-- sdylab 앱 경로: `/home/sdy/previews/switch-kiosk-20261119`
-- sdylab 서비스: `switch-kiosk-preview-20261119.service`, 내부 포트 `15173`
-- Mac 동기화 서비스: `world.sdy.switch-kiosk-preview-sync`
-- 설정: `dev/live-preview.json`
-- 동기화 상태와 로그: `.live-preview/`
+- **AI 키오스크:** https://temp.sdy.world/980d563c-35d0-4ee2-9de0-161a08901e29/
+- **기본 키오스크(AI 없음):** https://temp.sdy.world/6bd53630-2b00-4d66-9bab-3810e1e0aa36/
 
-Mac에서 `src/`, `public/` 및 앱 설정을 저장하면 해당 앱 소스만 sdylab으로 자동 복사되고, 브라우저는 Vite HMR로 갱신됩니다. 의존성 목록을 바꾸면 해당 앱의 패키지 설치와 재시작도 수행합니다. Mac 동기화는 해당 Mac 사용자로 로그인한 동안 동작하며, 연결 실패 시 재시도합니다. 작업 문서·하드웨어 코드·다른 프로젝트는 복사하지 않습니다.
+AI 화면의 대화·TTS·주문 처리는 sdylab의 switch-order-agent.service를 경유한다. 브라우저나 개별 키오스크에 OpenAI 키를 입력하지 않는다. Mac 로컬 Vite도 기본적으로 같은 중앙 서버를 사용한다. 로컬 진단 서버로 바꿀 때만 SWITCH_AGENT_TARGET=http://127.0.0.1:18732를 지정한다.
 
-게이트웨이의 UUID 경로에 맞춰 이미지·로고·글꼴 경로와 HMR을 설정했습니다. 라이브 뷰의 장바구니/주문 저장 키는 UUID별로 구분하며 Mac 로컬 화면의 주문 데이터와는 별개입니다.
+Mac의 world.sdy.switch-kiosk-preview-sync는 dev/live-preview.json에 지정한 **새 AI 디렉터리만** 동기화한다. src/public/설정과 에이전트 코드·메뉴 지식을 반영하며 에이전트 코드가 바뀌면 서비스를 재시작한다. 키·가상환경·배포 ZIP은 동기화하지 않는다. 기본 화면은 main의 AI 없는 소스를 사용하며 자동 동기화로 덮어쓰지 않는다. Mac이 꺼져도 sdylab의 마지막 버전이 실행된다.
 
-검증 기록은 `qa/live-preview-check.json`에 있습니다. 공개 주소에서 주문·모의 결제, 추천 메뉴 이미지 12개와 글꼴 로딩, Mac 편집 후 WebSocket을 통한 실제 HMR 갱신을 확인했습니다.
-
+UUID별로 화면 자산 경로와 브라우저 주문 저장 키를 분리한다. 운영 경로·서비스·중앙 설정과 검증 결과는 [sdylab 통합 운영](../docs/agent/sdylab_통합운영.md)을 참고한다.
 
 ## 디자인 근거
 

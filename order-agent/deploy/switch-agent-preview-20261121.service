@@ -1,0 +1,17 @@
+[Unit]
+Description=SWitch AI kiosk preview
+After=network.target switch-order-agent.service
+Wants=switch-order-agent.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/sdy/previews/switch-agent-20261121/kiosk-web
+Environment=SWITCH_PREVIEW_BASE=/980d563c-35d0-4ee2-9de0-161a08901e29/
+Environment=SWITCH_PREVIEW_HOST=temp.sdy.world
+Environment=SWITCH_AGENT_TARGET=http://127.0.0.1:18732
+ExecStart=/home/sdy/.local/share/mise/installs/node/24.22.0/bin/node /home/sdy/previews/switch-agent-20261121/kiosk-web/node_modules/vite/bin/vite.js --host 127.0.0.1 --port 15174 --strictPort
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

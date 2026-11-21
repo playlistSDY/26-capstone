@@ -25,7 +25,7 @@ def load_config():
     if path.exists():
         for raw in path.read_text().splitlines():
             key, sep, value = raw.strip().removeprefix("export ").partition("=")
-            if sep and key in {"OPENAI_API_KEY", "OPENAI_MODEL", "OPENAI_TTS_MODEL", "OPENAI_TTS_VOICE"}:
+            if sep and key in {"OPENAI_API_KEY", "OPENAI_MODEL", "OPENAI_TTS_MODEL", "OPENAI_TTS_VOICE", "SWITCH_ALLOWED_ORIGINS"}:
                 value = value.strip()
                 if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
                     value = value[1:-1]
@@ -91,7 +91,7 @@ class Bridge:
         if len(self.sessions) >= 32:
             raise OrderError("테스트 세션이 많아요. 잠시 후 다시 시도해 주세요.")
         if not self.ready:
-            raise OrderError("order-agent/.env에 OPENAI_API_KEY와 OPENAI_MODEL을 설정하고 에이전트 서버를 다시 실행해 주세요.")
+            raise OrderError("중앙 에이전트 서버의 API 키와 모델 설정을 확인해 주세요.")
         from .runtime import Conversation
         session_id = uuid4().hex
         speaker = self.speaker_factory()
@@ -270,13 +270,15 @@ def handler_for(bridge):
         def allowed(self):
             host = self.headers.get("Host", "").split(":")[0]
             origin = self.headers.get("Origin")
-            return host in {"127.0.0.1", "localhost"} and (not origin or origin in {"http://127.0.0.1:5173", "http://localhost:5173", "http://127.0.0.1:18732", "http://localhost:18732"})
+            origins = {"http://127.0.0.1:5173", "http://localhost:5173", "http://127.0.0.1:18732", "http://localhost:18732"}
+            origins.update(value.strip() for value in os.environ.get("SWITCH_ALLOWED_ORIGINS", "").split(",") if value.strip())
+            return host in {"127.0.0.1", "localhost"} and (not origin or origin in origins)
 
         def do_GET(self):
             if not self.allowed():
-                return self.send_json(403, {"error": "로컬 테스트 화면에서만 연결할 수 있어요."})
+                return self.send_json(403, {"error": "허용된 키오스크 화면에서만 연결할 수 있어요."})
             if urlsplit(self.path).path == "/agent-api/status":
-                message = "모형 응답으로 UI를 시험 중이에요" if bridge.factory else "OpenAI 에이전트 연결됨 · 가상 주문" if bridge.ready else "OpenAI 설정이 필요해요. order-agent/.env에 API 키와 모델을 설정해 주세요."
+                message = "모형 응답으로 UI를 시험 중이에요" if bridge.factory else "OpenAI 에이전트 연결됨 · 가상 주문" if bridge.ready else "중앙 에이전트 서버 설정을 확인해 주세요."
                 return self.send_json(200, {"ready": bridge.ready, "token": bridge.token, "mode": "mock-kiosk", "message": message})
             parts = urlsplit(self.path).path.strip("/").split("/")
             if len(parts) == 6 and parts[:2] == ["agent-api", "sessions"] and parts[3] == "turns" and parts[5] == "events":

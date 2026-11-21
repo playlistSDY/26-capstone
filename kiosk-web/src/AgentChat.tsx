@@ -204,7 +204,7 @@ export function AgentChat({
     } catch {
       setStatus(null);
       setError(
-        "에이전트 서버가 꺼져 있어요. order-agent에서 .venv/bin/python -m switch_agent.web을 실행한 뒤 다시 연결해 주세요.",
+        "중앙 에이전트 서버에 연결하지 못했어요. 잠시 뒤 다시 연결해 주세요.",
       );
     } finally {
       setChecking(false);

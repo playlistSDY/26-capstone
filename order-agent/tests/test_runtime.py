@@ -75,6 +75,18 @@ class RuntimeTest(unittest.IsolatedAsyncioTestCase):
         c = Conversation(store=s, model=ScriptedModel([[speech("카드 승인을 기다리고 있어요.")]]))
         self.assertEqual((await c.reply("지금 뭐 해?"))["text"], "카드 승인을 기다리고 있어요.")
 
+    async def test_home_order_asks_place_then_sets_menu_context(self):
+        c = Conversation(model=ScriptedModel([
+            [speech("드시고 가세요, 포장해 드릴까요?")],
+            [call("set_order_type", {"place":"store"})],
+            [speech("메뉴판을 열었어요. 원하시는 메뉴를 말씀해 주세요.")],
+        ]))
+        first = await c.reply("주문할게요")
+        self.assertIsNone(first["state"]["place"])
+        second = await c.reply("먹고 갈게요")
+        self.assertEqual(second["state"]["place"], "store")
+        self.assertEqual(second["state"]["phase"], "ordering")
+
     async def test_model_cannot_skip_confirmation(self):
         c = Conversation(model=ScriptedModel([[call("open_checkout")]]))
         result = await c.reply("그냥 결제해")

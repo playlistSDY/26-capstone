@@ -1,0 +1,10 @@
+{
+  "host": "sdylab",
+  "remoteDirectory": "/home/sdy/previews/switch-kiosk-20261119",
+  "service": "switch-kiosk-preview-20261119.service",
+  "mountId": "6bd53630-2b00-4d66-9bab-3810e1e0aa36",
+  "basePath": "/6bd53630-2b00-4d66-9bab-3810e1e0aa36/",
+  "url": "https://temp.sdy.world/6bd53630-2b00-4d66-9bab-3810e1e0aa36/",
+  "ttlHours": 0,
+  "port": 15173
+}
