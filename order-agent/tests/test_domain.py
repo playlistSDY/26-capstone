@@ -68,24 +68,27 @@ class OrderRulesTest(unittest.TestCase):
     def test_yes_with_change_cannot_checkout(self):
         self.s.request_confirmation(); self.s.delivered()
         self.s.begin_turn("네, 근데 하나 빼 주세요")
+        self.s.edit(self.s.lines[0].id,1,Options(temperature="hot"))
         with self.assertRaises(OrderError): self.s.checkout()
 
-    def test_question_consumes_confirmation(self):
+    def test_followup_question_keeps_unchanged_order_available(self):
         self.s.request_confirmation(); self.s.delivered()
         self.s.begin_turn("얼마라고요?")
         self.s.begin_turn("네")
-        with self.assertRaises(OrderError): self.s.checkout()
+        self.s.checkout()
+        self.assertEqual(self.s.phase,"checkout")
 
     def test_edit_invalidates_even_affirmative_turn(self):
         self.confirmed()
         self.s.edit(self.s.lines[0].id, 1, Options(temperature="hot"))
         with self.assertRaises(OrderError): self.s.checkout()
 
-    def test_expired_confirmation_is_rejected(self):
+    def test_unchanged_summary_does_not_expire_while_customer_thinks(self):
         self.s.request_confirmation(); self.s.delivered()
         self.s.pending["created"] = time.monotonic() - 121
         self.s.begin_turn("네")
-        with self.assertRaises(OrderError): self.s.checkout()
+        self.s.checkout()
+        self.assertEqual(self.s.phase,"checkout")
 
     def test_duplicate_checkout_does_not_charge(self):
         self.confirmed(); self.s.checkout()

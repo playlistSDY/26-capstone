@@ -7,6 +7,8 @@ import type { PaymentAction } from "./agentCheckout";
 import { summary, totalPrice } from "./domain";
 import type { CartLine, Place, PaymentMethod } from "./domain";
 import "./agent-chat.css";
+import type { UiEvent } from "./agentUiEvents";
+import { mergeUsage, type UsageReport } from "./agentUsage";
 import { AgentSpeech } from "./agentSpeech";
 import { streamAgentAudio, unlockAgentAudio } from "./agentAudio";
 
@@ -22,6 +24,17 @@ export type ChatCart = {
     method: PaymentMethod;
   } | null;
   last_action_id?: string | null;
+  ui_context?: {
+    category: string;
+    events?: UiEvent[];
+    overlay: string | null;
+    editor: {
+      product_id: string;
+      quantity: number;
+      options: CartLine["options"];
+      line_id?: string;
+    } | null;
+  };
 };
 export type AgentState = {
   phase: "ordering" | "checkout" | "handoff" | "completed";
@@ -38,7 +51,12 @@ export type AgentState = {
   total: number;
 };
 type Status = { ready: boolean; token: string; message: string };
-type Message = { role: "assistant" | "user"; text: string; id?: string };
+type Message = {
+  role: "assistant" | "user";
+  text: string;
+  id?: string;
+  usage?: UsageReport;
+};
 type Pending = {
   request_id: string;
   text: string;
@@ -53,6 +71,7 @@ type Result = {
   error?: string;
   state?: AgentState;
   session_complete?: boolean;
+  usage?: UsageReport;
 };
 type StreamEvent = Result & {
   type: "text.delta" | "final" | "error" | "interrupted";
@@ -98,12 +117,14 @@ export function AgentChat({
   onState,
   onConversationActiveChange,
   onSessionEnd,
+  previousUsage,
 }: {
   cart: ChatCart;
   disabled: boolean;
   onState: (state: AgentState) => void;
   onConversationActiveChange: (active: boolean) => void;
-  onSessionEnd: () => void;
+  onSessionEnd: (usage?: UsageReport) => void;
+  previousUsage?: UsageReport | null;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
@@ -116,6 +137,8 @@ export function AgentChat({
   const open = true;
   const [messages, setMessages] = useState<Message[]>([greeting]);
   const [text, setText] = useState("");
+  const [usage, setUsage] = useState<UsageReport | null>(null);
+  const latestUsage = useRef<UsageReport | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [session, setSession] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -135,6 +158,12 @@ export function AgentChat({
   const latestConnection = useRef({ session, token: status?.token });
   latestConnection.current = { session, token: status?.token };
   const generation = useRef(0);
+  const submissionSequence = useRef(0);
+  const activeRequest = useRef<{
+    session: string;
+    request: string;
+    cart: ChatCart;
+  } | null>(null);
   const streamAbort = useRef<AbortController | null>(null);
   const cursor = useRef(0);
   const delivery = useRef<{ session: string; request: string } | null>(null);
@@ -181,6 +210,16 @@ export function AgentChat({
     open,
     busy,
   ]);
+
+  function recordUsage(requestId: string, report: UsageReport) {
+    latestUsage.current = mergeUsage(latestUsage.current, report);
+    setUsage(latestUsage.current);
+    setMessages((previous) =>
+      previous.map((message) =>
+        message.id === requestId ? { ...message, usage: report } : message,
+      ),
+    );
+  }
 
   async function connect() {
     setChecking(true);
@@ -254,36 +293,58 @@ export function AgentChat({
 
   async function acknowledge() {
     const target = delivery.current;
+    const ownGeneration = generation.current;
     if (!target || !status) return;
-    delivery.current = null;
     try {
       await request(`sessions/${target.session}/delivered`, status.token, {
         request_id: target.request,
       });
+      if (delivery.current === target) delivery.current = null;
     } catch {
-      setError(
-        "최종 안내 전달을 확인하지 못했어요. 결제 전에 주문을 다시 확인해 주세요.",
-      );
+      if (generation.current === ownGeneration)
+        setError(
+          "주문 안내 전달을 확인하지 못했어요. 현재 주문으로 다시 확인할게요.",
+        );
     }
   }
 
-  async function interrupt() {
-    generation.current++;
+  async function interrupt(replyText?: string) {
+    const ownGeneration = ++generation.current;
+    const target = activeRequest.current;
+    const confirmationVisible =
+      !!target && delivery.current?.request === target.request;
+    const before = JSON.stringify([
+      current.current.lines,
+      current.current.place,
+    ]);
+    const canApply =
+      !!target &&
+      before === JSON.stringify([target.cart.lines, target.cart.place]);
     speech.current!.stop();
     delivery.current = null;
     streamAbort.current?.abort();
-    if (session && status) {
+    if (target && status) {
       const result = await request<Result>(
-        `sessions/${session}/interrupt`,
+        `sessions/${target.session}/interrupt`,
         status.token,
-        {},
+        {
+          request_id: target.request,
+          reply_text: replyText,
+          confirmation_visible: confirmationVisible,
+        },
       );
+      if (result.usage) recordUsage(target.request, result.usage);
+      if (generation.current !== ownGeneration) return;
       if (
         result.state &&
+        canApply &&
+        before ===
+          JSON.stringify([current.current.lines, current.current.place]) &&
         !["finalizing", "completed"].includes(current.current.screen)
       )
         apply(result.state);
     }
+    if (generation.current !== ownGeneration) return;
     sending.current = false;
     setBusy(false);
     setPending(null);
@@ -291,27 +352,32 @@ export function AgentChat({
 
   async function submit(retry?: Pending, paymentEvent = false) {
     if (disabled && !paymentEvent) return;
+    const submission = ++submissionSequence.current;
     if (ttsEnabled) unlockAgentAudio();
     if (!status?.ready || (!retry && !paymentEvent && !text.trim())) return;
     if (sending.current || speaking || delivery.current) {
       try {
-        await interrupt();
+        await interrupt(
+          paymentEvent ? undefined : (retry?.text ?? text.trim()),
+        );
       } catch {
         setError("주문 상태를 확인하지 못했어요. 다시 연결해 주세요.");
         return;
       }
     } else if (pending && !retry) return;
+    if (submission !== submissionSequence.current) return;
     sending.current = true;
     const turnGeneration = generation.current;
     setBusy(true);
     setError("");
     let operation = retry;
     try {
-      let id = retry?.session ?? session;
+      let id = retry?.session ?? latestConnection.current.session ?? session;
       if (!id) {
         id = (
           await request<{ session_id: string }>("sessions", status.token, {})
         ).session_id;
+        latestConnection.current = { session: id, token: status.token };
         setSession(id);
       }
       if (generation.current !== turnGeneration) return;
@@ -333,6 +399,11 @@ export function AgentChat({
         cursor.current = 0;
         speech.current!.begin();
       }
+      activeRequest.current = {
+        session: id,
+        request: operation.request_id,
+        cart: operation.cart,
+      };
       const audioSession = id;
       const audioRequest = operation.request_id;
       speech.current!.configure((text, signal) =>
@@ -341,6 +412,7 @@ export function AgentChat({
           status.token,
           { request_id: audioRequest, text },
           signal,
+          (report) => recordUsage(audioRequest, report),
         ),
       );
       setPending(operation);
@@ -354,6 +426,7 @@ export function AgentChat({
           payment_event: operation.payment_event,
         },
       );
+      if (generation.current !== turnGeneration) return;
       if (!started.ok) {
         setPending(null);
         if (started.code === "SESSION_EXPIRED") {
@@ -362,10 +435,6 @@ export function AgentChat({
           delivery.current = null;
         }
         throw new Error(started.error);
-      }
-      if (generation.current !== turnGeneration) {
-        await request(`sessions/${id}/interrupt`, status.token, {});
-        return;
       }
       const abort = new AbortController();
       streamAbort.current = abort;
@@ -430,17 +499,28 @@ export function AgentChat({
                   current.current.lines,
                   current.current.place,
                 ]) !==
-                JSON.stringify([operation.cart.lines, operation.cart.place])
+                  JSON.stringify([
+                    operation.cart.lines,
+                    operation.cart.place,
+                  ]) ||
+                current.current.screen !== operation.cart.screen ||
+                JSON.stringify(current.current.ui_context?.editor) !==
+                  JSON.stringify(operation.cart.ui_context?.editor)
               ) {
-                setSession(null);
-                throw new Error(
-                  "키오스크 주문이 바뀌었어요. 현재 주문으로 새 대화를 시작해 주세요.",
+                speech.current!.stop();
+                delivery.current = null;
+                setAssistant(
+                  "화면에서 바꾸신 주문을 유지했어요. 이어서 말씀해 주세요.",
+                  false,
                 );
+                if (event.usage) recordUsage(operation.request_id, event.usage);
+                continue;
               }
               apply(event.state);
             }
             if (event.type === "final" && event.text) {
               setAssistant(event.text, false);
+              if (event.usage) recordUsage(operation.request_id, event.usage);
               if (event.needs_delivery)
                 delivery.current = {
                   session: id,
@@ -452,11 +532,12 @@ export function AgentChat({
                   void request(`sessions/${id}/end`, status.token, {}).catch(
                     () => {},
                   );
-                  onSessionEnd();
+                  onSessionEnd(latestUsage.current ?? undefined);
                 }
               });
             } else {
               speech.current!.stop();
+              if (event.usage) recordUsage(operation.request_id, event.usage);
               if (event.error) setError(event.error);
             }
           }
@@ -467,9 +548,11 @@ export function AgentChat({
           "연결이 끊겼어요. ‘응답 다시 확인’으로 이어받아 주세요.",
         );
     } catch (cause) {
+      if (generation.current !== turnGeneration) return;
       if (cause instanceof Error && cause.name === "AbortError") return;
       try {
         const fresh = await request<Status>("status");
+        if (generation.current !== turnGeneration) return;
         setStatus(fresh);
         if (fresh.token !== status.token) {
           setSession(null);
@@ -553,6 +636,7 @@ export function AgentChat({
           <button
             disabled={!busy && !speaking && !pending}
             onClick={() => {
+              submissionSequence.current++;
               void interrupt().catch(() =>
                 setError("중단 상태를 확인하지 못했어요. 다시 연결해 주세요."),
               );
@@ -623,6 +707,18 @@ export function AgentChat({
             <div key={index} className={`agent-chat-message ${message.role}`}>
               <span>{message.role === "user" ? "나" : "SWitch 점원"}</span>
               <p>{message.text}</p>
+              {message.usage && (
+                <small
+                  className="agent-token-usage"
+                  title="대화 모델의 모든 도구 호출을 합친 제공자 사용량. 입력에는 대화 이력·도구 결과·캐시가 포함됩니다."
+                >
+                  입력 {message.usage.turn.input_tokens.toLocaleString()} · 출력{" "}
+                  {message.usage.turn.output_tokens.toLocaleString()} 토큰
+                  {message.usage.tts_turn
+                    ? ` · 음성 ${message.usage.tts_turn.total_tokens.toLocaleString()}`
+                    : ""}
+                </small>
+              )}
             </div>
           ))}
           {busy && (
@@ -648,6 +744,27 @@ export function AgentChat({
             개
           </span>
           <span>대화로 변경한 주문은 키오스크에도 반영돼요.</span>
+        </div>
+        <div
+          className="agent-session-usage"
+          aria-label="세션 토큰 사용량"
+          title="실제 제공된 사용량만 집계합니다. 중단 후 제공되지 않은 토큰은 추정하지 않습니다. 음성 토큰과 대화 토큰은 별도 집계입니다."
+        >
+          <span>
+            세션 대화 {(usage?.session.total_tokens ?? 0).toLocaleString()} ·
+            음성 {(usage?.tts_session?.total_tokens ?? 0).toLocaleString()} 토큰
+          </span>
+          {!!(
+            (usage?.session.unreported_requests ?? 0) +
+            (usage?.tts_session?.unreported_requests ?? 0)
+          ) && <span>일부 중단 요청 미집계</span>}
+          {!usage && previousUsage && (
+            <span>
+              이전 세션: 대화{" "}
+              {previousUsage.session.total_tokens.toLocaleString()} · 음성{" "}
+              {(previousUsage.tts_session?.total_tokens ?? 0).toLocaleString()}
+            </span>
+          )}
         </div>
         <form
           className="agent-chat-composer"
@@ -702,6 +819,9 @@ export function AgentChat({
                 void request(`sessions/${session}/end`, status.token, {}).catch(
                   () => {},
                 );
+              activeRequest.current = null;
+              latestUsage.current = null;
+              setUsage(null);
               setMessages([greeting]);
               setSession(null);
               setError("");

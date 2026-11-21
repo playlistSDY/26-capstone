@@ -54,6 +54,7 @@ class OrderStore:
     payment_ui: dict = field(default_factory=dict)
     payment_action: dict | None = None
     view: str = "menu"
+    ui_context: dict = field(default_factory=dict)
 
     @classmethod
     def demo(cls):
@@ -67,19 +68,8 @@ class OrderStore:
         self.utterance = text
         self.final_confirmation_text = None
         self.confirmation_at_turn_start = deepcopy(self.pending)
-        # Confirmation is a reply to the immediately preceding summary only.
-        normalized = re.sub(r"[\s.!?,。]+", "", text).lower()
-        affirmative = normalized in {
-            "네", "예", "응", "좋아요", "맞아요", "그래", "그래요",
-            "결제해줘", "결제해주세요", "네결제해주세요", "이대로결제해주세요",
-            "네맞아요", "네좋아요", "그대로해주세요", "그렇게해주세요",
-            "맞아", "맞습니다", "좋아", "이대로해줘",
-        }
-        affirmative = affirmative or bool(re.fullmatch(
-            r"(네|예|응|맞아|맞아요|좋아요|그래요)?(카드|삼성페이|애플페이|카카오페이|네이버페이)(요|로|로할게요|로할게|로해주세요|로결제할게요|로결제해주세요|로결제할래요)?", normalized))
-        if not affirmative:
-            self.pending = None
-            self.confirmation_at_turn_start = None
+        # The model interprets agreement in context. Entering method selection
+        # never charges a card; cart mutations still invalidate the quote.
 
     def product(self, product_id):
         if product_id not in self.catalog:
@@ -159,7 +149,7 @@ class OrderStore:
             "lines": [dict(asdict(l), name=self.product(l.product_id)["name"], unit_price=self.unit_price(l)) for l in self.lines],
             "total": sum(self.unit_price(l) * l.quantity for l in self.lines),
             "confirmation_pending": self.pending is not None,
-            "view": self.view, "payment_ui": deepcopy(self.payment_ui),
+            "view": self.view, "ui_context": deepcopy(self.ui_context), "payment_ui": deepcopy(self.payment_ui),
             "payment_action": deepcopy(self.payment_action),
             "handoff": deepcopy(self.handoff),
             "item_drafts": deepcopy(list(self.item_drafts.values())),
@@ -234,6 +224,8 @@ class OrderStore:
 
     def request_confirmation(self):
         self.editable()
+        if self.ui_context.get("editor"):
+            raise OrderError("선택 중인 메뉴를 먼저 담거나 옵션 창을 닫아 주세요.")
         if self.item_drafts:
             raise OrderError("아직 담기 전인 메뉴의 옵션을 선택하거나 그 메뉴를 취소해 주세요.")
         if not self.lines or self.place is None:
@@ -251,8 +243,8 @@ class OrderStore:
     def checkout(self):
         self.editable()
         p = self.confirmation_at_turn_start
-        if not p or not self.pending or not p["delivered"] or p["revision"] != self.revision or p["turn"] >= self.turn or time.monotonic() - p["created"] > 120:
-            raise OrderError("현재 주문의 최종 내용을 안내하고 새 답변으로 확인받아 주세요.")
+        if not p or not self.pending or not p["delivered"] or p["revision"] != self.revision or p["turn"] >= self.turn:
+            raise OrderError("주문 내용을 다시 확인해 드릴게요. 안내한 내용이 맞으면 말씀해 주세요.")
         self.validate_cart(self.lines)
         self.phase = "checkout"
         self.view = "payment"

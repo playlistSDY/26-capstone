@@ -87,11 +87,36 @@ class RuntimeTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(second["state"]["place"], "store")
         self.assertEqual(second["state"]["phase"], "ordering")
 
+    async def test_token_usage_includes_all_tool_roundtrips_and_session_total(self):
+        class MeteredModel(ScriptedModel):
+            async def get_response(self,*args,**kwargs):
+                response=await super().get_response(*args,**kwargs)
+                response.usage=Usage(requests=1,input_tokens=100,output_tokens=20,total_tokens=120)
+                return response
+        c=Conversation(model=MeteredModel([[call("set_order_type",{"place":"store"})],[speech("매장으로 해 드릴게요.")],[speech("천천히 고르세요.")]]))
+        first=await c.reply("먹고 갈게요")
+        self.assertEqual(first["usage"]["turn"]["total_tokens"],240)
+        second=await c.reply("잠깐만")
+        self.assertEqual(second["usage"]["turn"]["total_tokens"],120)
+        self.assertEqual(second["usage"]["session"]["total_tokens"],360)
+
+    async def test_committing_visible_editor_can_continue_to_order_review(self):
+        s=OrderStore.demo();s.add("latte",1,Options(temperature="hot"));s.set_place("store")
+        line=s.lines[0]
+        s.ui_context={"editor":{"line_id":line.id,"product_id":"latte","quantity":2,"options":asdict(Options(temperature="ice"))}}
+        c=Conversation(store=s,model=ScriptedModel([
+            [call("edit_item",{"line_id":line.id,"quantity":2,"options":asdict(Options(temperature="ice"))})],
+            [call("request_final_confirmation")]]))
+        result=await c.reply("지금 화면에서 고른 대로 바꾸고 결제할게요")
+        self.assertEqual(result["state"]["lines"][0]["quantity"],2)
+        self.assertIsNone(s.ui_context["editor"])
+        self.assertTrue(result["state"]["confirmation_pending"])
+
     async def test_model_cannot_skip_confirmation(self):
         c = Conversation(model=ScriptedModel([[call("open_checkout")]]))
         result = await c.reply("그냥 결제해")
         self.assertEqual(result["state"]["phase"], "ordering")
-        self.assertIn("최종", result["text"])
+        self.assertIn("확인", result["text"])
 
     async def test_clear_order_removes_lines_and_invalidates_confirmation(self):
         s = OrderStore.demo(); s.set_place("store")
@@ -151,6 +176,21 @@ class RuntimeTest(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(s.pending["delivered"])
         s.begin_turn("네")
         with self.assertRaises(Exception): s.checkout()
+
+    async def test_interruption_preserves_partial_spoken_recommendation(self):
+        started = asyncio.Event()
+        class PartialModel(ScriptedModel):
+            async def stream_response(self,*args,**kwargs):
+                yield ResponseTextDeltaEvent(type="response.output_text.delta",delta="루이보스 티는 카페인이 없어요.",content_index=0,item_id="partial",output_index=0,sequence_number=0,logprobs=[])
+                started.set()
+                await asyncio.Event().wait()
+                if False: yield None
+        c=Conversation(model=PartialModel([]))
+        task=asyncio.create_task(c.reply("차 추천해줘",emit=lambda e:None))
+        await started.wait();task.cancel()
+        with self.assertRaises(asyncio.CancelledError): await task
+        self.assertTrue(any("루이보스" in str(item.get("content")) for item in c.history))
+        self.assertTrue(any(item.get("role")=="developer" and "끼어들었다" in item.get("content","") for item in c.history))
 
     async def test_cancel_sdk_stream_retains_completed_tools_and_stops_run(self):
         started = asyncio.Event()

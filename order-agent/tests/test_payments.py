@@ -102,7 +102,7 @@ class PaymentTest(unittest.TestCase):
         self.assertEqual(self.s.phase,'checkout')
 
     def test_short_payment_replies_confirm_only_after_delivered_summary(self):
-        for text in ['네 카드요', '응 카드로', '맞아', '카카오페이로 결제해주세요']:
+        for text in ['네 카드요', '응 카드로', '맞아', '카카오페이로 결제해주세요', 'ㅇㅇ', '네네', '응응', '그럼 그렇게 진행해 주시면 돼요', '잘 담았네 이대로 할게요']:
             self.s.phase = 'ordering'
             self.s.begin_turn('다 했어'); self.s.request_confirmation(); self.s.delivered()
             self.s.begin_turn(text); self.s.checkout()
@@ -111,4 +111,5 @@ class PaymentTest(unittest.TestCase):
     def test_confirmation_with_change_is_not_accepted(self):
         self.s.begin_turn('다 했어'); self.s.request_confirmation(); self.s.delivered()
         self.s.begin_turn('네 카드로 결제할게요 아니 라떼 빼줘')
+        self.s.remove(self.s.lines[0].id)
         with self.assertRaises(OrderError): self.s.checkout()

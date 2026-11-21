@@ -104,7 +104,14 @@ def cancel_pending_item(ctx: RunContextWrapper[OrderStore], product_id: str) -> 
 @function_tool
 def edit_item(ctx: RunContextWrapper[OrderStore], line_id: str, quantity: int, options: Options, product_id: str | None = None) -> str:
     """특정 항목의 전체 옵션·수량을 바꾸거나 메뉴를 교체한다. 변경하지 않는 값은 조회한 기존 값을 유지한다. 옵션 제외는 등록 기본값으로 되돌린다."""
-    return guarded(lambda: ctx.context.edit(line_id, quantity, options, product_id))
+    def edit():
+        s = ctx.context
+        result = s.edit(line_id, quantity, options, product_id)
+        if (s.ui_context.get("editor") or {}).get("line_id") == line_id:
+            s.ui_context["editor"] = None
+            result["ui_context"] = dict(s.ui_context)
+        return result
+    return guarded(edit)
 
 
 @function_tool

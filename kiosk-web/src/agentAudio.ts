@@ -1,3 +1,4 @@
+import type { UsageReport } from "./agentUsage";
 import type { SpeechClip } from "./agentSpeech";
 
 let context: AudioContext | null = null;
@@ -12,6 +13,7 @@ export function streamAgentAudio(
   token: string,
   body: unknown,
   signal: AbortSignal,
+  onUsage?: (usage: UsageReport) => void,
 ): SpeechClip {
   unlockAgentAudio();
   const ctx = context!;
@@ -101,6 +103,7 @@ export function streamAgentAudio(
             pending.push(samples);
             drain();
           } else if (event.type === "audio.done") {
+            if (event.usage) onUsage?.(event.usage);
             finished = true;
             drain();
           } else if (event.type === "audio.error") throw new Error(event.error);

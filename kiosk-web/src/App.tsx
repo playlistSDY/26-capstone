@@ -65,6 +65,8 @@ import {
   shutdownKiosk,
 } from "./localBackend";
 import { playSound, useKioskSounds } from "./sounds";
+import { uiChanges, type UiEvent, type UiSnapshot } from "./agentUiEvents";
+import type { UsageReport } from "./agentUsage";
 import { applyPaymentAction } from "./agentCheckout";
 import { PaymentPanelBody, paymentMethods, type Payment } from "./PaymentFlow";
 import { paymentMethodName } from "./domain";
@@ -290,6 +292,9 @@ function PaymentPanel({
 
 export default function App() {
   const [chatActive, setChatActive] = useState(false);
+  const [lastSessionUsage, setLastSessionUsage] = useState<UsageReport | null>(
+    null,
+  );
   const [chatGeneration, setChatGeneration] = useState(0);
   const [initial] = useState(() => readDraft(localStorage));
   const [screen, setScreen] = useState<Screen>(initial ? "menu" : "home");
@@ -400,6 +405,40 @@ export default function App() {
   const total = totalPrice(cart),
     count = cart.reduce((n, l) => n + l.quantity, 0);
   const receipt = receiptOrder ?? order;
+  const uiJournal = useRef<UiEvent[]>([]);
+  const uiSequence = useRef(0);
+  const previousUi = useRef<UiSnapshot | null>(null);
+  const uiSource = useRef<"ui_or_device" | "agent">("ui_or_device");
+  useEffect(() => {
+    const snapshot: UiSnapshot = {
+      lines: cart,
+      place,
+      screen,
+      payment,
+      editor: editor
+        ? {
+            product_id: editor.product.id,
+            quantity: editor.quantity,
+            options: editor.options,
+            line_id: editor.lineId,
+          }
+        : null,
+      category,
+      overlay,
+    };
+    if (previousUi.current) {
+      for (const change of uiChanges(previousUi.current, snapshot))
+        uiJournal.current.push({
+          ...change,
+          id: ++uiSequence.current,
+          source: uiSource.current,
+        });
+      if (uiJournal.current.length > 24)
+        uiJournal.current.splice(0, uiJournal.current.length - 24);
+    }
+    previousUi.current = structuredClone(snapshot);
+    uiSource.current = "ui_or_device";
+  }, [cart, place, screen, payment, editor, category, overlay]);
 
   useEffect(() => {
     const element = surface.current!;
@@ -572,6 +611,8 @@ export default function App() {
   }, [idleSeconds, overlay]);
 
   function reset() {
+    uiJournal.current.splice(0);
+    previousUi.current = null;
     lastAgentPaymentAction.current = null;
     setChatActive(false);
     setChatGeneration((value) => value + 1);
@@ -593,6 +634,7 @@ export default function App() {
     lastActivity.current = Date.now();
   }
   function applyAgentState(state: AgentState) {
+    uiSource.current = "agent";
     const lines: CartLine[] = state.lines.map((line) => ({
       id: line.id,
       productId: line.product_id,
@@ -629,7 +671,12 @@ export default function App() {
       JSON.stringify(previous) === JSON.stringify(lines) ? previous : lines,
     );
     if (state.place) setPlace(state.place);
-    setEditor(null);
+    if (
+      JSON.stringify(cart) !== JSON.stringify(lines) ||
+      state.phase === "checkout" ||
+      state.view === "review"
+    )
+      setEditor(null);
     if (state.phase === "checkout") setScreen("payment");
     else if (state.view === "review" || state.confirmation_pending) {
       setPayment(null);
@@ -1865,16 +1912,29 @@ export default function App() {
                 }
               : null,
           last_action_id: lastAgentPaymentAction.current,
+          ui_context: {
+            category,
+            overlay,
+            events: uiJournal.current,
+            editor: editor
+              ? {
+                  product_id: editor.product.id,
+                  quantity: editor.quantity,
+                  options: editor.options,
+                  line_id: editor.lineId,
+                }
+              : null,
+          },
         }}
         disabled={
-          !!overlay ||
-          !!editor ||
-          screen === "finalizing" ||
-          screen === "completed"
+          !!overlay || screen === "finalizing" || screen === "completed"
         }
         onState={applyAgentState}
         onConversationActiveChange={setChatActive}
-        onSessionEnd={() => {
+        previousUsage={lastSessionUsage}
+        onSessionEnd={(usage) => {
+          uiJournal.current.splice(0);
+          setLastSessionUsage(usage ?? null);
           setChatActive(false);
           setChatGeneration((value) => value + 1);
         }}

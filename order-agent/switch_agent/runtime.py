@@ -11,12 +11,15 @@ from agents import Agent, ModelSettings, Runner, RunConfig
 from .domain import OrderStore
 from .tools import TOOLS
 from .payments import METHODS
+from .usage import counts, empty, add
 
 
 class Conversation:
     def __init__(self, store=None, model=None):
         self.store = store or OrderStore.demo()
         self.history = []
+        self.session_usage = empty()
+        self.last_usage = None
         self.lock = asyncio.Lock()
         self.prompt = Path(__file__).with_name("prompt.txt").read_text()
         model = model or os.environ.get("OPENAI_MODEL")
@@ -38,6 +41,9 @@ class Conversation:
             self.store.begin_turn(text)
             start_revision = self.store.revision
             start_phase = self.store.phase
+            spoken_parts = []
+            result = None
+            accounted = False
             try:
                 kwargs = dict(context=self.store, max_turns=12, run_config=RunConfig(tracing_disabled=True))
                 inputs = self.history + [{"role": "user", "content": text}]
@@ -48,6 +54,7 @@ class Conversation:
                     try:
                         async for event in result.stream_events():
                             if event.type == "raw_response_event" and event.data.type == "response.output_text.delta":
+                                spoken_parts.append(event.data.delta)
                                 emit({"type": "text.delta", "text": event.data.delta})
                     except asyncio.CancelledError:
                         result.cancel()
@@ -93,11 +100,27 @@ class Conversation:
                 previous_text = content if isinstance(content, str) else "".join(part.get("text", "") for part in content if isinstance(part, dict))
                 if last.get("role") != "assistant" or previous_text != answer:
                     self.history.append({"role": "assistant", "content": answer})
-                return {"text": answer, "state": self.store.snapshot()}
-            except (Exception, asyncio.CancelledError):
+                turn_usage = counts(result.context_wrapper.usage)
+                add(self.session_usage, turn_usage)
+                self.last_usage = {"turn":turn_usage,"session":dict(self.session_usage)}
+                accounted = True
+                return {"text": answer, "state": self.store.snapshot(), "usage":self.last_usage}
+            except (Exception, asyncio.CancelledError) as failure:
+                if not accounted:
+                    reported = getattr(getattr(result,"context_wrapper",None),"usage",None)
+                    turn_usage = counts(reported)
+                    if isinstance(failure,asyncio.CancelledError): turn_usage["unreported_requests"] += 1
+                    add(self.session_usage,turn_usage)
+                    self.last_usage = {"turn":turn_usage,"session":dict(self.session_usage)}
                 # Successful tool mutations are retained; do not blindly replay the turn.
                 self.store.pending = self.store.confirmation_at_turn_start = None
                 self.store.final_confirmation_text = None
+                partial = "".join(spoken_parts).strip()
+                if isinstance(failure, asyncio.CancelledError):
+                    note = partial or "네, 말씀해 주세요."
+                    self.history.extend([{"role": "user", "content": text}, {"role": "assistant", "content": note}])
+                    self.history.append({"role": "developer", "content": "손님이 직전 안내 도중 끼어들었다. 직전 assistant는 일부만 전달된 안내다. 새 발화를 우선하고 실제 서버 장바구니·미확정 옵션을 기준으로 이어 간다. 이미 반영한 도구를 다시 실행하지 않는다."})
+                    raise
                 note = "응답을 끝내지 못했어요. 현재 주문을 확인한 뒤 이어갈게요."
                 self.history.extend([{"role": "user", "content": text}, {"role": "assistant", "content": note}])
                 if self.store.revision != start_revision:

@@ -176,6 +176,97 @@ class BridgeTest(unittest.TestCase):
         finally:
             server.shutdown();server.server_close();worker.join()
 
+    def confirmation_record(self, name="confirm"):
+        async def prepare():
+            session = self.bridge.sessions[self.session]
+            s = session["conversation"].store
+            if not s.lines: s.add("latte",1,Options(temperature="hot"))
+            s.set_place("store"); s.begin_turn("끝"); s.request_confirmation()
+            task = asyncio.create_task(asyncio.sleep(0)); await task
+            session["turns"][name] = {"task":task,"done":True,"audio":{},"interrupted":False,
+                "events":[{"type":"final","text":s.final_confirmation_text,"needs_delivery":True}]}
+            return s
+        return self.bridge.submit(prepare())
+
+    def test_visible_summary_can_be_confirmed_while_audio_is_interrupted(self):
+        s = self.confirmation_record()
+        self.bridge.submit(self.bridge.interrupt(self.session,"confirm","ㅇㅇ",True))
+        self.assertTrue(s.pending["delivered"])
+        s.begin_turn("ㅇㅇ"); s.checkout()
+        self.assertEqual(s.phase,"checkout")
+
+    def test_interruption_does_not_confirm_an_unseen_summary(self):
+        for visible, text in [(False,"ㅇㅇ")]:
+            s = self.confirmation_record()
+            self.bridge.submit(self.bridge.interrupt(self.session,"confirm",text,visible))
+            self.assertIsNone(s.pending)
+            s.begin_turn(text)
+            with self.assertRaises(OrderError): s.checkout()
+
+    def test_late_interrupt_preserves_newer_confirmation(self):
+        s = self.confirmation_record("old")
+        self.confirmation_record("new")
+        pending = s.pending.copy()
+        self.bridge.submit(self.bridge.interrupt(self.session,"old"))
+        self.assertEqual(s.pending,pending)
+        self.assertFalse(self.bridge.sessions[self.session]["turns"]["new"]["interrupted"])
+
+    def test_interrupt_before_turn_registration_prevents_old_request_execution(self):
+        self.bridge.submit(self.bridge.interrupt(self.session,"early"))
+        result = self.bridge.submit(self.bridge.turn(self.session,{"request_id":"early","text":"라떼","cart":cart()}))
+        self.assertEqual(result["code"],"INTERRUPTED")
+        self.assertEqual(self.bridge.sessions[self.session]["conversation"].calls,0)
+
+    def test_manual_editor_and_navigation_are_authoritative_context(self):
+        s = OrderStore.demo()
+        ui = cart()
+        ui["ui_context"] = {"category":"커피","overlay":None,"editor":{"product_id":"latte","quantity":2,"options":asdict(Options(temperature="ice",ice="less"))}}
+        sync_cart(s,ui)
+        self.assertEqual(s.snapshot()["ui_context"]["editor"]["quantity"],2)
+        self.assertEqual(s.lines,[])
+        s.add("latte",1,Options(temperature="hot"))
+        with self.assertRaises(OrderError): s.request_confirmation()
+        ui["lines"]=[{"id":s.lines[0].id,"productId":"latte","quantity":1,"options":asdict(Options(temperature="hot"))}]
+        ui["ui_context"]["editor"]=None;ui["screen"]="cart"
+        sync_cart(s,ui);s.request_confirmation()
+        ui["screen"]="menu";sync_cart(s,ui)
+        self.assertIsNone(s.pending)
+        self.assertEqual(s.view,"menu")
+
+    def test_audio_usage_is_counted_once_when_cached_audio_is_replayed(self):
+        self.start();self.finish()
+        session=self.bridge.sessions[self.session]
+        async def stream(text,emit):
+            emit({"type":"audio.delta","pcm":"AAAAAA==","sample_rate":24000})
+            emit({"type":"audio.usage","counts":{"input_tokens":10,"output_tokens":30,"total_tokens":40,"requests":1}})
+        session["speaker"].stream=stream
+        first=self.bridge.submit(self.bridge.speech(self.session,"turn-1","따뜻한 라떼"))
+        async def finish_audio(): await first["task"]
+        self.bridge.submit(finish_audio())
+        self.bridge.submit(self.bridge.speech(self.session,"turn-1","따뜻한 라떼"))
+        self.assertEqual(session["tts_usage"]["total_tokens"],40)
+        self.assertEqual(first["events"][-1]["usage"]["tts_session"]["total_tokens"],40)
+
+    def test_touch_journal_is_added_to_context_once_even_when_cart_ends_empty(self):
+        c=self.bridge.sessions[self.session]["conversation"];c.history=[]
+        ui=cart();ui["ui_context"]={"editor":None,"events":[
+            {"id":1,"kind":"add_item","source":"ui_or_device","before":None,"after":{"product_id":"americano"}},
+            {"id":2,"kind":"remove_item","source":"ui_or_device","before":{"product_id":"americano"},"after":None}]}
+        self.bridge.submit(self.bridge.turn(self.session,{"request_id":"turn-1","text":"방금 지운 거 뭐였어?","cart":ui}));self.finish()
+        history=str(c.history)
+        self.assertIn("remove_item",history);self.assertIn("americano",history)
+        self.assertEqual(self.bridge.sessions[self.session]["last_ui_event"],2)
+        self.assertNotIn("events",c.store.ui_context)
+
+    def test_agent_requested_review_navigation_keeps_published_confirmation(self):
+        s=OrderStore.demo();s.add("latte",1,Options(temperature="hot"));s.set_place("store")
+        ui={"screen":"menu","place":"store","lines":[{"id":s.lines[0].id,"productId":"latte","quantity":1,"options":asdict(Options(temperature="hot"))}]}
+        sync_cart(s,ui);s.request_confirmation()
+        ui["screen"]="cart";sync_cart(s,ui)
+        self.assertIsNotNone(s.pending)
+        ui["screen"]="menu";sync_cart(s,ui)
+        self.assertIsNone(s.pending)
+
     def test_http_stream_and_origin_token_checks(self):
         server = ThreadingHTTPServer(("127.0.0.1", 0), handler_for(self.bridge))
         worker = threading.Thread(target=server.serve_forever, daemon=True); worker.start()

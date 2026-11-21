@@ -67,6 +67,9 @@ def add_with_preferences(store, product_id, quantity, options, confirmed_options
         return {"status": "needs_preference", "added": False, "draft": draft}
     # Keep the draft on failure so stock/cart errors cannot lose the request.
     result = store.add(product_id, quantity, candidate)
+    if (store.ui_context.get("editor") or {}).get("product_id") == product_id:
+        store.ui_context["editor"] = None
+        result["ui_context"] = dict(store.ui_context)
     store.item_drafts.pop(product_id, None)
     result["item_drafts"] = list(store.item_drafts.values())
     return {"status": "added", "added": True, "cart": result}
