@@ -33,6 +33,37 @@ class AcousticTests(unittest.TestCase):
         self.assertTrue(floor.update(90, .9))
         self.assertFalse(floor.update(90, .05))
 
+    def test_normal_vad_confidence_is_not_vetoed_by_a_loud_learned_floor(self):
+        floor = NoiseFloor()
+        for _ in range(120):
+            floor.update(2000, .01)
+        self.assertGreater(floor.threshold, 500)
+        self.assertTrue(floor.update(60, .55))
+        self.assertFalse(floor.update(60, .05))
+
+    def test_gain_affects_only_model_input_and_is_peak_limited(self):
+        vad = Silero(input_gain=32)
+        seen = []
+        class Session:
+            def run(self, _, values):
+                seen.append(values["input"].copy())
+                return np.array([[.6]], dtype=np.float32), values["state"]
+        vad.session = Session()
+        samples = (np.sin(np.arange(FRAME_SAMPLES) * .13) * 5000).astype("<i2")
+        raw = samples.tobytes()
+        frame, rms, probability = next(vad.frames(raw))
+        self.assertEqual(frame, raw)
+        self.assertAlmostEqual(rms, float(np.sqrt(np.mean(samples.astype(float) ** 2))), places=2)
+        self.assertLessEqual(float(np.max(np.abs(seen[0]))), .901)
+        self.assertEqual(round(probability, 1), .6)
+
+    def test_one_quiet_confidence_dip_does_not_discard_onset(self):
+        detector = SpeechCapture()
+        detector.feed(FRAME, 60, .6)
+        detector.feed(FRAME, 60, .1)
+        detector.feed(FRAME, 60, .6)
+        self.assertTrue(detector.active)
+
     def test_high_energy_non_speech_never_starts_capture(self):
         detector = SpeechCapture()
         for _ in range(200):

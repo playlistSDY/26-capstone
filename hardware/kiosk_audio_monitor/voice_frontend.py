@@ -17,7 +17,10 @@ FRAME_SECONDS = FRAME_SAMPLES / RATE
 
 
 class Silero:
-    def __init__(self):
+    def __init__(self, input_gain=8):
+        if not math.isfinite(input_gain) or not 1 <= input_gain <= 32:
+            raise ValueError("VAD input gain must be between 1 and 32")
+        self.input_gain = input_gain
         import onnxruntime as ort
         folder = Path(__file__).with_name("models")
         manifest = json.loads((folder / "manifest.json").read_text())
@@ -38,6 +41,7 @@ class Silero:
         self.state = np.zeros((2, 1, 128), dtype=np.float32)
         self.context = np.zeros((1, 64), dtype=np.float32)
         self.tail = np.zeros(62, dtype=np.float32)
+        self.gain = self.input_gain
         self.buffer = bytearray()
 
     def frames(self, pcm):
@@ -50,6 +54,15 @@ class Silero:
             extended = np.concatenate((self.tail, samples))
             filtered = np.convolve(extended, self.fir, mode="valid")[::3]
             self.tail = extended[-62:].copy()
+            # The ESP mic is much quieter than normalized file fixtures. Boost
+            # ONLY the model branch; keep capture PCM and RMS unchanged. Limit
+            # peaks rather than clipping waveform shape for loud voices.
+            target = min(self.input_gain, .9 / max(float(np.max(np.abs(filtered))), 1e-9))
+            if target < self.gain:
+                self.gain = target
+            else:
+                self.gain += (1 - math.exp(-FRAME_SECONDS / .3)) * (target - self.gain)
+            filtered = filtered * self.gain
             x = np.concatenate((self.context, filtered[None]), axis=1)
             output, self.state = self.session.run(None, {"input": x, "state": self.state, "sr": np.array(16000, dtype=np.int64)})
             self.context = x[:, -64:].copy()
@@ -72,10 +85,12 @@ class NoiseFloor:
             tau = .7 if observed > self.noise else 2.0
             self.noise += (1 - math.exp(-FRAME_SECONDS / tau)) * (observed - self.noise)
         self.threshold = min(600, max(self.minimum, self.noise * 1.7))
-        # Strong neural speech evidence rescues quiet speech below the energy
-        # threshold. These starting values require real store evaluation.
-        return ((probability >= .45 and rms >= self.threshold)
-                or (probability >= .75 and rms >= min(35, self.minimum)))
+        # Energy is supporting evidence, never an absolute veto. A learned
+        # background floor must not force a quiet person to shout. When energy
+        # exceeds that floor use a modestly lower VAD cutoff; otherwise keep the
+        # ordinary VAD cutoff. The post-STT intent gate handles false candidates.
+        self.probability_threshold = .3 if rms >= self.threshold else .45
+        return probability >= self.probability_threshold and rms >= 10
 
 
 @dataclass
@@ -101,6 +116,7 @@ class SpeechCapture:
     def reset(self):
         self.active = False
         self.pre = deque(maxlen=9)  # 288 ms of first-syllable protection.
+        self.onset_votes = deque(maxlen=4)
         self.pieces = []
         self.quiet = self.voiced = self.duration = self.onset = 0
 
@@ -110,8 +126,11 @@ class SpeechCapture:
         speaking = enabled and is_voice
         if not self.active:
             self.pre.append(pcm)
-            self.onset = self.onset + FRAME_SECONDS if speaking else 0
-            if self.onset >= .064:
+            self.onset_votes.append(speaking)
+            self.onset = sum(self.onset_votes) * FRAME_SECONDS
+            # Quiet phonemes can dip below VAD confidence for one 32ms frame.
+            # Two of four frames preserves them without reacting to one click.
+            if speaking and self.onset >= .064:
                 self.active = True
                 self.pieces = list(self.pre)
                 self.duration = len(self.pieces) * FRAME_SECONDS

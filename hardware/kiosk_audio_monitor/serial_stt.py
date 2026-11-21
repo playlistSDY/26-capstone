@@ -147,6 +147,7 @@ def main():
     parser.add_argument("--port")
     parser.add_argument("--button", action="store_true", help="버튼을 누른 동안만 수음하고 놓으면 인식")
     parser.add_argument("--threshold", type=float, default=70, help="동적 에너지 문턱의 최솟값. 신경망 말소리 판정과 함께 사용")
+    parser.add_argument("--vad-gain", type=float, default=8, help="VAD 모델 입력만 보정하는 배율, 기본 8. 녹음·스피커 음량은 그대로")
     parser.add_argument("--silence", type=float, default=.65, help="STT 조각 분리용 무음 시간(명령 완료 아님)")
     parser.add_argument("--join-wait", type=float, default=1.4, help="추가 발화 합치기 대기(초)")
     parser.add_argument("--incomplete-wait", type=float, default=6, help="미완성 문장 최대 대기(초)")
@@ -160,6 +161,8 @@ def main():
     args = parser.parse_args()
     if not math.isfinite(args.threshold) or not 10 <= args.threshold <= 10000:
         parser.error("--threshold는 10~10000 사이여야 합니다.")
+    if not math.isfinite(args.vad_gain) or not 1 <= args.vad_gain <= 32:
+        parser.error("--vad-gain은 1~32 사이여야 합니다.")
     if not math.isfinite(args.silence) or not .25 <= args.silence <= 3:
         parser.error("--silence는 .25~3초 사이여야 합니다.")
     if not math.isfinite(args.probe_seconds) or not 0 <= args.probe_seconds <= 60:
@@ -258,10 +261,11 @@ def main():
     decision_worker = threading.Thread(target=decide_turns, daemon=True)
     decoder = FrameDecoder()
     processor = AudioProcessor()
-    vad = Silero()
+    vad = Silero(input_gain=args.vad_gain)
     utterances = SpeechCapture(button=args.button, minimum=args.threshold, silence=args.silence)
     packets = gaps = 0
     previous = None
+    level_rms_peak = level_speech_peak = 0.0
     began = last_valid = last_status = time.monotonic()
     link = serial.Serial(port=None, baudrate=921600, timeout=.05, exclusive=os.name != "nt")
     # Native USB/JTAG: do not assert RTS and DTR together and reset the board.
@@ -281,7 +285,7 @@ def main():
             worker.start()
             decision_worker.start()
         mode = "버튼을 누르고 말한 뒤 놓아 주세요" if args.button else "버튼 없이 말해 주세요. 말을 멈추면 자동 인식합니다"
-        display.emit("started", f"\nSWitch ESP32 → Silero VAD → STT → 발화 합치기·필터\n포트: {args.port}\nSTT: {model} / 필터: {provider}\n{mode}\n후보는 표시하고, 합친 뒤 전달/무시/대기/확인 필요로 구분합니다.\n아직 주문 에이전트·결제로 전송하지 않습니다. 원본 녹음은 저장하지 않습니다.\n종료: Ctrl+C\n", port=args.port, model=model, filter=provider)
+        display.emit("started", f"\nSWitch ESP32 → Silero VAD → STT → 발화 합치기·필터\n포트: {args.port}\nSTT: {model} / 필터: {provider} / VAD 입력 보정: {args.vad_gain:g}배\n{mode}\n후보는 표시하고, 합친 뒤 전달/무시/대기/확인 필요로 구분합니다.\n아직 주문 에이전트·결제로 전송하지 않습니다. 원본 녹음은 저장하지 않습니다.\n종료: Ctrl+C\n", port=args.port, model=model, filter=provider, vad_gain=args.vad_gain)
         while not stopped.is_set():
             try:
                 data = link.read(max(1, min(link.in_waiting, 8192)))
@@ -312,6 +316,8 @@ def main():
                 previous = frame.sequence
                 samples = processor.process(frame.pcm, True)
                 for raw, rms, probability in vad.frames(samples.tobytes()):
+                    level_rms_peak = max(level_rms_peak, rms)
+                    level_speech_peak = max(level_speech_peak, probability)
                     was_active = utterances.active
                     chunk = utterances.feed(raw, rms, probability, frame.pressed)
                     if utterances.active and not was_active and client:
@@ -330,7 +336,8 @@ def main():
                             display.emit("audio_rejected", "짧은 비음성 후보를 STT 전에 걸렀어요.")
                     if last_valid - last_status >= 1:
                         bar = "█" * min(24, int(rms / max(utterances.threshold, 1) * 6))
-                        display.emit("level", f"마이크 {bar:<24} RMS {rms:6.0f} / 문턱 {utterances.threshold:.0f} / 말소리 {probability:.2f} / 배경 {utterances.floor.noise:.0f} / BTN {int(frame.pressed)} / 누락 {gaps} / CRC {decoder.bad_frames}", rms=round(rms), threshold=round(utterances.threshold), speech_probability=round(probability, 3), noise=round(utterances.floor.noise), packets=packets, gaps=gaps, bad=decoder.bad_frames)
+                        display.emit("level", f"마이크 {bar:<24} RMS 최대 {level_rms_peak:6.0f} / 문턱 {utterances.threshold:.0f} / 말소리 최대 {level_speech_peak:.2f} / 배경 {utterances.floor.noise:.0f} / BTN {int(frame.pressed)} / 누락 {gaps} / CRC {decoder.bad_frames}", rms=round(rms), rms_peak=round(level_rms_peak), threshold=round(utterances.threshold), speech_probability=round(probability, 3), speech_probability_peak=round(level_speech_peak, 3), noise=round(utterances.floor.noise), packets=packets, gaps=gaps, bad=decoder.bad_frames)
+                        level_rms_peak = level_speech_peak = 0.0
                         last_status = last_valid
             if time.monotonic() - last_valid > 5:
                 raise RuntimeError("5초 동안 유효한 PCM이 없습니다. 오디오 전송 스케치와 USB 연결을 확인해 주세요.")
