@@ -160,7 +160,7 @@ class BridgeTest(unittest.TestCase):
         self.start(); self.finish()
         self.bridge.submit(self.bridge.interrupt(self.session))
         with self.assertRaises(OrderError): self.bridge.submit(self.bridge.speech(self.session, "turn-1", "따뜻한 라떼"))
-        with self.assertRaises(OrderError): self.bridge.submit(self.bridge.delivered(self.session, "turn-1"))
+        self.assertTrue(self.bridge.submit(self.bridge.delivered(self.session, "turn-1"))["ok"])
 
     def test_configured_proxy_origin_is_allowed_without_allowing_arbitrary_origins(self):
         server = ThreadingHTTPServer(("127.0.0.1",0),handler_for(self.bridge))
@@ -202,7 +202,7 @@ class BridgeTest(unittest.TestCase):
             self.bridge.submit(self.bridge.interrupt(self.session,"confirm",text,visible))
             self.assertIsNone(s.pending)
             s.begin_turn(text)
-            with self.assertRaises(OrderError): s.checkout()
+            self.assertFalse(s.checkout()["payment_executed"])
 
     def test_late_interrupt_preserves_newer_confirmation(self):
         s = self.confirmation_record("old")

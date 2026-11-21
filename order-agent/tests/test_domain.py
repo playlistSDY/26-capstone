@@ -45,19 +45,19 @@ class OrderRulesTest(unittest.TestCase):
         self.s.stock["latte"] = 1
         with self.assertRaises(OrderError): self.s.checkout()
 
-    def test_option_yes_without_final_summary_is_not_confirmation(self):
-        self.s.begin_turn("네")
-        with self.assertRaises(OrderError): self.s.checkout()
+    def test_method_selection_is_not_gated_on_quote_ack(self):
+        self.s.begin_turn("결제할게요")
+        self.assertFalse(self.s.checkout()["payment_executed"])
 
-    def test_same_turn_final_confirmation_cannot_checkout(self):
+    def test_same_turn_method_selection_does_not_charge(self):
         self.s.request_confirmation()
         self.s.delivered()
-        with self.assertRaises(OrderError): self.s.checkout()
+        self.assertFalse(self.s.checkout()["payment_executed"])
 
-    def test_summary_must_be_delivered(self):
+    def test_method_selection_does_not_wait_for_speech(self):
         self.s.request_confirmation()
         self.s.begin_turn("네")
-        with self.assertRaises(OrderError): self.s.checkout()
+        self.assertFalse(self.s.checkout()["payment_executed"])
 
     def test_valid_confirmation_opens_mock_checkout(self):
         self.confirmed()
@@ -65,11 +65,11 @@ class OrderRulesTest(unittest.TestCase):
         self.assertEqual(result["event"], "checkout.opened")
         self.assertFalse(result["payment_executed"])
 
-    def test_yes_with_change_cannot_checkout(self):
+    def test_quantity_correction_uses_current_cart_without_repeating_ack(self):
         self.s.request_confirmation(); self.s.delivered()
         self.s.begin_turn("네, 근데 하나 빼 주세요")
         self.s.edit(self.s.lines[0].id,1,Options(temperature="hot"))
-        with self.assertRaises(OrderError): self.s.checkout()
+        self.assertEqual(self.s.checkout()["cart"]["lines"][0]["quantity"],1)
 
     def test_followup_question_keeps_unchanged_order_available(self):
         self.s.request_confirmation(); self.s.delivered()
@@ -78,10 +78,11 @@ class OrderRulesTest(unittest.TestCase):
         self.s.checkout()
         self.assertEqual(self.s.phase,"checkout")
 
-    def test_edit_invalidates_even_affirmative_turn(self):
+    def test_edit_discards_old_summary_but_allows_method_selection(self):
         self.confirmed()
         self.s.edit(self.s.lines[0].id, 1, Options(temperature="hot"))
-        with self.assertRaises(OrderError): self.s.checkout()
+        self.assertIsNone(self.s.pending)
+        self.assertFalse(self.s.checkout()["payment_executed"])
 
     def test_unchanged_summary_does_not_expire_while_customer_thinks(self):
         self.s.request_confirmation(); self.s.delivered()
@@ -92,14 +93,15 @@ class OrderRulesTest(unittest.TestCase):
 
     def test_duplicate_checkout_does_not_charge(self):
         self.confirmed(); self.s.checkout()
-        with self.assertRaises(OrderError): self.s.checkout()
+        self.assertFalse(self.s.checkout()["payment_executed"])
 
     def test_edit_after_checkout_needs_return_and_reconfirmation(self):
         self.confirmed(); self.s.checkout()
         with self.assertRaises(OrderError): self.s.remove(self.s.lines[0].id)
         self.s.return_to_order()
         self.s.edit(self.s.lines[0].id, 1, Options(temperature="hot"))
-        with self.assertRaises(OrderError): self.s.checkout()
+        self.assertIsNone(self.s.pending)
+        self.assertFalse(self.s.checkout()["payment_executed"])
 
     def test_invalid_options_and_fractional_quantity_are_atomic(self):
         before = deepcopy(self.s.snapshot())

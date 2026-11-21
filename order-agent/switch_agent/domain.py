@@ -200,7 +200,8 @@ class OrderStore:
         return self.snapshot()
 
     def set_place(self, place):
-        self.editable()
+        if not (self.phase == "checkout" and not self.payment_ui.get("payment")):
+            self.editable()
         if place not in {"store", "takeout"}:
             raise OrderError("매장 또는 포장을 선택해 주세요.")
         if self.place != place:
@@ -241,10 +242,14 @@ class OrderStore:
             self.pending["delivered"] = True
 
     def checkout(self):
-        self.editable()
-        p = self.confirmation_at_turn_start
-        if not p or not self.pending or not p["delivered"] or p["revision"] != self.revision or p["turn"] >= self.turn:
-            raise OrderError("주문 내용을 다시 확인해 드릴게요. 안내한 내용이 맞으면 말씀해 주세요.")
+        # This opens method selection, never approves or charges a payment.
+        # Do not gate it on speech playback, message ACKs, or quote tokens.
+        if self.phase != "checkout":
+            self.editable()
+        if not self.lines:
+            raise OrderError("먼저 메뉴를 골라 주세요.")
+        if self.place is None:
+            raise OrderError("드시고 가세요, 포장해 드릴까요?")
         self.validate_cart(self.lines)
         self.phase = "checkout"
         self.view = "payment"

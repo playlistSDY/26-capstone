@@ -113,7 +113,10 @@ export class AgentSpeech {
       onDone();
       return;
     }
-    if (this.failed) return;
+    if (this.failed) {
+      onDone();
+      return;
+    }
     const remaining = this.text.slice(this.consumed).trim();
     if (remaining) this.enqueue(remaining);
     this.consumed = this.text.length;
@@ -156,6 +159,9 @@ export class AgentSpeech {
       this.active = false;
       this.onSpeaking(false);
       this.onError();
+      const done = this.done;
+      this.done = null;
+      done?.();
     };
     if (next.clip) {
       try {

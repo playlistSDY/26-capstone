@@ -59,13 +59,23 @@ class PaymentTest(unittest.TestCase):
         with self.assertRaises(OrderError): self.s.return_to_order()
         self.assertEqual(command(self.s, 'cancel')['expected_attempt'], 'attempt-1')
 
-    def test_cancel_then_return_requires_new_confirmation(self):
+    def test_cancel_then_return_keeps_order_and_can_resume_method_selection(self):
         self.checkout(); sync_cart(self.s,self.ui(status='waiting'))
         action=command(self.s,'cancel')
         sync_cart(self.s,self.ui(ack=action['id']))
         self.s.return_to_order()
         self.assertEqual(len(self.s.lines),1)
-        with self.assertRaises(OrderError): self.s.checkout()
+        self.assertFalse(self.s.checkout()["payment_executed"])
+
+    def test_order_type_can_change_on_method_screen_before_reader_starts(self):
+        self.checkout();sync_cart(self.s,self.ui())
+        total=self.s.snapshot()['total']
+        self.s.set_place('store')
+        self.assertEqual(self.s.phase,'checkout')
+        self.assertEqual(self.s.place,'store')
+        self.assertEqual(self.s.snapshot()['total'],total)
+        sync_cart(self.s,{**self.ui(status='approved'),'place':'store'})
+        with self.assertRaises(OrderError):self.s.set_place('takeout')
 
     def test_approved_payment_cannot_restart_cancel_or_edit(self):
         self.checkout(); sync_cart(self.s,self.ui(status='approved'))

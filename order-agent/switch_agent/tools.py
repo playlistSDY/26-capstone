@@ -84,7 +84,7 @@ def get_cart(ctx: RunContextWrapper[OrderStore]) -> str:
 
 @function_tool
 def add_item(ctx: RunContextWrapper[OrderStore], product_id: str, quantity: int, options: Options, confirmed_options: list[str] | None = None, use_defaults: bool = False) -> str:
-    """메뉴 추가 또는 미확정 메뉴 옵션 갱신. confirmed_options에는 손님이 직접 지정·동의한 temperature/size/ice/sweetness만 넣는다. use_defaults는 손님이 '나머지는 기본/알아서'라고 위임했을 때만 참. needs_preference면 아직 추가되지 않았으므로 반환 question 하나를 묻고 답을 기다린다. 다음 발화에 같은 product_id와 전체 옵션으로 다시 호출한다. 이전 동의는 같은 값일 때 유지된다. 추천만으로 호출하지 않는다."""
+    """메뉴 추가 또는 미확정 메뉴 옵션 갱신. confirmed_options에는 손님이 직접 지정·동의한 temperature/size/ice/sweetness만 넣는다. use_defaults는 손님이 '기본으로/알아서'라고 답하면 남은 기본 옵션에 대한 동의로 참. needs_preference면 아직 추가되지 않았으므로 반환 question 하나로 남은 옵션을 묶어 묻고 답을 기다린다. 그 질문에 동의하면 question_options 항목들을 모두 confirmed_options로 반영한다. 다음 발화에 같은 product_id와 전체 옵션으로 다시 호출한다. 이전 동의는 같은 값일 때 유지된다. 추천만으로 호출하지 않는다."""
     return guarded(lambda: add_with_preferences(ctx.context, product_id, quantity, options, confirmed_options or [], use_defaults))
 
 
@@ -159,13 +159,13 @@ def set_order_type(ctx: RunContextWrapper[OrderStore], place: str) -> str:
 
 @function_tool
 def request_final_confirmation(ctx: RunContextWrapper[OrderStore]) -> str:
-    """사용자가 주문을 마치려 할 때 호출한다. 전체 내역과 금액을 안내하고 새로운 사용자 발화로 최종 동의를 기다린다. 주문 확인 화면으로 이동하며, 결제수단 선택은 다음 동의 후에 진행한다."""
+    """처음 주문 확인 화면을 열 때 호출한다. 이미 확인 화면에서 동의하거나 결제를 요청한 고객에게 반복 호출하지 말고 open_checkout을 사용한다."""
     return guarded(ctx.context.request_confirmation)
 
 
 @function_tool
 def open_checkout(ctx: RunContextWrapper[OrderStore], method: Literal["card", "samsung", "apple", "kakao", "naver"] | None = None) -> str:
-    """직전 최종 주문 요약에 사용자가 명확히 동의한 경우에만 결제 화면을 연다. 현재는 가상 이벤트이며 실제 청구는 없다."""
+    """고객이 결제·다음 진행 의사를 보이면 결제수단 선택 화면을 연다. 낭독·요약 전달 ACK·별도 확인 토큰은 필요 없다. 이미 확인한 주문을 다시 묻지 않는다. 이 호출은 실제 승인·청구를 하지 않으며 반복 호출해도 중복 결제를 만들지 않는다."""
     def open_screen():
         result = ctx.context.checkout()
         if method is not None:

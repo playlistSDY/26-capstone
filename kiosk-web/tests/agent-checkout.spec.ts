@@ -44,11 +44,15 @@ async function fixture(page: Page, standalone = true, startAtHome = false) {
         text = c.receipt
           ? `결제가 완료됐어요. 주문번호는 ${c.receipt.number}번이에요.`
           : "결제가 승인되지 않았어요. 다시 시도할까요?";
-      } else if (["네", "ㅇㅇ"].includes(p.text)) {
+      } else if (["네", "ㅇㅇ", "그래", "맞아"].includes(p.text)) {
         state.phase = "checkout";
         state.view = "payment";
         state.confirmation_pending = false;
         text = "어떤 결제수단으로 하시겠어요?";
+      } else if (p.text === "아 매장에서 먹고갈래") {
+        state.place = "store";
+        state.confirmation_pending = false;
+        text = "매장으로 바꿨어요.";
       } else if (
         ["카드로 할게", "다시 해줘", "결제 취소해줘"].includes(p.text)
       ) {
@@ -95,7 +99,7 @@ async function fixture(page: Page, standalone = true, startAtHome = false) {
             estimated_cost_usd: reportedTurns * 0.0004,
           },
         },
-        needs_delivery: state.confirmation_pending,
+        needs_delivery: false,
         session_complete: !!c.receipt,
       });
       result = { ok: true, request_id: p.request_id };
@@ -293,7 +297,7 @@ test("Acknowledging a visible summary can interrupt its speech without losing co
     .click();
   await expect(page.locator(".payment-method")).toHaveCount(5);
   expect(f.interrupts.at(-1).reply_text).toBe("ㅇㅇ");
-  expect(f.interrupts.at(-1).confirmation_visible).toBe(true);
+  expect(f.interrupts.at(-1).confirmation_visible).toBe(false);
   expect(f.interrupts.at(-1).request_id).toBe(f.requests[0].request_id);
 });
 
@@ -506,4 +510,36 @@ test("Manual checkout asks for an unchosen order type without losing items", asy
   await page.getByRole("button", { name: "포장", exact: true }).click();
   await expect(page.locator(".payment-method")).toHaveCount(5);
   await expect(page.locator(".payment-total")).toContainText("3,200원");
+});
+
+test("Order-type correction and agreement advance even if speech fails and no ACK arrives", async ({
+  page,
+}) => {
+  const f = await fixture(page);
+  await page.route("**/agent-api/sessions/*/speech", (route) =>
+    route.fulfill({ status: 503, json: { error: "Speech unavailable" } }),
+  );
+  await page.getByRole("button", { name: "음성 켜기", exact: true }).click();
+  await f.say("이대로 결제해줘");
+  await expect(
+    page.getByRole("button", { name: "확인하고 결제하기", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".agent-chat-error")).toBeVisible();
+  await f.say("아 매장에서 먹고갈래");
+  await expect(page.locator(".place-switch")).toHaveText("매장");
+  await f.say("그래");
+  await expect(page.locator(".payment-method")).toHaveCount(5);
+  await expect(page.getByRole("log", { name: "주문 대화" })).not.toContainText(
+    "주문 내용을 다시 확인해",
+  );
+  expect(f.requests.at(-1).cart.place).toBe("store");
+  await f.say("카드로 할게");
+  await page.clock.runFor(3100);
+  await page.clock.runFor(1700);
+  await page.clock.runFor(1900);
+  await page.clock.runFor(1100);
+  await expect.poll(() => f.ended()).toBeGreaterThan(0);
+  await expect(page.getByRole("log", { name: "주문 대화" })).toContainText(
+    "안녕하세요",
+  );
 });

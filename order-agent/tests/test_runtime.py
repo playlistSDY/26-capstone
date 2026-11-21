@@ -112,11 +112,26 @@ class RuntimeTest(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(s.ui_context["editor"])
         self.assertTrue(result["state"]["confirmation_pending"])
 
+    async def test_order_type_correction_and_spoken_agreement_do_not_repeat_review(self):
+        s=OrderStore.demo();s.add("latte",2,Options(temperature="hot"));s.add("americano",1,Options(temperature="ice",size="large"));s.set_place("takeout")
+        c=Conversation(store=s,model=ScriptedModel([
+            [call("request_final_confirmation")],
+            [call("set_order_type",{"place":"store"})],
+            [speech("매장으로 바꿨어요. 이대로 결제할까요?")],
+            [call("open_checkout")]]))
+        await c.reply("이대로 결제해줘",emit=lambda e:None,defer_delivery=True)
+        await c.reply("아 매장에서 먹고갈래",emit=lambda e:None,defer_delivery=True)
+        self.assertIsNone(s.pending)
+        result=await c.reply("그래",emit=lambda e:None,defer_delivery=True)
+        self.assertEqual(result["state"]["phase"],"checkout")
+        self.assertEqual(result["state"]["place"],"store")
+        self.assertNotIn("다시 확인",result["text"])
+
     async def test_model_cannot_skip_confirmation(self):
         c = Conversation(model=ScriptedModel([[call("open_checkout")]]))
         result = await c.reply("그냥 결제해")
         self.assertEqual(result["state"]["phase"], "ordering")
-        self.assertIn("확인", result["text"])
+        self.assertIn("메뉴", result["text"])
 
     async def test_clear_order_removes_lines_and_invalidates_confirmation(self):
         s = OrderStore.demo(); s.set_place("store")
@@ -168,14 +183,14 @@ class RuntimeTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual("".join(event["text"] for event in events), result["text"])
         self.assertEqual(len(events), 2)
 
-    async def test_streamed_final_confirmation_waits_for_playback_ack(self):
+    async def test_method_selection_does_not_wait_for_playback_ack(self):
         s = OrderStore.demo()
         s.set_place("store"); s.add("latte", 1, Options(temperature="hot"))
         c = Conversation(store=s, model=ScriptedModel([[call("request_final_confirmation")]]))
         await c.reply("끝", emit=lambda event: None, defer_delivery=True)
         self.assertFalse(s.pending["delivered"])
         s.begin_turn("네")
-        with self.assertRaises(Exception): s.checkout()
+        self.assertFalse(s.checkout()["payment_executed"])
 
     async def test_interruption_preserves_partial_spoken_recommendation(self):
         started = asyncio.Event()

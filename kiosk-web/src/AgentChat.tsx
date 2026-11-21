@@ -160,9 +160,7 @@ export function AgentChat({
   const speech = useRef<AgentSpeech | null>(null);
   if (!speech.current)
     speech.current = new AgentSpeech(setSpeaking, () =>
-      setError(
-        "음성 재생에 실패했어요. ‘음성 끄기’를 누르면 화면의 안내로 계속할 수 있어요.",
-      ),
+      setError("음성 재생을 중단했어요. 화면의 안내로 계속 진행할게요."),
     );
   const latestConnection = useRef({ session, token: status?.token });
   latestConnection.current = { session, token: status?.token };

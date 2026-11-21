@@ -10,6 +10,13 @@ class PreferenceTest(unittest.TestCase):
     def add(self, product='latte', options=None, confirmed=(), defaults=False):
         return add_with_preferences(self.s, product, 1, options or Options(temperature='ice'), list(confirmed), defaults)
 
+    def test_optional_defaults_are_proposed_in_one_question(self):
+        result=self.add(confirmed=['temperature'])
+        self.assertIn('size',result['draft']['question_options'])
+        self.assertIn('ice',result['draft']['question_options'])
+        done=self.add(confirmed=result['draft']['question_options'])
+        self.assertTrue(done['added'])
+
     def test_missing_size_is_draft_not_cart(self):
         r = self.add(confirmed=['temperature'])
         self.assertEqual(r['draft']['next_option'], 'size')

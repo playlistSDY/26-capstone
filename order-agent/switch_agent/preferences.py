@@ -20,13 +20,15 @@ def important_options(product, options):
     return keys
 
 
-def question(key, options):
-    return {
-        "temperature": "따뜻하게 드릴까요, 차갑게 드릴까요?",
-        "size": "기본 크기로 드릴까요? 큰 크기는 500원 추가예요.",
-        "ice": "얼음은 보통으로 넣어 드릴까요?",
-        "sweetness": "당도는 기본으로 해 드릴까요? 덜 달게도 가능해요.",
-    }[key]
+def question(keys, options):
+    if keys[0] == "temperature":
+        return "따뜻하게 드릴까요, 차갑게 드릴까요?"
+    labels = {
+        "size": "기본 크기" if options.size == "regular" else "큰 크기",
+        "ice": {"normal":"얼음 보통", "less":"얼음 적게", "none":"얼음 없이"}[options.ice],
+        "sweetness": {"normal":"기본 당도", "less":"덜 달게", "none":"첨가 시럽 없이"}[options.sweetness],
+    }
+    return ", ".join(labels[key] for key in keys) + ", 이렇게 해 드릴까요?"
 
 
 def add_with_preferences(store, product_id, quantity, options, confirmed_options, use_defaults):
@@ -61,7 +63,8 @@ def add_with_preferences(store, product_id, quantity, options, confirmed_options
     if missing:
         draft = {"product_id": product_id, "name": product["name"], "quantity": quantity,
                  "options": values, "reviewed": reviewed, "next_option": missing[0],
-                 "question": question(missing[0], candidate)}
+                 "question_options": [missing[0]] if missing[0] == "temperature" else missing,
+                 "question": question([missing[0]] if missing[0] == "temperature" else missing, candidate)}
         store.item_drafts[product_id] = draft
         store.changed()
         return {"status": "needs_preference", "added": False, "draft": draft}

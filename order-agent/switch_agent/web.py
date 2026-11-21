@@ -194,7 +194,7 @@ class Bridge:
                     result["usage"] = {"turn":empty(),"session":dict(getattr(conversation,"session_usage",empty()))}
                 result["usage"] = {**result.get("usage", {"turn":empty(), "session":empty()}), "tts_turn":dict(record["tts_usage"]), "tts_session":dict(session["tts_usage"])}
                 record["usage"] = result["usage"]
-                emit({"type": "final", "ok": True, **result, "needs_delivery": conversation.store.final_confirmation_text is not None})
+                emit({"type": "final", "ok": True, **result, "needs_delivery": False})
             except asyncio.CancelledError:
                 conversation.store.pending = conversation.store.confirmation_at_turn_start = None
                 conversation.store.final_confirmation_text = None
@@ -319,13 +319,12 @@ class Bridge:
         return {"events": list(audio["events"][after:]), "done": audio["done"]}
 
     async def delivered(self, session_id, request_id):
+        # Compatibility acknowledgement, never a permission gate for checkout.
         session = self.sessions.get(session_id)
-        if not session or session["busy"] or not session["turns"] or next(reversed(session["turns"])) != request_id:
-            raise OrderError("최신 응답의 전달 상태만 확인할 수 있어요.")
-        record = session["turns"][request_id]
-        if record["interrupted"] or not record["done"] or not record["events"] or record["events"][-1]["type"] != "final":
-            raise OrderError("완료된 안내만 전달 확인할 수 있어요.")
-        session["conversation"].store.delivered()
+        if session and request_id == next(reversed(session["turns"]),None):
+            record = session["turns"][request_id]
+            if record["done"] and not record["interrupted"]:
+                session["conversation"].store.delivered()
         return {"ok": True}
 
     def submit(self, coroutine):

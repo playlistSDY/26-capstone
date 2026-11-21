@@ -71,14 +71,14 @@ test("Host final text replaces provisional audio", async () => {
   assert.equal(played.at(-1)!.text, "차가운 라떼 한 잔이에요.");
 });
 
-test("TTS playback failure blocks confirmation until explicit text mode", async () => {
+test("TTS playback failure falls back to visible text without blocking the flow", async () => {
   const { speech, played, errors } = fixture();
   let done = false;
   speech.finish("이대로 결제할까요?", () => (done = true));
   await tick();
   played[0].failed();
   assert.equal(errors.length, 1);
-  assert.equal(done, false);
+  assert.equal(done, true);
   speech.setEnabled(false);
   assert.equal(done, true);
 });

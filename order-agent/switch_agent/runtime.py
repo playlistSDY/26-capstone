@@ -35,7 +35,10 @@ class Conversation:
         )
 
     def instructions(self, ctx, agent):
-        return self.prompt + "\n현재 서버 주문 상태 JSON\n" + json.dumps(self.store.snapshot(), ensure_ascii=False)
+        stage = ""
+        if self.store.phase == "ordering" and (self.store.view == "review" or self.store.payment_ui.get("screen") == "cart"):
+            stage = "\n현재 주문 확인 화면이다. 고객의 동의/진행 요청에는 open_checkout으로 다음 단계로 이동한다. 같은 요약을 다시 확인받지 않는다. 이용 방법만 바꾸면 반영 후 바로 이동한다."
+        return stage + self.prompt + "\n현재 서버 주문 상태 JSON\n" + json.dumps(self.store.snapshot(), ensure_ascii=False)
 
     async def reply(self, text, emit=None, defer_delivery=False):
         async with self.lock:
@@ -77,7 +80,7 @@ class Conversation:
                         answer = f"{METHODS[action['method']]} 앱의 결제코드를 스캐너에 보여 주세요."
                     else:
                         answer = f"{METHODS[action['method']]}를 켜고 휴대폰을 리더기에 대 주세요."
-                elif self.store.phase == "checkout" and start_phase != "checkout":
+                elif self.store.phase == "checkout" and (start_phase != "checkout" or "checkout.opened" in str(result.final_output)):
                     answer = "결제수단을 선택해 주세요. 카드나 어떤 페이로 결제하시겠어요?"
                 elif self.store.phase == "handoff":
                     answer = "지금까지의 주문과 도움이 필요한 내용을 정리했어요. 아직 실제 직원 호출에는 연결되지 않았어요."
