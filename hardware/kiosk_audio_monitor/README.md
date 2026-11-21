@@ -8,20 +8,36 @@ USB 마이크 장치로 등록되는 방식이 아니라, 전용 수신 프로�
 
 `마이크_STT.command`를 더블클릭합니다. `order-agent/.env`의 기존 `OPENAI_API_KEY`를 읽으며 키를 출력하지 않습니다. ESP32 오디오 전송 스케치가 올라가 있으면 재업로드할 필요가 없습니다. 시리얼 모니터와 기존 마이크 듣기 프로그램은 먼저 닫아 주세요.
 
-기본은 버튼 없이 말하면 약 0.8초 무음 뒤 문장을 인식하는 자동 모드입니다. 터미널에 음량 막대·입력 수치와 `인식 결과 > …`를 표시합니다. 에너지 기준의 간단한 구간 분리라 주변 대화도 잡힐 수 있습니다. 조용한 곳에서 마이크와 15~20cm 거리를 두고 테스트하세요.
+기본은 버튼 없이 수음합니다. 로컬 Silero VAD와 동적 소음 문턱으로 말소리 후보를 잡고, 약 0.65초 무음에서 STT 조각을 나눕니다. 이는 명령 완료가 아닙니다. 추가 발화를 1.4초 더 기다리며 새 말이 들어오면 이어 붙입니다. 미완성으로 판단하면 마지막 조각 뒤 최대 6초까지 기다립니다. 터미널에 `인식 후보`와 최종 `전달할 문장 / 무시 / 대기 / 확인 필요`를 구분해 표시합니다.
+
+목소리 크기·음높이로 주문자를 고르지 않습니다. 말소리 여부와 주문 대상을 별도로 판단하며, 여러 사람의 메뉴 의논이 주문으로 전달되지 않도록 의미 필터를 거칩니다. 단일 마이크만으로 화자 신원을 확정할 수는 없습니다. [필터 구성과 현장 평가 계획](../../docs/agent/음성입력_필터_시제품.md)을 확인하세요.
 
 ```sh
 ./마이크_STT.command                    # 자동 수음
 ./마이크_STT.command --button           # 버튼을 누르고 말한 뒤 놓으면 인식
-./마이크_STT.command --threshold 400    # 주변 소음에 너무 자주 반응할 때
+./마이크_STT.command --join-wait 2     # 천천히 끊어 말할 때 추가 대기
+./마이크_STT.command --filter rules    # 외부 의미 모델 없이 보수적인 규칙 비교
+./마이크_STT.command --filter jev      # TYPESAFE_API_KEY를 설정한 경우
 ./마이크_STT.command --probe-seconds 4  # STT 호출 없이 USB 수음만 확인
 ```
 
-STT는 OpenAI의 `gpt-transcribe` 모델로 인터넷을 통해 처리합니다. 발화 오디오는 메모리의 WAV로 전송하며 원본 녹음은 디스크에 저장하지 않습니다. 주문 에이전트·장바구니·결제로 전달하지 않고 텍스트만 표시합니다. `OPENAI_STT_MODEL`이나 `--model`로 모델을 바꿀 수 있습니다. [공식 파일 음성 인식 문서](https://developers.openai.com/api/docs/guides/speech-to-text)
+STT는 OpenAI의 `gpt-transcribe` 모델로 인터넷을 통해 처리합니다. 발화 오디오는 메모리의 WAV로 전송하며 원본 녹음은 디스크에 저장하지 않습니다. 기본 의미 필터는 OpenAI `gpt-5.6-luna`이며, `TYPESAFE_API_KEY`가 있으면 Jev로 전환합니다. STT 요금 외에 의미 필터의 텍스트 API 요금이 추가됩니다. 규칙·비활성 비교는 `--filter rules` / `--filter none`으로 구분합니다. `none`은 필터 없이 후보를 통과시키는 비교용입니다.
 
-종료는 Ctrl+C이며 USB 포트를 해제합니다. 기본은 텍스트도 저장하지 않습니다. 진단이 필요할 때만 `--event-log <경로.jsonl>`로 수음 수치·인식 결과를 로컬에 남길 수 있습니다. 음성 전송은 발화당 최대 15초, 동시 API 요청은 하나이며 대기 발화는 두 개로 제한합니다. 느린 요청을 자동 재시도하지 않습니다.
+주문 에이전트·장바구니·결제로 전달하지 않고 텍스트와 판단만 표시합니다. `OPENAI_STT_MODEL`이나 `--model`로 STT 모델을, `OPENAI_FILTER_MODEL`로 OpenAI 의미 필터 모델을 바꿀 수 있습니다. [공식 파일 음성 인식 문서](https://developers.openai.com/api/docs/guides/speech-to-text)
 
-수동 설치는 `requirements-stt.txt`를 사용합니다. `numpy`, `pyserial`, `openai`만 필요하며 PC 스피커로 재생하지 않습니다. STT 테스트는 `.venv/bin/python -m unittest test_serial_stt test_audio_protocol`로 실행합니다.
+종료는 Ctrl+C이며 USB 포트를 해제합니다. 기본은 텍스트도 저장하지 않습니다. 진단이 필요할 때만 `--event-log <경로.jsonl>`로 수음 수치·인식 결과·판단·필터 사용량을 로컬에 남길 수 있습니다. STT는 조각당 최대 12초이며, 길이 제한으로 자른 조각은 명령 완료로 처리하지 않습니다. STT 요청은 한 번에 하나, 대기 조각은 두 개입니다. 의미 판단은 별도 스레드에서 처리하며 새 말이 들어오면 늦은 판단을 폐기합니다. 전송 누락·큐 초과·STT/필터 오류에는 부분 주문을 자동 전달하지 않습니다.
+
+수동 설치는 `requirements-stt.txt`를 사용합니다. `numpy`, `pyserial`, `openai`, `onnxruntime`이 필요하며 PyTorch나 GPU는 사용하지 않습니다. `models/`의 고정 버전 모델과 MIT 라이선스를 포함하고 런타임에 모델을 다운로드하지 않습니다. PC 스피커로 재생하지 않습니다.
+
+검증:
+
+```sh
+.venv/bin/python -m unittest test_voice_frontend test_serial_stt test_audio_protocol
+.venv/bin/python check_voice_noise.py             # 로컬 합성 소음 혼합, API 호출 없음
+.venv/bin/python check_speech_gate.py --live       # 실제 의미 필터 호출, 추가 요금
+```
+
+`check_voice_noise.py --speech-wav <실제발화.wav> --noise-wav <현장소음.wav>`로 같은 조건을 반복할 수 있습니다. 입력은 48kHz·16bit·모노 WAV입니다. 결과는 Git에서 제외한 `tmp/voice-gate/`에 남습니다. 합성 시험은 현장 성능·음성 인식 정확도·모든 화자 특성을 검증하지 않습니다.
 
 ## 1 보드에 오디오 전송 코드 업로드
 

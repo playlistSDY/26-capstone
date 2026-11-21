@@ -1,0 +1,19 @@
+{
+  "upstream": "snakers4/silero-vad",
+  "version": "6.2.1",
+  "revision": "7e30209a3e901f9842f81b225f3e93d8199902b1",
+  "files": [
+    {
+      "file": "silero-vad-v6.2.1.onnx",
+      "source": "https://raw.githubusercontent.com/snakers4/silero-vad/7e30209a3e901f9842f81b225f3e93d8199902b1/src/silero_vad/data/silero_vad.onnx",
+      "bytes": 2327524,
+      "sha256": "1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3"
+    },
+    {
+      "file": "Silero-LICENSE.txt",
+      "source": "https://raw.githubusercontent.com/snakers4/silero-vad/7e30209a3e901f9842f81b225f3e93d8199902b1/LICENSE",
+      "bytes": 1075,
+      "sha256": "2e63e9a38b6e8fc0c7bc37ce174caca1862870856c6daf5697cfb785e925520b"
+    }
+  ]
+}

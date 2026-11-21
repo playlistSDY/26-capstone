@@ -5,7 +5,7 @@ cd "$task_dir"
 if [[ ! -x .venv/bin/python ]]; then
   python3 -m venv .venv
 fi
-if ! .venv/bin/python -c 'import numpy, serial, openai' >/dev/null 2>&1; then
+if ! .venv/bin/python -c 'import numpy, serial, openai, onnxruntime' >/dev/null 2>&1; then
   .venv/bin/python -m pip install -r requirements-stt.txt
 fi
 .venv/bin/python -u serial_stt.py "$@" || {
