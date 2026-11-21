@@ -1,0 +1,20 @@
+{
+  "currency": "USD",
+  "unit": "per_million_tokens",
+  "checked_on": "2026-11-21",
+  "tier": "Standard",
+  "models": {
+    "gpt-6.2-sol": {
+      "source": "https://developers.openai.com/api/docs/models/gpt-6.2-sol",
+      "text": {"input": 2.0, "cached_input": 0.1, "cache_write": 2.5, "output": 10.0},
+      "long_context_threshold": 272000,
+      "long_input_multiplier": 2.0,
+      "long_output_multiplier": 1.5
+    },
+    "gpt-realtime-2.1-mini": {
+      "source": "https://developers.openai.com/api/docs/models/gpt-realtime-2.1-mini",
+      "text": {"input": 0.6, "cached_input": 0.06, "output": 2.4},
+      "audio": {"input": 10.0, "cached_input": 0.3, "output": 20.0}
+    }
+  }
+}

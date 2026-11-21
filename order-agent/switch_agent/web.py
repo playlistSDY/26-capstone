@@ -158,9 +158,14 @@ class Bridge:
         if session["busy"]:
             return {"ok": False, "error": "이전 답변을 처리하고 있어요. 잠시 기다려 주세요."}
         session["busy"] = True
-        record = {"hash": fingerprint, "events": [], "done": False, "task": None, "audio": {}, "interrupted": False, "tts_usage": empty()}
+        record = {"hash": fingerprint, "events": [], "done": False, "task": None, "audio": {}, "interrupted": False, "tts_usage": empty(), "started_at":time.perf_counter(), "first_text_ms":None}
 
         def emit(event):
+            elapsed = round((time.perf_counter()-record["started_at"])*1000)
+            if event["type"] == "text.delta" and record["first_text_ms"] is None:
+                record["first_text_ms"] = elapsed
+            if event["type"] in {"final","error","interrupted"}:
+                event = {**event,"timing":{"response_ms":elapsed,"first_text_ms":record["first_text_ms"]}}
             record["events"].append({**event, "sequence": len(record["events"]) + 1})
 
         async def run():

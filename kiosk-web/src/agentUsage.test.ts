@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mergeUsage, type UsageReport } from "./agentUsage";
+import {
+  mergeUsage,
+  formatEstimatedCost,
+  type UsageReport,
+} from "./agentUsage";
 const report: UsageReport = {
   turn: { input_tokens: 100, output_tokens: 20, total_tokens: 120 },
   session: { input_tokens: 200, output_tokens: 40, total_tokens: 240 },
@@ -26,4 +30,42 @@ test("Incomplete provider usage is explicitly retained", () => {
     session: { ...report.session, unreported_requests: 1 },
   });
   assert.equal(merged.session.unreported_requests, 1);
+});
+
+test("Costs include dialogue and audio with enough precision for short replies", () => {
+  assert.equal(
+    formatEstimatedCost(
+      {
+        input_tokens: 10,
+        output_tokens: 1,
+        total_tokens: 11,
+        estimated_cost_usd: 0.00003,
+      },
+      {
+        input_tokens: 1,
+        output_tokens: 1,
+        total_tokens: 2,
+        estimated_cost_usd: 0.00002,
+      },
+    ),
+    "예상 $0.000050",
+  );
+});
+test("Missing prices are marked instead of claiming the request is free", () => {
+  assert.equal(
+    formatEstimatedCost({
+      input_tokens: 1,
+      output_tokens: 1,
+      total_tokens: 2,
+      unpriced_requests: 1,
+    }),
+    "비용 미집계",
+  );
+});
+test("Older reports cannot reduce the cumulative estimated cost", () => {
+  const merged = mergeUsage(
+    { ...report, session: { ...report.session, estimated_cost_usd: 0.05 } },
+    { ...report, session: { ...report.session, estimated_cost_usd: 0.02 } },
+  );
+  assert.equal(merged.session.estimated_cost_usd, 0.05);
 });

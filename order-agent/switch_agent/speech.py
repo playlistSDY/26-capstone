@@ -59,7 +59,7 @@ class RealtimeSpeaker:
                             emit({'type': 'audio.delta', 'pcm': event.delta, 'sample_rate': 24000})
                         elif event.type == 'response.done':
                             from .usage import counts
-                            emit({'type':'audio.usage', 'counts':counts(event.response.usage)})
+                            emit({'type':'audio.usage', 'counts':counts(event.response.usage,self.model)})
                             if event.response.status != 'completed' or not received:
                                 raise OrderError('음성을 끝까지 만들지 못했어요.')
                             break

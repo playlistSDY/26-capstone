@@ -8,7 +8,11 @@ import { summary, totalPrice } from "./domain";
 import type { CartLine, Place, PaymentMethod } from "./domain";
 import "./agent-chat.css";
 import type { UiEvent } from "./agentUiEvents";
-import { mergeUsage, type UsageReport } from "./agentUsage";
+import {
+  mergeUsage,
+  formatEstimatedCost,
+  type UsageReport,
+} from "./agentUsage";
 import { AgentSpeech } from "./agentSpeech";
 import { streamAgentAudio, unlockAgentAudio } from "./agentAudio";
 
@@ -56,6 +60,7 @@ type Message = {
   text: string;
   id?: string;
   usage?: UsageReport;
+  elapsed_ms?: number;
 };
 type Pending = {
   request_id: string;
@@ -63,6 +68,7 @@ type Pending = {
   cart: ChatCart;
   session: string;
   payment_event?: boolean;
+  started_at?: number;
 };
 type Result = {
   ok: boolean;
@@ -72,6 +78,7 @@ type Result = {
   state?: AgentState;
   session_complete?: boolean;
   usage?: UsageReport;
+  timing?: { response_ms: number; first_text_ms: number | null };
 };
 type StreamEvent = Result & {
   type: "text.delta" | "final" | "error" | "interrupted";
@@ -353,6 +360,7 @@ export function AgentChat({
   async function submit(retry?: Pending, paymentEvent = false) {
     if (disabled && !paymentEvent) return;
     const submission = ++submissionSequence.current;
+    const submittedAt = performance.now();
     if (ttsEnabled) unlockAgentAudio();
     if (!status?.ready || (!retry && !paymentEvent && !text.trim())) return;
     if (sending.current || speaking || delivery.current) {
@@ -374,6 +382,8 @@ export function AgentChat({
     try {
       let id = retry?.session ?? latestConnection.current.session ?? session;
       if (!id) {
+        latestUsage.current = null;
+        setUsage(null);
         id = (
           await request<{ session_id: string }>("sessions", status.token, {})
         ).session_id;
@@ -388,6 +398,7 @@ export function AgentChat({
           payment_event: paymentEvent,
           cart: structuredClone(current.current),
           session: id,
+          started_at: submittedAt,
         };
         if (!paymentEvent) {
           setMessages((previous) => [
@@ -412,7 +423,10 @@ export function AgentChat({
           status.token,
           { request_id: audioRequest, text },
           signal,
-          (report) => recordUsage(audioRequest, report),
+          (report) => {
+            if (latestConnection.current.session === audioSession)
+              recordUsage(audioRequest, report);
+          },
         ),
       );
       setPending(operation);
@@ -520,6 +534,17 @@ export function AgentChat({
             }
             if (event.type === "final" && event.text) {
               setAssistant(event.text, false);
+              const elapsed =
+                operation.started_at === undefined
+                  ? event.timing?.response_ms
+                  : Math.round(performance.now() - operation.started_at);
+              setMessages((previous) =>
+                previous.map((message) =>
+                  message.id === operation!.request_id
+                    ? { ...message, elapsed_ms: elapsed }
+                    : message,
+                ),
+              );
               if (event.usage) recordUsage(operation.request_id, event.usage);
               if (event.needs_delivery)
                 delivery.current = {
@@ -707,16 +732,32 @@ export function AgentChat({
             <div key={index} className={`agent-chat-message ${message.role}`}>
               <span>{message.role === "user" ? "나" : "SWitch 점원"}</span>
               <p>{message.text}</p>
-              {message.usage && (
+              {(message.usage || message.elapsed_ms !== undefined) && (
                 <small
                   className="agent-token-usage"
                   title="대화 모델의 모든 도구 호출을 합친 제공자 사용량. 입력에는 대화 이력·도구 결과·캐시가 포함됩니다."
                 >
-                  입력 {message.usage.turn.input_tokens.toLocaleString()} · 출력{" "}
-                  {message.usage.turn.output_tokens.toLocaleString()} 토큰
-                  {message.usage.tts_turn
-                    ? ` · 음성 ${message.usage.tts_turn.total_tokens.toLocaleString()}`
-                    : ""}
+                  {message.usage && (
+                    <>
+                      입력 {message.usage.turn.input_tokens.toLocaleString()} ·
+                      출력 {message.usage.turn.output_tokens.toLocaleString()}{" "}
+                      토큰
+                      {message.usage.tts_turn
+                        ? ` · 음성 ${message.usage.tts_turn.total_tokens.toLocaleString()}`
+                        : ""}{" "}
+                      ·{" "}
+                      {formatEstimatedCost(
+                        message.usage.turn,
+                        message.usage.tts_turn,
+                      )}
+                    </>
+                  )}
+                  {message.elapsed_ms !== undefined && (
+                    <span title="전송부터 최종 텍스트 수신까지의 시간입니다. 네트워크와 끼어들기 처리를 포함하며 TTS 재생은 제외합니다.">
+                      {" "}
+                      · 응답 {message.elapsed_ms.toLocaleString()} ms
+                    </span>
+                  )}
                 </small>
               )}
             </div>
@@ -748,11 +789,12 @@ export function AgentChat({
         <div
           className="agent-session-usage"
           aria-label="세션 토큰 사용량"
-          title="실제 제공된 사용량만 집계합니다. 중단 후 제공되지 않은 토큰은 추정하지 않습니다. 음성 토큰과 대화 토큰은 별도 집계입니다."
+          title="실제 제공된 사용량만 집계합니다. 중단 후 제공되지 않은 토큰은 추정하지 않습니다. 비용은 OpenAI Standard 공개 단가의 USD 예상액이며 실제 청구서·세금·할인과 다를 수 있습니다."
         >
           <span>
             세션 대화 {(usage?.session.total_tokens ?? 0).toLocaleString()} ·
             음성 {(usage?.tts_session?.total_tokens ?? 0).toLocaleString()} 토큰
+            · {formatEstimatedCost(usage?.session, usage?.tts_session)}
           </span>
           {!!(
             (usage?.session.unreported_requests ?? 0) +
@@ -762,7 +804,12 @@ export function AgentChat({
             <span>
               이전 세션: 대화{" "}
               {previousUsage.session.total_tokens.toLocaleString()} · 음성{" "}
-              {(previousUsage.tts_session?.total_tokens ?? 0).toLocaleString()}
+              {(previousUsage.tts_session?.total_tokens ?? 0).toLocaleString()}{" "}
+              ·{" "}
+              {formatEstimatedCost(
+                previousUsage.session,
+                previousUsage.tts_session,
+              )}
             </span>
           )}
         </div>

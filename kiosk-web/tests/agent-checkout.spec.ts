@@ -82,11 +82,13 @@ async function fixture(page: Page, standalone = true) {
             input_tokens: turnTokens ? 100 : 0,
             output_tokens: turnTokens ? 20 : 0,
             total_tokens: turnTokens,
+            estimated_cost_usd: turnTokens ? 0.0004 : 0,
           },
           session: {
             input_tokens: reportedTurns * 100,
             output_tokens: reportedTurns * 20,
             total_tokens: reportedTurns * 120,
+            estimated_cost_usd: reportedTurns * 0.0004,
           },
         },
         needs_delivery: state.confirmation_pending,
@@ -399,6 +401,12 @@ test("Per-reply tokens and session totals are shown without counting UI events a
   );
   await expect(page.getByLabel("세션 토큰 사용량")).toContainText(
     "세션 대화 120",
+  );
+  await expect(page.locator(".agent-token-usage").last()).toContainText(
+    "예상 $0.000400",
+  );
+  await expect(page.locator(".agent-token-usage").last()).toContainText(
+    /응답 [\d,]+ ms/,
   );
   await f.say("네");
   await expect(page.getByLabel("세션 토큰 사용량")).toContainText(

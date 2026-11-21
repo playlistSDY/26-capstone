@@ -88,6 +88,7 @@ class BridgeTest(unittest.TestCase):
         events = self.bridge.submit(self.bridge.events(self.session, "turn-1", 1))
         self.assertEqual([event["type"] for event in events["events"]], ["text.delta", "final"])
         self.assertTrue(events["done"])
+        self.assertGreaterEqual(events["events"][-1]["timing"]["response_ms"],0)
 
     def test_interrupt_preserves_completed_mutation_and_stops_deltas(self):
         self.start(text="slow")

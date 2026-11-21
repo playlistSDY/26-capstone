@@ -25,6 +25,7 @@ class Conversation:
         model = model or os.environ.get("OPENAI_MODEL")
         if not model:
             raise ValueError("OPENAI_MODEL에 사용할 모델 ID를 설정해 주세요.")
+        self.model_id = model if isinstance(model,str) else os.environ.get("OPENAI_MODEL", "")
         self.agent = Agent(
             name="SWitch 주문 점원", model=model, tools=TOOLS,
             instructions=self.instructions,
@@ -100,7 +101,7 @@ class Conversation:
                 previous_text = content if isinstance(content, str) else "".join(part.get("text", "") for part in content if isinstance(part, dict))
                 if last.get("role") != "assistant" or previous_text != answer:
                     self.history.append({"role": "assistant", "content": answer})
-                turn_usage = counts(result.context_wrapper.usage)
+                turn_usage = counts(result.context_wrapper.usage,self.model_id)
                 add(self.session_usage, turn_usage)
                 self.last_usage = {"turn":turn_usage,"session":dict(self.session_usage)}
                 accounted = True
@@ -108,7 +109,7 @@ class Conversation:
             except (Exception, asyncio.CancelledError) as failure:
                 if not accounted:
                     reported = getattr(getattr(result,"context_wrapper",None),"usage",None)
-                    turn_usage = counts(reported)
+                    turn_usage = counts(reported,self.model_id)
                     if isinstance(failure,asyncio.CancelledError): turn_usage["unreported_requests"] += 1
                     add(self.session_usage,turn_usage)
                     self.last_usage = {"turn":turn_usage,"session":dict(self.session_usage)}
