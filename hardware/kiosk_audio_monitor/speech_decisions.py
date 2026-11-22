@@ -71,16 +71,16 @@ def rules(text, context):
 
 
 class OpenAIGate:
-    def __init__(self, api_key, model):
+    def __init__(self, api_key, model, timeout=4):
         from openai import OpenAI
-        self.client = OpenAI(api_key=api_key, timeout=4, max_retries=0)
+        self.client = OpenAI(api_key=api_key, timeout=timeout, max_retries=0)
         self.model = model
 
-    def decide(self, text, context):
-        protected = preserve_short_reply(text, context)
+    def decide(self, text, context, *, use_fast_path=True):
+        protected = preserve_short_reply(text, context) if use_fast_path else None
         if protected:
             return protected
-        direct = explicit_single_order(text, context)
+        direct = explicit_single_order(text, context) if use_fast_path else None
         if direct:
             return direct
         kwargs = {"reasoning": {"effort": "low"}} if self.model.startswith(("gpt-6", "gpt-5")) else {}
@@ -127,12 +127,13 @@ def jev_decision(response):
 
 
 class JevGate:
-    def __init__(self, api_key, ca_file, model="jev-latest"):
+    def __init__(self, api_key, ca_file, model="jev-latest", timeout=3):
         self.key, self.model = api_key, model
+        self.timeout = timeout
         self.ssl = ssl.create_default_context(cafile=str(ca_file))
 
-    def decide(self, text, context):
-        protected = preserve_short_reply(text, context)
+    def decide(self, text, context, *, use_fast_path=True):
+        protected = preserve_short_reply(text, context) if use_fast_path else None
         if protected:
             return protected
         body = {"model": self.model, "state": {"text": text, "context": context, "policy": INSTRUCTIONS}, "questions": {
@@ -140,7 +141,7 @@ class JevGate:
             "completion": {"type": "choice", "instructions": "이어서 말할 접속사인지. 단어/단답/대명사/수량도 그 자체로 점원에게 하는 대답이다. 주문 문법이나 메뉴 이름을 검사하지 않는다.", "criteria": {"complete": "문장/단어/단답/정정/참조/수량 등 에이전트가 문맥으로 이해할 수 있는 말", "incomplete": "그리고... 같은 분명히 이어질 접속사/말더듬기", "uncertain": "불명확하지만 버리면 안 되는 원문"}},
         }}
         request = urllib.request.Request("https://api.typesafe.ai/v1/systemone", data=json.dumps(body, ensure_ascii=False).encode(), headers={"Authorization": "Bearer " + self.key, "Content-Type": "application/json"})
-        with urllib.request.urlopen(request, timeout=3, context=self.ssl) as response:
+        with urllib.request.urlopen(request, timeout=self.timeout, context=self.ssl) as response:
             raw = response.read(65537)
         if len(raw) > 65536:
             raise ValueError("Jev response too large")
