@@ -57,7 +57,7 @@ class Worker:
         with self.lock:
             if self.running():
                 return
-            child = subprocess.Popen(self.command, cwd=HERE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", bufsize=1)
+            child = subprocess.Popen(self.command, cwd=HERE, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", bufsize=1, env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"})
             self.process = child
             self.hub.publish({"event": "worker.starting", "message": "ESP 수음기를 연결하고 있어요."})
             threading.Thread(target=self.read, args=(child,), daemon=True).start()
@@ -76,6 +76,7 @@ class Worker:
                 self.hub.publish(row)
         finally:
             child.stdout.close()
+            child.stdin.close()
             code = child.wait()
             if child is self.process:
                 self.hub.publish({"event": "worker.exited", "code": code, "message": "수음기를 종료했어요." if code == 0 else "연결을 확인하고 다시 시작해 주세요."})
@@ -85,6 +86,16 @@ class Worker:
             child = self.process
             if child is None or child.poll() is not None:
                 return
+            if any(Path(arg).name == "voice_relay.py" for arg in self.command):
+                # Cooperative exit also works on Windows, where terminate()
+                # skips finally blocks and would leave a server lease briefly.
+                try:
+                    child.stdin.write("stop\n")
+                    child.stdin.flush()
+                    child.wait(timeout=3)
+                    return
+                except (OSError, ValueError, subprocess.TimeoutExpired):
+                    pass
             child.terminate()
             try:
                 child.wait(timeout=4)
@@ -208,10 +219,22 @@ def main():
     parser.add_argument("--port", type=int, default=18733)
     parser.add_argument("--no-browser", action="store_true")
     parser.add_argument("--no-start", action="store_true", help="수음기를 자동 시작하지 않음")
+    parser.add_argument("--remote-config", type=Path, help="서버 수음 모드 설정 JSON (PC에서는 음성 추론하지 않음)")
+    parser.add_argument("--stop", action="store_true", help="이 음성 화면과 수음기만 종료")
     args = parser.parse_args()
     url = f"http://127.0.0.1:{args.port}/"
+    if args.stop:
+        with urllib.request.urlopen(url + "api/state", timeout=2) as response:
+            state = json.load(response)
+        if state.get("app") != APP_ID:
+            raise SystemExit("SWitch 음성 화면을 찾을 수 없습니다.")
+        request = urllib.request.Request(url + "api/shutdown", data=b"{}", headers={"Content-Type": "application/json", "X-Voice-Token": state["token"]})
+        with urllib.request.urlopen(request, timeout=8):
+            pass
+        return
+    command = [sys.executable, "-u", str(HERE / "voice_relay.py"), "--config", str(args.remote_config.resolve())] if args.remote_config else None
     try:
-        server = LabServer(("127.0.0.1", args.port))
+        server = LabServer(("127.0.0.1", args.port), command=command)
     except OSError:
         try:
             with urllib.request.urlopen(url + "api/state", timeout=2) as response:

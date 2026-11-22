@@ -3,8 +3,9 @@ const model = { token: '', cursor: 0, running: false, history: [], logs: [], det
 const labels = { 'worker.starting': '연결 시작', started: '수음 시작', ready: 'USB 연결됨', speech_started: '말소리 감지', audio_segment: '음성 구간 완료', recognizing: 'STT 시작', transcript: '인식 후보', filter_started: '전달할 말 판단', 'turn.accept': '문장 확정', 'turn.ignore': '무관한 말 · 무시', 'turn.wait': '이어지는 말 대기', 'turn.hold': '추가 발화 확인', 'turn.clarify': '확인 필요 · 보류', decision_stale: '새 발화 · 다시 판단', audio_rejected: '비음성 후보 제외', audio_gap: 'USB 입력 끊김', stt_error: 'STT 오류', filter_error: '의미 필터 오류', stopped: '수음 중지', 'worker.exited': '수음기 종료', level: '마이크 수치', busy: '처리 대기 초과', 'worker.log': '수음기 메시지' };
 const reasons = { ready: '키오스크에 전달할 말로 확인했어요.', unrelated_speech: '의논이나 주문과 관계없는 말로 판단했어요.', needs_more_words: '말이 이어질 수 있어 조금 더 기다려요.', unclear_target: '누구에게 한 말인지 아직 분명하지 않아요.', mixed_or_ambiguous: '여러 의도가 섞여 자동 전달을 보류했어요.', continuation_window: '의미 판단은 끝났고 추가 발화만 확인해요.', incomplete_timeout: '충분히 기다렸지만 문장을 확정하지 못했어요.', audio_or_transcription_incomplete: '입력이 끊겨 일부 단어만 전달하지 않았어요.', filter_unavailable: '필터 응답을 확인하지 못해 전달하지 않았어요.', empty_transcript: '인식된 문장이 없어요.', filter_disabled: '비교용으로 필터가 꺼져 있어요.' };
 reasons.context_for_agent = '단답·참조·정정의 뜻은 에이전트가 문맥으로 이해하도록 원문을 넘겨요.';
+Object.assign(labels, { 'remote.connecting': '서버 연결 중', 'remote.connected': '서버 처리 연결됨', 'remote.error': '서버 연결 오류', 'remote.closed': '서버 연결 종료' });
 reasons.partial_for_agent = '더 이어지는 말이 없어 지금까지 들은 원문을 에이전트에게 넘겨요.';
-function routeName(row) { return row.usage?.route === 'local_explicit_order' ? '로컬 빠른 판별' : row.usage?.route === 'local_conversation' ? '단답 · 문맥 전달' : row.usage?.model ? '의미 모델' : '문맥 확인'; }
+function routeName(row) { return row.usage?.route === 'local_explicit_order' ? (row.processing === 'server' ? '서버 빠른 판별' : '로컬 빠른 판별') : row.usage?.route === 'local_conversation' ? '단답 · 문맥 전달' : row.usage?.model ? '의미 모델' : '문맥 확인'; }
 function el(tag, className, text) { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; }
 function duration(seconds) { return typeof seconds !== 'number' || !Number.isFinite(seconds) ? '—' : seconds < 1 ? `${Math.round(seconds * 1000)}ms` : `${seconds.toFixed(2)}s`; }
 function clock(seconds) { return new Date(seconds * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }); }
@@ -57,6 +58,9 @@ function apply(row, replay = false) {
   switch (row.event) {
     case 'worker.starting': model.running = true; caption('마이크를 연결하고 있어요'); break;
     case 'started': model.running = true; break;
+    case 'remote.connecting': caption('음성 서버에 연결하고 있어요'); break;
+    case 'remote.connected': caption('서버에 마이크를 연결했어요', '말소리 판단과 문장 처리는 서버에서 진행해요.'); break;
+    case 'remote.error': case 'remote.closed': caption('연결을 확인해 주세요', row.message); break;
     case 'ready': step('capture', 'active', '말을 기다리는 중'); caption('듣고 있어요', '평소 목소리로 말씀해 주세요.'); break;
     case 'speech_started':
       step('capture', 'active', '말소리를 수집하고 있어요', null); step('stt', '', '다음 음성 구간 대기', null); step('merge', '', '발화가 이어지는지 확인', null); step('filter', '', '판단 대기', null);

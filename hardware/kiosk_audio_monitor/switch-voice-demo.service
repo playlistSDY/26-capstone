@@ -1,0 +1,18 @@
+[Unit]
+Description=SWitch microphone web connection demo
+After=network-online.target switch-voice-server.service
+Wants=network-online.target switch-voice-server.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/sdy/previews/switch-voice-20261122/hardware/kiosk_audio_monitor
+EnvironmentFile=/home/sdy/.config/switch-voice/device.env
+EnvironmentFile=/home/sdy/.config/switch-voice/demo.env
+Environment=PYTHONUTF8=1
+ExecStart=/home/sdy/previews/switch-voice-20261122/.venv/bin/python voice_demo_server.py --package /home/sdy/previews/switch-voice-20261122/downloads/SWitch-Voice-ThinClient.zip
+Restart=on-failure
+RestartSec=3
+UMask=0077
+
+[Install]
+WantedBy=default.target

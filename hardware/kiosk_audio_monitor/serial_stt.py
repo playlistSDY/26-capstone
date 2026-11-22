@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import queue
 import signal
+import sys
 import threading
 import time
 import wave
@@ -21,6 +22,30 @@ from voice_frontend import Silero, SpeechCapture, TurnBuffer, Candidate, Decisio
 from speech_decisions import OpenAIGate, JevGate, rules
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+class StdinAudio:
+    """Server-side framed PCM input with interruptible reads (Linux/macOS)."""
+
+    in_waiting = 8192
+
+    def open(self):
+        pass
+
+    def reset_input_buffer(self):
+        pass
+
+    def read(self, size):
+        import select
+        if not select.select([sys.stdin.buffer], [], [], .05)[0]:
+            return b""
+        data = os.read(sys.stdin.fileno(), size)
+        if not data:
+            raise EOFError("음성 전송 연결이 종료됐습니다.")
+        return data
+
+    def close(self):
+        pass
 
 
 def load_environment(path):
@@ -147,6 +172,7 @@ def main():
 
     parser = argparse.ArgumentParser(description="ESP32 마이크 한국어 STT (Ctrl+C 종료)")
     parser.add_argument("--port")
+    parser.add_argument("--pcm-stdin", action="store_true", help="서버 모드: USB 대신 표준입력에서 같은 PCM 패킷을 수신")
     parser.add_argument("--button", action="store_true", help="버튼을 누른 동안만 수음하고 놓으면 인식")
     parser.add_argument("--threshold", type=float, default=70, help="동적 에너지 문턱의 최솟값. 신경망 말소리 판정과 함께 사용")
     parser.add_argument("--vad-gain", type=float, default=8, help="VAD 모델 입력만 보정하는 배율, 기본 8. 녹음·스피커 음량은 그대로")
@@ -179,7 +205,7 @@ def main():
         for port in ports:
             print(f"{port.device}: {port.description}")
         return 0
-    if not args.port:
+    if not args.port and not args.pcm_stdin:
         matches = [p.device for p in ports if p.vid == 0x303A]
         if len(matches) != 1:
             parser.error("ESP32 한 대를 연결하거나 --port로 지정해 주세요.")
@@ -273,14 +299,14 @@ def main():
     level_rms_peak = level_speech_peak = 0.0
     last_meter = 0.0
     began = last_valid = last_status = time.monotonic()
-    link = serial.Serial(port=None, baudrate=921600, timeout=.05, exclusive=os.name != "nt")
+    link = StdinAudio() if args.pcm_stdin else serial.Serial(port=None, baudrate=921600, timeout=.05, exclusive=True)
     # Native USB/JTAG: do not assert RTS and DTR together and reset the board.
     link.dtr = True
     link.rts = False
     link.port = args.port
     try:
         link.open()
-        if os.name == "posix":
+        if os.name == "posix" and not args.pcm_stdin:
             import fcntl
             import termios
             # Also block programs that do not cooperate with pySerial's flock.
@@ -307,7 +333,7 @@ def main():
                 if last_valid < warmup_end:
                     continue  # Drain stale USB packets before measuring gaps.
                 if not packets:
-                    display.emit("ready", "✓ USB 음성 수신 중. 이제 말씀해 주세요.")
+                    display.emit("ready", "✓ 서버에서 음성을 처리 중. 이제 말씀해 주세요." if args.pcm_stdin else "✓ USB 음성 수신 중. 이제 말씀해 주세요.", processing="server" if args.pcm_stdin else "local")
                 packets += 1
                 if previous is not None:
                     delta = (frame.sequence - previous) & 0xFFFFFFFF

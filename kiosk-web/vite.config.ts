@@ -7,6 +7,7 @@ const agentTarget =
   process.env.SWITCH_AGENT_TARGET ??
   "https://temp.sdy.world/980d563c-35d0-4ee2-9de0-161a08901e29";
 const agentPrefix = `${base}agent-api`;
+const voicePrefix = `${base}voice-api`;
 
 export default defineConfig({
   plugins: [react()],
@@ -19,6 +20,13 @@ export default defineConfig({
         }
       : {}),
     proxy: {
+      [voicePrefix]: {
+        target: "http://127.0.0.1:18734",
+        changeOrigin: true,
+        rewrite: (requestPath) => requestPath.slice(base.length - 1),
+        timeout: 120000,
+        proxyTimeout: 120000,
+      },
       [agentPrefix]: {
         target: agentTarget,
         changeOrigin: true,

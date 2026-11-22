@@ -1,0 +1,5 @@
+{
+  "server_url": "https://YOUR-SERVER/voice-api",
+  "device_token": "REPLACE_WITH_PRIVATE_DEVICE_TOKEN_32_CHARS_OR_MORE",
+  "serial_port": ""
+}
