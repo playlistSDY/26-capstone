@@ -82,6 +82,20 @@ class TransportTests(unittest.TestCase):
             self.assertEqual(os.environ["OPENAI_STT_MODEL"], "gpt-transcribe")
             self.assertNotIn("EVIL", os.environ)
 
+    def test_reported_token_and_duration_usage_are_kept_without_fabrication(self):
+        client = Mock()
+        result = client.audio.transcriptions.create.return_value
+        result.text = " 아이스 라떼 "
+        for usage, expected in [
+            ({"input_tokens": 21, "output_tokens": 7, "total_tokens": 28, "private": "hidden"}, {"input_tokens": 21, "output_tokens": 7, "total_tokens": 28}),
+            ({"type": "duration", "seconds": 1.2}, {"type": "duration", "seconds": 1.2}),
+            (None, {}),
+        ]:
+            result.usage = usage
+            text, actual = transcribe(client, "gpt-transcribe", block(1000), with_usage=True)
+            self.assertEqual(text, "아이스 라떼")
+            self.assertEqual(actual, expected)
+
     def test_current_and_legacy_models_receive_correct_language_hint(self):
         client = Mock()
         client.audio.transcriptions.create.return_value.text = " 아이스 라떼 주세요 "

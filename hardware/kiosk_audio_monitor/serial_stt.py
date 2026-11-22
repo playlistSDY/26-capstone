@@ -18,7 +18,7 @@ import numpy as np
 
 from audio_protocol import FrameDecoder, SAMPLE_RATE
 from audio_playback import AudioProcessor
-from voice_frontend import Silero, SpeechCapture, TurnBuffer, Candidate, Decision
+from voice_frontend import Silero, SpeechCapture, TurnBuffer, Candidate, Decision, DropoutGuard
 from speech_decisions import OpenAIGate, JevGate, rules
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -153,7 +153,7 @@ class Display:
                     stream.write(json.dumps(event, ensure_ascii=False) + "\n")
 
 
-def transcribe(client, model, pcm):
+def transcribe(client, model, pcm, *, with_usage=False):
     hints = {"languages": ["ko"]} if model == "gpt-transcribe" else {}
     legacy = {"language": "ko"} if model != "gpt-transcribe" else {}
     result = client.audio.transcriptions.create(
@@ -162,7 +162,18 @@ def transcribe(client, model, pcm):
         extra_body=hints,
         **legacy,
     )
-    return result.text.strip()
+    text = result.text.strip()
+    if not with_usage:
+        return text
+    value = getattr(result, "usage", None)
+    if hasattr(value, "model_dump"):
+        value = value.model_dump()
+    elif value is not None and not isinstance(value, dict) and hasattr(value, "__dict__"):
+        value = vars(value)
+    if not isinstance(value, dict):
+        value = {}
+    usage = {key: value[key] for key in ["input_tokens", "output_tokens", "total_tokens", "seconds", "type"] if type(value.get(key)) in (int, float, str)}
+    return text, usage
 
 
 def main():
@@ -176,6 +187,7 @@ def main():
     parser.add_argument("--button", action="store_true", help="버튼을 누른 동안만 수음하고 놓으면 인식")
     parser.add_argument("--threshold", type=float, default=70, help="동적 에너지 문턱의 최솟값. 신경망 말소리 판정과 함께 사용")
     parser.add_argument("--vad-gain", type=float, default=8, help="VAD 모델 입력만 보정하는 배율, 기본 8. 녹음·스피커 음량은 그대로")
+    parser.add_argument("--noise-suppression", choices=["none", "rnnoise"], default=os.getenv("SWITCH_AUDIO_DENOISE", "none"), help="서버 전용 잡음 억제 VAD 보조 경로. STT 원음은 유지")
     parser.add_argument("--silence", type=float, default=.45, help="STT 조각 분리용 무음 시간(명령 완료 아님)")
     parser.add_argument("--join-wait", type=float, default=1.0, help="추가 발화 합치기 대기(초), 의미 판단과 병렬")
     parser.add_argument("--incomplete-wait", type=float, default=6, help="미완성 문장 최대 대기(초)")
@@ -243,14 +255,15 @@ def main():
             started = time.monotonic()
             display.emit("recognizing", "\n… 음성을 글자로 바꾸는 중", seconds=round(len(pcm) / 96000, 2), turn_id=token[0], segment=token[1])
             try:
-                text = transcribe(client, model, pcm)
+                text, usage = transcribe(client, model, pcm, with_usage=True)
                 elapsed = round(time.monotonic() - started, 3)
+                display.emit("stt_usage", "STT API response", turn_id=token[0], segment=token[1], model=model, provider="openai", elapsed=elapsed, usage=usage, audio_seconds=round(len(pcm) / 96000, 3), api_call=True)
                 if not stopped.is_set() and turns.transcript(token, text, now=time.monotonic(), stt_seconds=elapsed):
                     display.emit("transcript", f"\n  인식 후보 > {text or '(인식된 말 없음)'}\n  STT {elapsed}초 · 아직 에이전트에 전달하지 않음\n", text=text, elapsed=elapsed, turn_id=token[0], segment=token[1])
             except Exception as error:
                 turns.transcript(token, "", failed=True)
                 # Never print response bodies or request headers containing credentials.
-                display.emit("stt_error", f"STT 실패: {type(error).__name__} (HTTP {getattr(error, 'status_code', '?')}). 다음 발화를 기다립니다.", error=type(error).__name__, status=getattr(error, "status_code", None))
+                display.emit("stt_error", f"STT failed: {type(error).__name__}", error=type(error).__name__, status=getattr(error, "status_code", None), turn_id=token[0], segment=token[1])
             finally:
                 pending.task_done()
 
@@ -278,22 +291,27 @@ def main():
                 else:
                     decision = gate.decide(candidate.text, candidate.context)
             except Exception as error:
-                display.emit("filter_error", f"필터 판단 실패: {type(error).__name__}. 자동 전달하지 않습니다.", error=type(error).__name__)
+                display.emit("filter_error", f"Gate failed: {type(error).__name__}", error=type(error).__name__, turn_id=candidate.turn_id, revision=candidate.revision)
                 decision = Decision("clarify", "filter_unavailable")
+            elapsed = round(time.monotonic() - started, 3)
+            route = (decision.usage or {}).get("route", "")
+            display.emit("filter_usage", "Gate decision", turn_id=candidate.turn_id, revision=candidate.revision, provider=provider, model=getattr(gate, "model", provider), elapsed=elapsed, usage=decision.usage or {}, api_call=gate is not None and not route.startswith("local_") and decision.reason != "filter_unavailable")
             if stopped.is_set():
                 return
             result = turns.apply(candidate, decision, time.monotonic(), filter_seconds=round(time.monotonic() - started, 3))
             if result:
                 emit_turn(result, candidate, decision.usage, round(time.monotonic() - started, 3))
             else:
-                display.emit("decision_stale", "추가 발화가 들어와 이전 판단을 폐기하고 이어 듣습니다.")
+                display.emit("decision_stale", "New audio invalidated the previous decision.", turn_id=candidate.turn_id, revision=candidate.revision)
 
     worker = threading.Thread(target=recognize, daemon=True)
     decision_worker = threading.Thread(target=decide_turns, daemon=True)
     decoder = FrameDecoder()
     processor = AudioProcessor()
-    vad = Silero(input_gain=args.vad_gain)
+    from noise_frontend import SpeechDetector
+    vad = SpeechDetector(input_gain=args.vad_gain, denoise=args.noise_suppression)
     utterances = SpeechCapture(button=args.button, minimum=args.threshold, silence=args.silence)
+    dropout = DropoutGuard()
     packets = gaps = 0
     previous = None
     level_rms_peak = level_speech_peak = 0.0
@@ -317,7 +335,7 @@ def main():
             worker.start()
             decision_worker.start()
         mode = "버튼을 누르고 말한 뒤 놓아 주세요" if args.button else "버튼 없이 말해 주세요. 말을 멈추면 자동 인식합니다"
-        display.emit("started", f"\nSWitch ESP32 → Silero VAD → STT → 발화 합치기·필터\n포트: {args.port}\nSTT: {model} / 필터: {provider} / VAD 입력 보정: {args.vad_gain:g}배\n{mode}\n후보는 표시하고, 합친 뒤 전달/무시/대기/확인 필요로 구분합니다.\n아직 주문 에이전트·결제로 전송하지 않습니다. 원본 녹음은 저장하지 않습니다.\n종료: Ctrl+C\n", port=args.port, model=model, filter=provider, vad_gain=args.vad_gain)
+        display.emit("started", f"\nSWitch ESP32 → Silero VAD → STT → 발화 합치기·필터\n포트: {args.port}\nSTT: {model} / 필터: {provider} / VAD 입력 보정: {args.vad_gain:g}배\n{mode}\n후보는 표시하고, 합친 뒤 전달/무시/대기/확인 필요로 구분합니다.\n아직 주문 에이전트·결제로 전송하지 않습니다. 원본 녹음은 저장하지 않습니다.\n종료: Ctrl+C\n", port=args.port, model=model, filter=provider, gate_model=getattr(gate, "model", provider), vad_gain=args.vad_gain, noise_suppression=vad.mode)
         while not stopped.is_set():
             try:
                 data = link.read(max(1, min(link.in_waiting, 8192)))
@@ -344,6 +362,7 @@ def main():
                             utterances.reset()
                             vad.reset()
                             turns.cancel()
+                            dropout.interrupt()
                             display.emit("audio_gap", "USB 음성이 크게 끊겨 미완성 발화는 전달하지 않았어요. 다시 말씀해 주세요.")
                 previous = frame.sequence
                 samples = processor.process(frame.pcm, True)
@@ -351,24 +370,30 @@ def main():
                     level_rms_peak = max(level_rms_peak, rms)
                     level_speech_peak = max(level_speech_peak, probability)
                     was_active = utterances.active
-                    chunk = utterances.feed(raw, rms, probability, frame.pressed)
+                    if dropout.feed(probability):
+                        chunk = None
+                        if not dropout.blocked:
+                            utterances.reset()
+                            display.emit("audio_resumed", "Audio stable. Repeat the interrupted utterance.")
+                    else:
+                        chunk = utterances.feed(raw, rms, probability, frame.pressed)
                     if utterances.active and not was_active and client:
                         turn_id, revision = turns.speech_started(time.monotonic())
                         display.emit("speech_started", "\n● 말소리 후보 수음 중…", turn_id=turn_id, revision=revision)
                     if chunk and client:
                         token = turns.audio_finished(time.monotonic(), chunk.continuing, voice_end=time.monotonic() - chunk.quiet_seconds)
                         if token and chunk.pcm:
-                            display.emit("audio_segment", "음성 구간 수집 완료", turn_id=token[0], segment=token[1], endpoint_seconds=round(chunk.quiet_seconds, 3), continuing=chunk.continuing)
+                            display.emit("audio_segment", f"STT 음성 구간 {len(chunk.pcm) / 96000:.2f}초 · 앞부분 보관 {chunk.pre_roll_seconds:.2f}초", turn_id=token[0], segment=token[1], endpoint_seconds=round(chunk.quiet_seconds, 3), continuing=chunk.continuing, audio_seconds=round(len(chunk.pcm) / 96000, 3), pre_roll_seconds=round(chunk.pre_roll_seconds, 3), voiced_seconds=round(chunk.voiced_seconds, 3), noise_suppression=vad.mode)
                             try:
                                 pending.put_nowait((token, chunk.pcm))
                             except queue.Full:
                                 turns.transcript(token, "", failed=True)
-                                display.emit("busy", "수음 처리가 밀려 이 발화 전체를 전달 보류합니다. 다시 말씀해 주세요.")
+                                display.emit("busy", "수음 처리가 밀려 이 발화 전체를 전달 보류합니다. 다시 말씀해 주세요.", turn_id=token[0], segment=token[1])
                         elif token:
                             turns.transcript(token, "")
-                            display.emit("audio_rejected", "짧은 비음성 후보를 STT 전에 걸렀어요.")
+                            display.emit("audio_rejected", "짧은 비음성 후보를 STT 전에 걸렀어요.", turn_id=token[0], segment=token[1])
                     if args.json_events and last_valid - last_meter >= .12:
-                        display.emit("meter", "", rms=round(rms), threshold=round(utterances.threshold), probability=round(probability, 3), active=utterances.active, noise=round(utterances.floor.noise))
+                        display.emit("meter", "", rms=round(rms), threshold=round(utterances.threshold), probability=round(probability, 3), raw_probability=round(vad.last_raw_probability, 3), enhanced_probability=round(vad.last_enhanced_probability, 3), noise_suppression=vad.mode, active=utterances.active, noise=round(utterances.floor.noise))
                         last_meter = last_valid
                     if last_valid - last_status >= 1:
                         bar = "█" * min(24, int(rms / max(utterances.threshold, 1) * 6))
@@ -385,6 +410,7 @@ def main():
     finally:
         stopped.set()
         link.close()
+        vad.close()
         if worker.is_alive():
             worker.join(timeout=.5)
         if decision_worker.is_alive():

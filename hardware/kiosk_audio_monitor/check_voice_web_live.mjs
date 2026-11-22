@@ -14,11 +14,12 @@ if (!pcm) throw new Error('Missing WAV data');
 const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--mute-audio'] });
 let page;
 try {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1120 } });
+  const context = await browser.newContext({ viewport: { width: 1000, height: 1600 } });
   await context.addInitScript((base64) => {
     const source = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)); let cursor = 0, sequence = 0, timer;
     const crc = (bytes) => { let v = 0xffffffff; for (const b of bytes) { v ^= b; for (let k = 0; k < 8; k++) v = (v >>> 1) ^ ((v & 1) ? 0xedb88320 : 0); } return (v ^ 0xffffffff) >>> 0; };
     const serial = new EventTarget();
+    serial.getPorts = async () => [];
     serial.requestPort = async () => {
       let controller;
       return { readable: new ReadableStream({ start(c) { controller = c; }, cancel() { clearInterval(timer); } }), open: async () => {}, close: async () => clearInterval(timer), setSignals: async () => {
@@ -41,14 +42,16 @@ try {
   await page.goto(`${config.url}#access=${config.access}`);
   await expect(page.locator('#connect')).toBeEnabled({ timeout: 12000 });
   await page.locator('#connect').click();
-  await expect(page.locator('#processing-state')).toHaveText('음성 처리 중', { timeout: 12000 });
+  await expect(page.locator('#processing-state')).toHaveText('RUNNING', { timeout: 12000 });
   await page.evaluate(() => { window.startFixture = true; });
   await expect(page.locator('.bubble').first()).toContainText('아이스 아메리카노', { timeout: 25000 });
+  await expect(page.locator('#speech-status')).toHaveText('PASS', { timeout: 12000 });
+  await expect(page.locator('#api-calls')).not.toHaveText('0');
   const folder = path.join(root, 'tmp/voice-web-live-qa'); await mkdir(folder, { recursive: true });
   await page.screenshot({ path: path.join(folder, 'deployed-connected.png'), fullPage: true });
-  const result = { actualPublicHTTPS: true, actualSTT: true, syntheticUSB: true, physicalESPTested: false, text: await page.locator('.bubble p').first().textContent(), timing: await page.locator('#timing').textContent(), errors, apiFailures };
-  await page.locator('#processing-toggle').click(); await expect(page.locator('#processing-toggle')).toHaveText('음성 처리 재개'); await expect(page.locator('#processing-toggle')).toBeEnabled();
-  await expect(page.locator('#connection-status')).toHaveText('마이크 연결됨');
+  const result = { actualPublicHTTPS: true, actualSTT: true, syntheticUSB: true, physicalESPTested: false, text: await page.locator('.bubble p').first().textContent(), timing: await page.locator('#timing').textContent(), tokens: await page.locator('#tokens-total').textContent(), usageUnknown: await page.locator('#usage-unknown').textContent(), apiResponses: await page.locator('#api-calls').textContent(), sttP50: await page.locator('#stt-p50').textContent(), gateP50: await page.locator('#filter-p50').textContent(), denoise: await page.locator('#denoise-mode').textContent(), gate: await page.locator('#gate-model').textContent(), errors, apiFailures };
+  await page.locator('#processing-toggle').click(); await expect(page.locator('#processing-toggle')).toHaveText('RESUME'); await expect(page.locator('#processing-toggle')).toBeEnabled();
+  await expect(page.locator('#connection-status')).toHaveText('USB CONNECTED');
   result.pausePreservedUSB = true; result.stopReleased = true; await writeFile(path.join(folder, 'result.json'), JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result));
   if (errors.length || apiFailures.length) throw new Error('Live web check failed');

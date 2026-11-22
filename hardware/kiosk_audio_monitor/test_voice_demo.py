@@ -91,7 +91,7 @@ class DemoTests(unittest.TestCase):
         self.assertEqual(self.call("POST", "/api/auth", b"{}", {"Origin": "https://untrusted.example"})[0], 403)
 
     def test_static_assets_never_contain_private_credentials(self):
-        for path in ["/", "/app.js", "/audio_stream.js", "/styles.css", "/avatar.png", "/font.woff2"]:
+        for path in ["/", "/app.js", "/audio_stream.js", "/debug_view.js", "/styles.css", "/avatar.png", "/font.woff2"]:
             status, headers, body = self.call("GET", path)
             self.assertEqual(status, 200)
             self.assertNotIn(TOKEN.encode(), body)

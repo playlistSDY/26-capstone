@@ -221,7 +221,7 @@ class Handler(BaseHTTPRequestHandler):
                 while data := source.read(65536):
                     self.wfile.write(data)
             return
-        files = {"/": (HERE / "web_demo/index.html", "text/html; charset=utf-8"), "/app.js": (HERE / "web_demo/app.js", "text/javascript; charset=utf-8"), "/audio_stream.js": (HERE / "web_demo/audio_stream.js", "text/javascript; charset=utf-8"), "/styles.css": (HERE / "web_demo/styles.css", "text/css; charset=utf-8"), "/avatar.png": (HERE / "dashboard/avatar.png", "image/png"), "/font.woff2": (ROOT / "kiosk-web/public/assets/fonts/PretendardVariable.woff2", "font/woff2")}
+        files = {"/debug_view.js": (HERE / "web_demo/debug_view.js", "text/javascript; charset=utf-8"), "/": (HERE / "web_demo/index.html", "text/html; charset=utf-8"), "/app.js": (HERE / "web_demo/app.js", "text/javascript; charset=utf-8"), "/audio_stream.js": (HERE / "web_demo/audio_stream.js", "text/javascript; charset=utf-8"), "/styles.css": (HERE / "web_demo/styles.css", "text/css; charset=utf-8"), "/avatar.png": (HERE / "dashboard/avatar.png", "image/png"), "/font.woff2": (ROOT / "kiosk-web/public/assets/fonts/PretendardVariable.woff2", "font/woff2")}
         item = files.get(url.path)
         if not item:
             return self.send(404, {"error": "not_found"})

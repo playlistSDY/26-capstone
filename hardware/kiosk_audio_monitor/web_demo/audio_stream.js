@@ -13,7 +13,7 @@ export class AudioStream {
   open() {
     if (!this.active) return;
     const epoch = ++this.epoch;
-    this.onStatus('connecting', this.retries ? '서버에 다시 연결하고 있어요. USB 마이크는 유지돼요.' : '음성 서버에 연결하고 있어요.');
+    this.onStatus('connecting', this.retries ? 'Reconnecting server. USB retained.' : 'Connecting speech server.');
     let socket;
     try { socket = this.socket = new WebSocket(this.url); }
     catch { void this.recover(epoch); return; }
@@ -27,7 +27,7 @@ export class AudioStream {
           clearTimeout(this.deadline); this.session = row.session; this.ready = true;
           const recovered = this.retries > 0; this.retries = 0;
           this.onReady(row.session);
-          this.onStatus('ready', recovered ? '서버 연결을 복구했어요. 끊겼을 때 하신 말은 다시 말씀해 주세요.' : '연결됐어요. 평소 목소리로 자유롭게 말씀해 주세요.');
+          this.onStatus('ready', recovered ? 'Stream recovered. Repeat speech lost during reconnect.' : 'Stream ready.');
         } else if (row.event === 'stream.error') {
           this.onStatus('waiting', row.message); void this.recover(epoch, row.message);
         } else if (row.event === 'remote.closed') {
@@ -42,7 +42,7 @@ export class AudioStream {
     if (!this.active || !this.ready) return;
     this.chunks.push(data); this.bytes += data.length;
     if (this.bytes + (this.socket?.bufferedAmount || 0) > this.maximumBytes) {
-      void this.recover(this.epoch, '전송 지연이 길어 서버 연결을 새로 잡고 있어요. 연결 후 이번 말만 다시 말씀해 주세요.');
+      void this.recover(this.epoch, 'TX backlog exceeded. Resetting server session; USB retained.');
     }
   }
   take() {
@@ -63,7 +63,7 @@ export class AudioStream {
       while (this.bytes && socket.bufferedAmount < 65536) socket.send(this.take());
     } catch { void this.recover(this.epoch); }
   }
-  async recover(epoch, message = '서버 연결이 잠시 끊겼어요. USB 마이크를 유지하고 다시 연결하고 있어요.') {
+  async recover(epoch, message = 'Server disconnected. Recovering; USB retained.') {
     if (!this.active || epoch !== this.epoch) return;
     const recovery = ++this.epoch, socket = this.socket, session = this.session;
     this.ready = false; this.socket = null; this.session = null; this.chunks = []; this.bytes = 0;

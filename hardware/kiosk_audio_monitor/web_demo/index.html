@@ -1,52 +1,32 @@
 <!doctype html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SWitch · 내 목소리</title><link rel="icon" href="./avatar.png"><link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script>
-</head>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5f6f7"><title>SWitch / Voice Test</title><link rel="icon" href="./avatar.png"><link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script></head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="./" aria-label="SWitch 음성 화면"><span class="brand-icon">S<span>↗</span></span><b>SWitch</b><i></i><span>음성 입력 스튜디오</span></a>
-    <div class="top-actions"><span id="server-state" class="server-state">접속 확인 중</span><button id="processing-toggle" class="process-button" disabled>음성 처리 일시정지</button><button id="connection-open" class="settings-button" aria-haspopup="dialog"><span id="connection-status">마이크 연결</span><span class="chevron" aria-hidden="true"></span></button></div>
-  </header>
-  <main class="workspace">
-    <section class="conversation" aria-label="내가 전달할 문장">
-      <div class="conversation-heading"><div><span class="eyebrow">MY VOICE</span><h1>내가 건넨 말,<br>그대로 이어지도록.</h1></div><span class="preview-tag" id="processing-state">음성 처리 대기</span></div>
-      <div class="stage">
-        <div class="bubble-history" id="messages" role="log" aria-live="polite" aria-label="필터가 통과시킨 문장"><div class="empty-bubble" id="empty-bubble"><span class="bubble-kicker">이제 편하게 말해 보세요</span><p>확정된 문장이<br>여기에 나타나요.</p><span class="small-note">인식 중인 말과 로그는 오른쪽에서 볼 수 있어요.</span></div></div>
-        <div class="person-area"><div class="avatar-wrap" id="avatar-wrap"><div class="avatar-halo"></div><img src="./avatar.png" alt="나를 나타내는 아바타" class="avatar"><div class="floor-shadow"></div></div><span class="name-tag">나 <i></i>말하는 사람</span></div>
-      </div>
-      <div class="listening-footer"><div class="level-track" aria-hidden="true"><div id="level"></div></div><div class="listening-line"><span class="live-dot" id="live-dot"></span><strong id="stage">마이크를 연결하고 있어요</strong></div><p id="connection-message">한 번 허용한 마이크는 자동으로 다시 연결해요.</p><button id="clear" class="text-button">대화 화면 비우기</button></div>
-    </section>
-    <aside class="inspector" aria-label="처리 상태와 로그">
-      <div class="inspector-title"><div><span class="eyebrow">LIVE INSPECTOR</span><h2>지금 처리 중인 일</h2></div><span class="live-label" id="live-label">대기</span></div>
-      <section class="pipeline" aria-label="음성 처리 흐름">
-        <div class="pipeline-step" data-step="capture"><span class="step-icon">01</span><div><b>말소리 수집</b><span class="step-description">마이크 연결 대기</span></div><span class="step-time">—</span></div>
-        <div class="pipeline-step" data-step="stt"><span class="step-icon">02</span><div><b>음성을 글자로</b><span class="step-description">STT 대기</span></div><span class="step-time">—</span></div>
-        <div class="parallel-label"><span>아래 두 단계는 함께 처리해요</span></div>
-        <div class="pipeline-step" data-step="merge"><span class="step-icon">03</span><div><b>이어지는 말 합치기</b><span class="step-description">발화 흐름 확인</span></div><span class="step-time">—</span></div>
-        <div class="pipeline-step" data-step="filter"><span class="step-icon">04</span><div><b>주변 대화 확인</b><span class="step-description">뜻과 문맥은 에이전트에게</span></div><span class="step-time">—</span></div>
-      </section>
-      <section class="candidate-card"><div class="section-line"><h3>인식 중인 말</h3><span id="candidate-badge">후보</span></div><p id="candidate">아직 인식한 말이 없어요.</p><div class="candidate-result" id="candidate-result">최종 확정된 말만 왼쪽에 표시해요.</div></section>
-      <section class="timing-card" aria-label="처리 시간"><div class="section-line"><h3>STT 다음에 얼마나 걸렸을까?</h3><span id="route">—</span></div><div class="timing-primary"><strong id="after-stt">—</strong><span>STT 완료 → 최종 판단</span></div><div class="timing-detail"><div><span>STT</span><b id="stt-time">—</b></div><div><span>의미 판단</span><b id="filter-time">—</b></div><div><span>발화 끝부터</span><b id="timing">—</b></div></div></section>
-      <section class="logs-section"><div class="section-line"><h3>처리 로그 <span id="log-count">0</span></h3><div class="log-actions"><button id="clear-logs">기록 비우기</button></div></div><div id="logs" class="logs" role="log" aria-live="off"><p class="logs-empty">처리가 시작되면 로그가 쌓여요.</p></div></section>
-      <details class="diagnostics"><summary>마이크 세부 수치</summary><dl><div><dt>입력 RMS</dt><dd id="rms">—</dd></div><div><dt>배경 / 문턱</dt><dd id="noise">—</dd></div><div><dt>말소리 점수</dt><dd id="probability">—</dd></div><div><dt>패킷 누락 / CRC 오류</dt><dd id="packet-errors">—</dd></div></dl></details>
-    </aside>
-  </main>
-  <div id="error-banner" role="alert" hidden></div>
-
+<header class="topbar"><a class="brand" href="./"><b>SW<span>itch</span></b><span class="brand-caption">VOICE TEST</span></a><div class="model-tags"><span>ASR <b id="asr-model">—</b></span><span>GATE <b id="gate-model">—</b></span><span>NS <b id="denoise-mode">—</b></span></div><div class="top-actions"><span id="server-state">AUTH…</span><button id="processing-toggle" disabled>PAUSE</button><button id="connection-open" aria-haspopup="dialog"><i id="device-light"></i><span id="connection-status">MIC CONFIG</span> ▾</button></div></header>
+<section class="conversation" aria-label="Live conversation">
+  <div class="speech-bubble" aria-live="polite"><div class="speech-heading"><span>LATEST TURN</span><span id="speech-status">IDLE</span></div><p id="speech-text">—</p><span id="speech-meta">No speech yet</span></div>
+  <img class="avatar" src="./avatar.png" alt="Conversation avatar">
+  <div class="source-footer"><div><b>ESP32-S3 / ICS-43434</b><strong id="stage">IDLE</strong><p id="connection-message">Connect a USB source.</p><div class="level-track"><div id="level"></div></div></div><span id="live-dot"></span></div>
+</section>
+<section class="metrics-bar" aria-label="Reported API usage and response time"><div><span>INPUT TOKENS</span><b id="tokens-in">0</b></div><div><span>OUTPUT TOKENS</span><b id="tokens-out">0</b></div><div><span>KNOWN TOTAL</span><b id="tokens-total">0</b></div><div><span>API RESPONSES / ERR</span><b><i id="api-calls">0</i> / <i id="api-errors">0</i></b></div><div><span>USAGE UNKNOWN</span><b id="usage-unknown">0</b></div><div><span>STT p50 / p95</span><b><i id="stt-p50">—</i> / <i id="stt-p95">—</i></b></div><div><span>GATE p50 / p95</span><b><i id="filter-p50">—</i> / <i id="filter-p95">—</i></b></div><div><span>LAST END→FINAL</span><b id="last-e2e">—</b></div></section>
+<main class="workspace">
+<section class="turns-pane"><div class="pane-heading"><h1>TURN STREAM <em id="turn-count">0</em></h1><div><span id="processing-state">IDLE</span><button id="follow-turn" class="active">FOLLOW</button><button id="clear">CLEAR VIEW</button></div></div><div id="messages" class="turn-list" role="log" aria-live="polite"></div></section>
+<aside class="inspect-pane"><div class="pane-heading"><h2>TRACE / <span id="focus-turn">SYSTEM</span></h2><span id="live-label">IDLE</span></div><div class="pipeline"><div class="pipeline-step" data-step="capture"><b>01</b><div><strong>CAPTURE</strong><span class="step-description">Idle</span></div><span class="step-time">—</span></div><div class="pipeline-step" data-step="stt"><b>02</b><div><strong>STT</strong><span class="step-description">Idle</span></div><span class="step-time">—</span></div><div class="parallel-label">PARALLEL / BUFFER + GATE</div><div class="pipeline-step" data-step="merge"><b>03</b><div><strong>TURN BUFFER</strong><span class="step-description">Idle</span></div><span class="step-time">—</span></div><div class="pipeline-step" data-step="filter"><b>04</b><div><strong>GATE</strong><span class="step-description">Idle</span></div><span class="step-time">—</span></div></div>
+<div class="candidate-card"><div class="section-line"><h3>TRANSCRIPT</h3><span id="candidate-badge">IDLE</span></div><p id="candidate">—</p><span id="candidate-result">No final decision</span></div><div class="turn-timing"><div><span>AFTER STT</span><b id="after-stt">—</b></div><div><span>STT</span><b id="stt-time">—</b></div><div><span>GATE</span><b id="filter-time">—</b></div><div><span>END→FINAL</span><b id="timing">—</b></div></div><span id="route" class="route">—</span>
+<section class="logs-section"><div class="pane-heading"><h3>EVENT LOG <em id="log-count">0</em></h3><div><button id="system-log">SYS</button><button id="log-format">JSON</button><button id="clear-logs">CLEAR</button></div></div><div id="logs" class="logs" role="log" aria-live="off"></div></section></aside>
+<section class="raw-pane"><div class="pane-heading"><h2>RAW / TELEMETRY</h2><span>4 Hz UI · 64 B HEX</span></div><div class="raw-grid"><div class="signal-data"><div class="telemetry"><div><span>RMS</span><b id="rms">—</b></div><div><span>NOISE</span><b id="noise-value">—</b></div><div><span>THRESHOLD</span><b id="threshold-value">—</b></div><div><span>P(SPEECH)</span><b id="probability">—</b></div><div><span>VAD RAW</span><b id="vad-raw">—</b></div><div><span>VAD CLEAN</span><b id="vad-clean">—</b></div><div><span>RX RATE</span><b id="usb-rate">0 KiB/s</b></div><div><span>RX BYTES</span><b id="usb-bytes">0</b></div><div><span>TX QUEUE</span><b id="tx-buffer">0 B</b></div><div><span>PACKETS</span><b id="rx-packets">—</b></div><div><span>GAPS</span><b id="packet-gaps">—</b></div><div><span>CRC ERR</span><b id="crc-errors">—</b></div></div><div class="trace-label">VAD HISTORY <span>RAW</span><span>CLEAN</span></div><svg viewBox="0 0 252 50" role="img" aria-label="Recent raw and enhanced VAD probabilities"><polyline id="vad-raw-line" fill="none" points=""></polyline><polyline id="vad-clean-line" fill="none" points=""></polyline></svg><div class="raw-label">LATEST USB BYTES</div><pre id="usb-hex">—</pre></div><div class="json-data"><div class="raw-label">SELECTED EVENT / JSON</div><pre id="raw-event">{}</pre></div></div><span id="packet-errors" hidden>0 / 0</span></section>
+<footer>Reported usage only. Pending / cancelled requests may not include token usage. Metrics reset on page reload. No raw audio file storage.</footer>
+</main>
   <dialog id="connection-modal" aria-labelledby="connect-title">
-    <div class="modal-heading"><div><span class="eyebrow">CONNECTION</span><h2 id="connect-title">마이크 연결 설정</h2></div><button id="connection-close" class="close-button" aria-label="연결 설정 닫기">×</button></div>
-    <p class="device-line"><span id="device-light" class="device-light"></span><span id="device-state">마이크 연결 전</span></p>
-    <p class="modal-copy">ESP32 마이크를 USB로 연결한 뒤<br><strong>USB JTAG/serial debug unit</strong>을 선택하세요.</p>
-    <button class="primary" id="connect" disabled>ESP32 마이크 연결</button>
-    <button class="secondary" id="disconnect" hidden>마이크 연결 해제</button>
-    <label class="auto-setting"><input type="checkbox" id="auto-connect" checked>다음부터 허용한 마이크 자동 연결</label>
-    <div class="browser-note" id="browser-note">데스크톱 Chrome·Edge에서 바로 연결할 수 있어요.</div>
-    <div class="invitation" id="invitation" hidden><label for="access">테스트 접속 키</label><div><input id="access" type="password" autocomplete="off" placeholder="초대받은 접속 키를 입력하세요"><button id="unlock">접속</button></div></div>
-    <div class="notice" id="notice" role="status" aria-live="polite">접속 권한을 확인하고 있어요.</div>
-    <a class="download-button" id="installer" href="./download/installer.cmd" download>Windows 연결 도우미 설치</a>
-    <details class="install-help"><summary>장치가 보이지 않거나 설치가 어려운가요?</summary><p>웹 직접 연결은 별도 프로그램 없이 사용할 수 있어요. 도우미 설치형 수음과 웹 수음은 동시에 사용할 수 없어요.</p><a class="plain-link" id="package" href="./download/package.zip" download>설치 없이 ZIP으로 내려받기</a><p>장치가 없다면 데이터 USB 케이블과 장치 관리자의 COM 포트를 확인하고, 시리얼 모니터를 종료하세요.</p><a class="plain-link" href="https://docs.espressif.com/projects/esp-techpedia/en/latest/esp-friends/get-started/try-firmware/try-firmware-usb-driver.html" target="_blank" rel="noreferrer">Espressif 공식 USB 드라이버 안내</a></details>
+    <div class="modal-heading"><div><span class="eyebrow">CONNECTION</span><h2 id="connect-title">MIC CONFIG</h2></div><button id="connection-close" class="close-button" aria-label="Close microphone settings">×</button></div>
+    <p class="device-line"><span class="device-light"></span><span id="device-state">DISCONNECTED</span></p>
+    <p class="modal-copy">USB device: <strong>USB JTAG/serial debug unit</strong></p>
+    <button class="primary" id="connect" disabled>CONNECT ESP32</button>
+    <button class="secondary" id="disconnect" hidden>DISCONNECT USB</button>
+    <label class="auto-setting"><input type="checkbox" id="auto-connect" checked>Auto-connect granted device</label>
+    <div class="browser-note" id="browser-note">Desktop Chrome / Edge · Web Serial</div>
+    <div class="invitation" id="invitation" hidden><label for="access">ACCESS KEY</label><div><input id="access" type="password" autocomplete="off" placeholder="Invitation key"><button id="unlock">UNLOCK</button></div></div>
+    <div class="notice" id="notice" role="status" aria-live="polite">Checking access…</div>
+    <a class="download-button" id="installer" href="./download/installer.cmd" download>WINDOWS HELPER</a>
+    <details class="install-help"><summary>SETUP / DRIVERS</summary><p>Use Web Serial or the native helper. One reader per USB device.</p><a class="plain-link" id="package" href="./download/package.zip" download>DOWNLOAD ZIP</a><p>Check the data cable and COM port. Close other serial readers.</p><a class="plain-link" href="https://docs.espressif.com/projects/esp-techpedia/en/latest/esp-friends/get-started/try-firmware/try-firmware-usb-driver.html" target="_blank" rel="noreferrer">ESPRESSIF DRIVER DOCS</a></details>
   </dialog>
-</body>
-</html>
+</body></html>

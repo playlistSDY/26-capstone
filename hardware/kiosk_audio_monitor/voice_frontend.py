@@ -16,6 +16,25 @@ FRAME_SAMPLES = 1536  # 32 ms, matching 512 Silero samples at 16 kHz.
 FRAME_SECONDS = FRAME_SAMPLES / RATE
 
 
+class DropoutGuard:
+    """Never treat the tail after missing USB audio as a fresh full utterance."""
+    def __init__(self):
+        self.blocked = False
+        self.quiet = 0
+
+    def interrupt(self):
+        self.blocked = True
+        self.quiet = 0
+
+    def feed(self, probability):
+        if not self.blocked:
+            return False
+        self.quiet = self.quiet + FRAME_SECONDS if probability < .20 else 0
+        if self.quiet >= .512:
+            self.blocked = False
+        return True
+
+
 class Silero:
     def __init__(self, input_gain=8):
         if not math.isfinite(input_gain) or not 1 <= input_gain <= 32:
@@ -77,10 +96,10 @@ class NoiseFloor:
         self.noise = 30.0
         self.threshold = minimum
 
-    def update(self, rms, probability):
+    def update(self, rms, probability, *, learn=True):
         # Only confidently non-speech can teach the background level. A sudden
         # clink is capped; someone's voice must not teach the gate to reject it.
-        if probability < .15:
+        if learn and probability < .15:
             observed = min(rms, self.noise * 3 + 100)
             tau = .7 if observed > self.noise else 2.0
             self.noise += (1 - math.exp(-FRAME_SECONDS / tau)) * (observed - self.noise)
@@ -99,14 +118,16 @@ class AudioChunk:
     continuing: bool = False
     voiced_seconds: float = 0
     quiet_seconds: float = 0
+    pre_roll_seconds: float = 0
 
 
 class SpeechCapture:
-    def __init__(self, *, button=False, silence=.65, maximum=12, minimum=70):
+    def __init__(self, *, button=False, silence=.65, maximum=12, minimum=70, pre_roll=1.5):
         self.button = button
         self.silence = silence
         self.maximum = maximum
         self.floor = NoiseFloor(minimum)
+        self.pre_roll_frames = max(1, math.ceil(pre_roll / FRAME_SECONDS))
         self.active = False
         self.reset()
 
@@ -116,13 +137,18 @@ class SpeechCapture:
 
     def reset(self):
         self.active = False
-        self.pre = deque(maxlen=9)  # 288 ms of first-syllable protection.
+        self.pre = deque(maxlen=self.pre_roll_frames)
+        self.pre_roll_seconds = 0
         self.onset_votes = deque(maxlen=4)
         self.pieces = []
         self.quiet = self.voiced = self.duration = self.onset = 0
 
     def feed(self, pcm, rms, probability, pressed=False):
-        is_voice = self.floor.update(rms, probability)
+        is_voice = self.floor.update(rms, probability, learn=not self.active)
+        # Once speech has started, tolerate weaker masked phonemes without
+        # lowering the onset threshold for idle cafe noise.
+        if self.active and probability >= .20 and rms >= 10:
+            is_voice = True
         enabled = not self.button or pressed
         speaking = enabled and is_voice
         if not self.active:
@@ -133,6 +159,7 @@ class SpeechCapture:
             # Two of four frames preserves them without reacting to one click.
             if speaking and self.onset >= .064:
                 self.active = True
+                self.pre_roll_seconds = max(0, len(self.pre) - 1) * FRAME_SECONDS
                 self.pieces = list(self.pre)
                 self.duration = len(self.pieces) * FRAME_SECONDS
                 self.voiced = self.onset
@@ -145,19 +172,20 @@ class SpeechCapture:
             self.quiet = 0
         else:
             self.quiet += FRAME_SECONDS
-        ended = (self.button and not pressed) or self.quiet >= self.silence
+        endpoint = max(self.silence, .65) if self.floor.noise >= 150 else self.silence
+        ended = (self.button and not pressed) or self.quiet >= endpoint
         capped = self.duration >= self.maximum
         if not ended and not capped:
             return None
         pcm = b"".join(self.pieces)
-        voiced, quiet = self.voiced, self.quiet
+        voiced, quiet, pre_roll = self.voiced, self.quiet, self.pre_roll_seconds
         if ended and self.quiet > .2:
             pcm = pcm[: -int((self.quiet - .2) * RATE) * 2]
         continuing = capped and not ended
         self.reset()
         if continuing:
             self.active = True  # A duration boundary is not a completed turn.
-        return AudioChunk(pcm if voiced >= .096 else b"", continuing, voiced, quiet)
+        return AudioChunk(pcm if voiced >= .096 else b"", continuing, voiced, quiet, pre_roll)
 
 
 @dataclass(frozen=True)

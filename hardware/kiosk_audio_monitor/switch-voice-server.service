@@ -10,6 +10,7 @@ EnvironmentFile=/home/sdy/.config/switch-agent/agent.env
 EnvironmentFile=/home/sdy/.config/switch-voice/device.env
 Environment=PYTHONUTF8=1
 Environment=PYTHONIOENCODING=utf-8
+Environment=SWITCH_AUDIO_DENOISE=rnnoise
 ExecStart=/home/sdy/previews/switch-voice-20261122/.venv/bin/python voice_remote_server.py
 Restart=on-failure
 RestartSec=3

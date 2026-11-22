@@ -52,9 +52,9 @@ try {
       if (row.event === 'turn.accept') {
         for (const event of [
           { event: 'speech_started' }, { event: 'audio_segment', endpoint_seconds: .45 },
-          { event: 'recognizing' }, { event: 'transcript', text: '아이스 라떼', elapsed: .7 },
-          { event: 'filter_started' },
-        ]) client.send(JSON.stringify(event));
+          { event: 'recognizing' }, { event: 'stt_usage', model:'gpt-fixture', api_call:true, elapsed:.7, usage:{input_tokens:10,output_tokens:4,total_tokens:14} }, { event: 'transcript', text: '아이스 라떼', elapsed: .7 },
+          { event: 'filter_started' }, { event:'filter_usage', model:'jev-fixture', api_call:true, elapsed:.18, usage:{input_tokens:20,output_tokens:10} },
+        ]) client.send(JSON.stringify({...event,turn_id:row.turn_id,segment:1,revision:1}));
       }
       client.send(data);
     });
@@ -66,42 +66,66 @@ try {
   await expect(page.locator('#connect')).toBeEnabled();
   if (page.url().includes('#')) throw new Error('Invitation remained in URL');
   await page.evaluate(() => { window.cancelNext = true; });
-  await page.locator('#connect').click(); await expect(page.locator('#notice')).toContainText('취소');
+  await page.locator('#connect').click(); await expect(page.locator('#notice')).toContainText('cancelled');
   await page.locator('#connect').click();
   await expect(page.locator('#connection-modal')).not.toBeVisible();
   await expect(page.locator('.bubble').first()).toContainText('아이스 라떼', { timeout: 10000 });
   await expect(page.locator('#logs')).toBeVisible();
   await expect(page.locator('[data-step="stt"]')).toHaveClass(/done/);
   await expect(page.locator('[data-step="filter"]')).toHaveClass(/done/);
-  await expect(page.locator('#processing-state')).toHaveText('음성 처리 중');
+  await expect(page.locator('#processing-state')).toHaveText('RUNNING');
+  await expect(page.locator('#tokens-total')).toHaveText('44');
+  await expect(page.locator('#speech-text')).toHaveText('아이스 라떼');
   const signals = await page.evaluate(() => window.lastSignals);
   if (!signals.dataTerminalReady || signals.requestToSend) throw new Error('Unsafe reset signal configuration');
   // 1.1s per-message delay, at full ESP bit rate: no HTTP acknowledgement stall.
   if (routes.length !== 1 || await page.evaluate(() => window.usbOpens) !== 1) throw new Error('Lag disconnected USB');
+  await expect(page.locator('.turn-card')).toHaveCount(1);
+  await expect(page.locator('#raw-event')).toContainText('fixture-turn');
+  await expect(page.locator('#usb-hex')).not.toHaveText('');
   await page.screenshot({ path: path.join(folder, 'desktop-connected.png'), fullPage: true });
   routes[0].closed = true;
   await routes[0].client.close({ code: 1012, reason: 'fixture-network-loss' });
   await routes[0].server.close({ code: 1012 });
   await expect.poll(() => routes.length).toBe(2);
-  await expect(page.locator('#connection-message')).toContainText('복구');
+  await expect(page.locator('#connection-message')).toContainText('recovered');
   if (await page.evaluate(() => window.usbOpens) !== 1) throw new Error('Network recovery reopened USB');
   await page.locator('#processing-toggle').click();
-  await expect(page.locator('#processing-toggle')).toHaveText('음성 처리 재개');
+  await expect(page.locator('#processing-toggle')).toHaveText('RESUME');
   await expect(page.locator('#processing-toggle')).toBeEnabled();
   const pausedFrames = binaryFrames; await new Promise((resolve) => setTimeout(resolve, 650));
   if (binaryFrames !== pausedFrames) throw new Error('Audio still transmitted while paused');
-  await expect(page.locator('#connection-status')).toHaveText('마이크 연결됨');
-  await expect(page.locator('#stage')).toContainText('잠시 멈췄어요');
+  await expect(page.locator('#connection-status')).toHaveText('USB CONNECTED');
+  await expect(page.locator('#stage')).toContainText('PAUSED');
   const pickerCount = await page.evaluate(() => sessionStorage.getItem('fixture.pickers'));
   await page.reload();
-  await expect(page.locator('#connection-status')).toHaveText('마이크 연결됨');
-  await expect(page.locator('#processing-toggle')).toHaveText('음성 처리 재개');
+  await expect(page.locator('#connection-status')).toHaveText('USB CONNECTED');
+  await expect(page.locator('#processing-toggle')).toHaveText('RESUME');
   await expect(page.locator('#connection-modal')).not.toBeVisible();
   if (await page.evaluate(() => sessionStorage.getItem('fixture.pickers')) !== pickerCount) throw new Error('Reload prompted for USB permission again');
   await page.locator('#processing-toggle').click();
   await expect(page.locator('.bubble').first()).toContainText('아이스 라떼');
-  await expect(page.locator('#processing-state')).toHaveText('음성 처리 중');
+  await expect(page.locator('#processing-state')).toHaveText('RUNNING');
   await page.screenshot({ path: path.join(folder, 'desktop-ready.png'), fullPage: true });
+  for (const event of [{event:'speech_started'},{event:'transcript',text:'다른 걸로 주세요',segment:1,elapsed:.5},{event:'turn.accept',text:'다른 걸로 주세요',reason:'context_for_agent',stt_seconds:.5,filter_seconds:.2,from_speech_end_seconds:1.3}]) routes.at(-1).client.send(JSON.stringify({...event,turn_id:'second-turn'}));
+  await expect(page.locator('#speech-text')).toHaveText('다른 걸로 주세요');
+  await page.locator('.turn-card .turn-pick').first().click();
+  await expect(page.locator('#focus-turn')).toHaveText('TURN 001');
+  await expect(page.locator('#speech-text')).toHaveText('다른 걸로 주세요');
+  await expect(page.locator('#logs')).not.toContainText('다른 걸로 주세요');
+  const latestLabel=(await page.locator('.turn-card .turn-pick').last().textContent()).match(/^TURN \d+/)[0];
+  await page.locator('#follow-turn').click();
+  await expect(page.locator('#focus-turn')).toHaveText(latestLabel);
+  for (const [width,height] of [[1000,1600],[1600,2560]]) {
+    await page.setViewportSize({width,height});
+    const layout=await page.evaluate(()=>{
+      const rect=(selector)=>{const r=document.querySelector(selector).getBoundingClientRect();return {x:r.x,y:r.y,bottom:r.bottom,width:r.width,height:r.height};};
+      return {bubble:rect('.speech-bubble'),avatar:rect('.conversation .avatar'),metrics:rect('.metrics-bar'),logs:rect('#logs'),raw:rect('.raw-pane'),overflow:document.documentElement.scrollHeight>innerHeight+1};
+    });
+    if(layout.overflow || layout.bubble.bottom>layout.avatar.y || layout.avatar.bottom>layout.metrics.y || layout.logs.height<70 || layout.raw.bottom>height) throw new Error(`Portrait layout: ${JSON.stringify(layout)}`);
+    await expect(page.locator('#speech-text')).toHaveText('다른 걸로 주세요');
+    await page.screenshot({path:path.join(folder,`portrait-${width}.png`)});
+  }
   for (const width of [1024, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) throw new Error(`Overflow at ${width}`);
@@ -109,24 +133,24 @@ try {
   }
   await page.locator('#connection-open').click(); await expect(page.locator('#connection-modal')).toBeVisible();
   await page.locator('#disconnect').click(); await expect(page.locator('#connect')).toBeEnabled();
-  await expect(page.locator('#notice')).toContainText('전송을 멈췄어요');
+  await expect(page.locator('#notice')).toContainText('Transmission stopped');
   if (await page.evaluate(() => window.usbCloses) !== 1) throw new Error('Serial port leaked');
   // Upgrade from the previous page: a browser grant alone must be enough.
   await page.evaluate(() => { const key = `switch.voice.${location.pathname}`; localStorage.removeItem(`${key}.auto`); localStorage.removeItem(`${key}.device`); });
-  await page.reload(); await expect(page.locator('#connection-status')).toHaveText('마이크 연결됨');
+  await page.reload(); await expect(page.locator('#connection-status')).toHaveText('USB CONNECTED');
   await expect(page.locator('#connection-modal')).not.toBeVisible();
   if (await page.evaluate(() => sessionStorage.getItem('fixture.pickers')) !== pickerCount) throw new Error('Existing permission was not reused after upgrade');
-  await page.locator('#processing-toggle').click(); await expect(page.locator('#processing-toggle')).toHaveText('음성 처리 재개');
+  await page.locator('#processing-toggle').click(); await expect(page.locator('#processing-toggle')).toHaveText('RESUME');
   const unsupported = await browser.newContext();
   await unsupported.addInitScript(() => Object.defineProperty(navigator, 'serial', { value: undefined }));
   const alternative = await unsupported.newPage();
   alternative.on('pageerror', (error) => errors.push(error.message));
   await alternative.goto(`${info.base}#access=${info.access}`);
-  await expect(alternative.locator('#browser-note')).toContainText('지원하지 않아요');
+  await expect(alternative.locator('#browser-note')).toContainText('unavailable');
   await expect(alternative.locator('#connect')).toBeDisabled();
   const download = alternative.waitForEvent('download'); await alternative.locator('#installer').click();
   if ((await download).suggestedFilename() !== 'SWitch-Voice-Setup.cmd') throw new Error('Installer download failed');
-  const result = { realHTTPAndServerWorkers: true, simulatedWebSerial: true, microphoneAndSTTAPIsUsed: false, invitation: true, directUSBFlow: true, pickerCancellation: true, safeDTRRTS: true, stopRestart: true, alwaysVisibleLogs: true, progressSteps: true, fullESPRate: true, delayedFramesMs: 1100, automaticServerRecovery: true, automaticUSBReload: true, pauseNoAudioTransmission: true, unsupportedBrowserHelp: true, installerDownload: true, widths: [1440, 1024, 390], pageErrors: errors, externalRequests: external };
+  const result = { realHTTPAndServerWorkers: true, simulatedWebSerial: true, microphoneAndSTTAPIsUsed: false, invitation: true, directUSBFlow: true, pickerCancellation: true, safeDTRRTS: true, stopRestart: true, alwaysVisibleLogs: true, progressSteps: true, fullESPRate: true, delayedFramesMs: 1100, automaticServerRecovery: true, automaticUSBReload: true, pauseNoAudioTransmission: true, turnGrouping: true, reportedTokenAccounting: true, boundedRawHex: true, unsupportedBrowserHelp: true, installerDownload: true, portrait10to16: true, avatarBelowBubble: true, widths: [1440, 1000, 1600, 1024, 390], pageErrors: errors, externalRequests: external };
   await writeFile(path.join(folder, 'result.json'), JSON.stringify(result, null, 2));
   if (errors.length || external.length) throw new Error(JSON.stringify(result));
   console.log(JSON.stringify(result));

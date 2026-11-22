@@ -20,7 +20,7 @@ print(json.dumps({'event':'started', 'message':'fixture'}), flush=True)
 while True:
     data = os.read(sys.stdin.fileno(), 8192)
     if not data: break
-    print(json.dumps({'event':'turn.accept', 'text':'아이스 라떼', 'bytes':len(data)}, ensure_ascii=False), flush=True)
+    print(json.dumps({'event':'turn.accept', 'text':'아이스 라떼', 'bytes':len(data), 'turn_id':'fixture-turn', 'revision':1, 'segment':1}, ensure_ascii=False), flush=True)
 """
 
 
