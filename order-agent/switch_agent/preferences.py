@@ -66,6 +66,11 @@ def add_with_preferences(store, product_id, quantity, options, confirmed_options
                  "question_options": [missing[0]] if missing[0] == "temperature" else missing,
                  "question": question([missing[0]] if missing[0] == "temperature" else missing, candidate)}
         store.item_drafts[product_id] = draft
+        # Keep the editor in the returned state aligned with this turn's choices.
+        # Read-only explanations otherwise retain the touch-edited selection.
+        if (store.ui_context.get("editor") or {}).get("product_id") == product_id:
+            store.ui_context["editor"].update(quantity=quantity, options=values)
+
         store.changed()
         return {"status": "needs_preference", "added": False, "draft": draft}
     # Keep the draft on failure so stock/cart errors cannot lose the request.

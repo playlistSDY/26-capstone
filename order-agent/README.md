@@ -39,7 +39,7 @@ export OPENAI_MODEL='사용할-모델-ID'
 
 - `switch_agent/prompt.txt`: 짧은 진행 안내, 기억 도움, 필요한 질문, 추천과 마무리 정책.
 - `switch_agent/domain.py`: 주문 상태, 옵션·수량·재고 검증, 최종 확인 게이트.
-- `switch_agent/tools.py`: 19개 모델 도구와 가상 어댑터.
+- `switch_agent/tools.py`: 20개 모델 도구와 가상 어댑터.
 - `switch_agent/runtime.py`: 단일 세션의 SDK 실행과 대화 이력.
 - `data/catalog.json`: 기존 키오스크 시제품 112개 메뉴의 메타데이터 복사본. 실제 매장 정보와 자동 동기화되지 않음.
 

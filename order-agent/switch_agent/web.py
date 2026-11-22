@@ -44,6 +44,18 @@ def normalize_ui_context(store, raw):
     kinds = {"add_item","edit_item","remove_item","place","screen","payment","editor","category","overlay"}
     context["events"] = [{key:event[key] for key in ("id","kind","source","before","after") if key in event}
                          for event in events if isinstance(event,dict) and type(event.get("id")) is int and event["id"] > 0 and event.get("kind") in kinds]
+    interaction = raw.get("interaction")
+    if isinstance(interaction, dict):
+        metrics = {key: min(interaction[key], 86400000) for key in ("activations", "option_changes", "screen_changes", "guidance_completed", "idle_ms", "session_elapsed_ms") if type(interaction.get(key)) is int and interaction[key] >= 0}
+        actions = interaction.get("recent_actions", [])
+        from .guidance import TARGETS
+        metrics["recent_actions"] = [a for a in actions[-12:] if isinstance(a, str) and a in TARGETS | {"other"}] if isinstance(actions, list) else []
+        context["interaction"] = metrics
+    guidance = raw.get("guidance")
+    if isinstance(guidance, dict) and guidance.get("status") in {"showing", "done"}:
+        from .guidance import TARGETS
+        if guidance.get("target") in TARGETS:
+            context["guidance"] = {key: guidance[key] for key in ("id", "target", "instruction", "product_id", "line_id", "option", "value", "status") if isinstance(guidance.get(key), str)}
     editor = raw.get("editor")
     if editor is not None:
         if not isinstance(editor, dict) or editor.get("product_id") not in store.catalog or type(editor.get("quantity")) is not int or not 1 <= editor["quantity"] <= 20:

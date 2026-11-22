@@ -55,6 +55,7 @@ class OrderStore:
     payment_action: dict | None = None
     view: str = "menu"
     ui_context: dict = field(default_factory=dict)
+    guidance: dict | None = None
 
     @classmethod
     def demo(cls):
@@ -64,6 +65,7 @@ class OrderStore:
     def begin_turn(self, text: str):
         if not text.strip() or len(text) > 4000:
             raise OrderError("발화는 1~4000자로 보내 주세요.")
+        self.guidance = None
         self.turn += 1
         self.utterance = text
         self.final_confirmation_text = None
@@ -151,6 +153,7 @@ class OrderStore:
             "confirmation_pending": self.pending is not None,
             "view": self.view, "ui_context": deepcopy(self.ui_context), "payment_ui": deepcopy(self.payment_ui),
             "payment_action": deepcopy(self.payment_action),
+            "guidance": deepcopy(self.guidance),
             "handoff": deepcopy(self.handoff),
             "item_drafts": deepcopy(list(self.item_drafts.values())),
         }

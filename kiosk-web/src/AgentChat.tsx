@@ -7,6 +7,11 @@ import type { PaymentAction } from "./agentCheckout";
 import { summary, totalPrice } from "./domain";
 import type { CartLine, Place, PaymentMethod } from "./domain";
 import "./agent-chat.css";
+import {
+  AgentGuidance,
+  type Guidance,
+  type GuidanceState,
+} from "./AgentGuidance";
 import type { UiEvent } from "./agentUiEvents";
 import {
   mergeUsage,
@@ -29,6 +34,18 @@ export type ChatCart = {
   } | null;
   last_action_id?: string | null;
   ui_context?: {
+    guidance?: GuidanceState | null;
+    interaction?: {
+      activations: number;
+      option_changes: number;
+      screen_changes: number;
+      guidance_completed: number;
+      started_at: number;
+      last_action_at: number | null;
+      recent_actions: string[];
+      idle_ms?: number | null;
+      session_elapsed_ms?: number;
+    };
     category: string;
     events?: UiEvent[];
     overlay: string | null;
@@ -41,6 +58,16 @@ export type ChatCart = {
   };
 };
 export type AgentState = {
+  ui_context?: ChatCart["ui_context"];
+  guidance?: Guidance | null;
+  focus?: string | null;
+  item_drafts?: {
+    product_id: string;
+    quantity: number;
+    options: CartLine["options"];
+    next_option: string;
+    question?: string;
+  }[];
   phase: "ordering" | "checkout" | "handoff" | "completed";
   view?: "menu" | "review" | "payment";
   confirmation_pending?: boolean;
@@ -126,6 +153,10 @@ export function AgentChat({
   onConversationActiveChange,
   onSessionEnd,
   previousUsage,
+  guidance,
+  onGuideDone,
+  onGuideDismiss,
+  onGuideShortcut,
 }: {
   cart: ChatCart;
   disabled: boolean;
@@ -134,6 +165,10 @@ export function AgentChat({
   onConversationActiveChange: (active: boolean) => void;
   onSessionEnd: (usage?: UsageReport) => void;
   previousUsage?: UsageReport | null;
+  guidance: GuidanceState | null;
+  onGuideDone: () => void;
+  onGuideDismiss: () => void;
+  onGuideShortcut: (target: string) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
@@ -357,7 +392,11 @@ export function AgentChat({
     setPending(null);
   }
 
-  async function submit(retry?: Pending, paymentEvent = false) {
+  async function submit(
+    retry?: Pending,
+    paymentEvent = false,
+    overrideText?: string,
+  ) {
     if (disabled && !paymentEvent) return;
     const submission = ++submissionSequence.current;
     const submittedAt = performance.now();
@@ -366,11 +405,17 @@ export function AgentChat({
       current.current = { ...current.current, screen: "menu" };
     }
     if (ttsEnabled) unlockAgentAudio();
-    if (!status?.ready || (!retry && !paymentEvent && !text.trim())) return;
+    if (
+      !status?.ready ||
+      (!retry && !paymentEvent && !(overrideText ?? text).trim())
+    )
+      return;
     if (sending.current || speaking || delivery.current) {
       try {
         await interrupt(
-          paymentEvent ? undefined : (retry?.text ?? text.trim()),
+          paymentEvent
+            ? undefined
+            : (retry?.text ?? (overrideText ?? text).trim()),
         );
       } catch {
         setError("주문 상태를 확인하지 못했어요. 다시 연결해 주세요.");
@@ -398,12 +443,25 @@ export function AgentChat({
       if (!operation) {
         operation = {
           request_id: crypto.randomUUID(),
-          text: paymentEvent ? "키오스크 결제 결과 알림" : text.trim(),
+          text: paymentEvent
+            ? "키오스크 결제 결과 알림"
+            : (overrideText ?? text).trim(),
           payment_event: paymentEvent,
           cart: structuredClone(current.current),
           session: id,
           started_at: submittedAt,
         };
+        const interaction = operation.cart.ui_context?.interaction;
+        if (interaction) {
+          interaction.idle_ms =
+            interaction.last_action_at === null
+              ? null
+              : Math.max(0, Date.now() - interaction.last_action_at);
+          interaction.session_elapsed_ms = Math.max(
+            0,
+            Date.now() - interaction.started_at,
+          );
+        }
         if (!paymentEvent) {
           setMessages((previous) => [
             ...previous,
@@ -681,6 +739,15 @@ export function AgentChat({
                 : "텍스트 스트리밍"}
           </span>
         </div>
+        <AgentGuidance
+          guide={guidance}
+          disabled={disabled || busy || !status?.ready}
+          onDone={onGuideDone}
+          onDismiss={onGuideDismiss}
+          onShortcut={onGuideShortcut}
+          hasCart={cart.lines.length > 0 && !cart.payment && !cart.receipt}
+          onRequest={(value) => void submit(undefined, false, value)}
+        />
         {status && !status.ready && (
           <div className="agent-chat-setup" role="status">
             {status.message}

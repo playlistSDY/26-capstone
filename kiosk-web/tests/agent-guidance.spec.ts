@@ -1,0 +1,308 @@
+import { test, expect, type Page } from "@playwright/test";
+import { mockBackend } from "./backend-fixture";
+
+const options = {
+  temperature: "ice",
+  size: "regular",
+  shots: 0,
+  syrup: 0,
+  milk: "regular",
+  ice: "normal",
+  sweetness: "normal",
+  decaf: false,
+};
+async function fixture(page: Page) {
+  await mockBackend(page);
+  const requests: any[] = [];
+  const turns = new Map<string, any>();
+  let respond: (body: any) => any = () => ({});
+  await page.route("**/agent-api/**", async (route) => {
+    const req = route.request(),
+      path = new URL(req.url()).pathname;
+    if (path.endsWith("/status"))
+      return route.fulfill({
+        json: { ready: true, token: "test", message: "테스트 연결" },
+      });
+    if (path.endsWith("/sessions"))
+      return route.fulfill({ json: { session_id: "guide-session" } });
+    if (path.endsWith("/turns")) {
+      const body = req.postDataJSON();
+      requests.push(body);
+      const state = {
+        phase: "ordering",
+        view: "menu",
+        place: body.cart.place,
+        lines: body.cart.lines.map((line: any) => ({
+          id: line.id,
+          product_id: line.productId,
+          quantity: line.quantity,
+          options: line.options,
+        })),
+        total: body.cart.lines.reduce(
+          (sum: number, line: any) =>
+            sum +
+            (4200 + (line.options.size === "large" ? 500 : 0)) * line.quantity,
+          0,
+        ),
+        ...respond(body),
+      };
+      turns.set(body.request_id, {
+        type: "final",
+        sequence: 1,
+        ok: true,
+        text: "현재 화면에 설명하는 위치를 표시했어요.",
+        state,
+        needs_delivery: false,
+      });
+      return route.fulfill({ json: { ok: true } });
+    }
+    if (path.endsWith("/events"))
+      return route.fulfill({
+        contentType: "application/x-ndjson",
+        body: JSON.stringify(turns.get(path.split("/").at(-2)!)) + "\n",
+      });
+    return route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "음성 끄기", exact: true }).click();
+  async function say(text: string) {
+    const previous = requests.length;
+    await page.getByRole("textbox", { name: "주문 메시지" }).fill(text);
+    await page
+      .getByRole("button", { name: "메시지 보내기", exact: true })
+      .click();
+    await expect.poll(() => requests.length).toBe(previous + 1);
+    await expect(page.locator(".agent-chat-thinking")).toHaveCount(0);
+  }
+  return {
+    requests,
+    say,
+    respond: (fn: typeof respond) => {
+      respond = fn;
+    },
+  };
+}
+const guide = (target: string, extra = {}) => ({
+  id: crypto.randomUUID(),
+  target,
+  instruction: "설명하는 버튼이에요. 직접 누르거나 말로 부탁하셔도 돼요.",
+  ...extra,
+});
+
+test("Option dialogue opens its drink and highlights the discussed option without selecting it", async ({
+  page,
+}) => {
+  const f = await fixture(page);
+  f.respond(() => ({
+    item_drafts: [
+      {
+        product_id: "latte",
+        quantity: 2,
+        options: { ...options, temperature: null },
+        next_option: "temperature",
+        question: "따뜻하게 드릴까요, 차갑게 드릴까요?",
+      },
+    ],
+  }));
+  await f.say("라떼 두 잔 줘");
+  await expect(
+    page.getByRole("dialog", { name: "메뉴 선택", exact: true }),
+  ).toContainText("카페라떼");
+  await expect(page.locator(".agent-guide-ring")).toBeVisible();
+  await expect(
+    page.locator(
+      '[data-guide="option"][data-guide-option="temperature"][data-guide-value="ice"]',
+    ),
+  ).toHaveAttribute("aria-pressed", "false");
+  f.respond(() => ({
+    guidance: guide("option", {
+      product_id: "latte",
+      option: "size",
+      value: "large",
+    }),
+  }));
+  await f.say("큰 크기는 뭐야?");
+  await expect(
+    page.locator(
+      '[data-guide="option"][data-guide-option="size"][data-guide-value="large"]',
+    ),
+  ).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".agent-guide-ring")).toBeVisible();
+  expect(f.requests.at(-1).cart.lines).toHaveLength(0);
+});
+
+test("A customer can choose options and add manually after a brief non-prescriptive explanation", async ({
+  page,
+}) => {
+  const f = await fixture(page);
+  f.respond(() => ({
+    item_drafts: [
+      { product_id: "latte", quantity: 2, options, next_option: "size" },
+    ],
+    guidance: guide("editor.add", {
+      product_id: "latte",
+      instruction: "원하는 옵션을 고른 뒤 담기를 눌러 주세요.",
+    }),
+  }));
+  await f.say("귀찮으니까 나머지는 내가 고를게");
+  await expect(page.locator(".agent-guidance")).toContainText("원하는 옵션");
+  await page
+    .locator('[data-guide-option="size"][data-guide-value="large"]')
+    .click();
+  await expect(page.locator(".agent-guide-ring")).toHaveCount(0);
+  await page
+    .locator('[data-guide-option="ice"][data-guide-value="less"]')
+    .click();
+  await page.locator('[data-guide="editor.add"]').click();
+  await f.say("이제 어떻게 해?");
+  const cart = f.requests.at(-1).cart;
+  expect(cart.lines[0].quantity).toBe(2);
+  expect(cart.lines[0].options).toMatchObject({ size: "large", ice: "less" });
+  expect(cart.ui_context.interaction.option_changes).toBe(2);
+  expect(cart.ui_context.interaction.activations).toBeGreaterThanOrEqual(3);
+});
+
+test("Added drinks offer quantity/options/checkout locations and delegation preserves touch choices", async ({
+  page,
+}) => {
+  const f = await fixture(page);
+  f.respond(() => ({
+    lines: [{ id: "line-one", product_id: "latte", quantity: 1, options }],
+    total: 4200,
+  }));
+  await f.say("아이스 라떼 기본으로 담아줘");
+  await expect(page.locator(".agent-guide-ring")).toBeVisible();
+  await expect(page.locator(".agent-guidance")).toContainText("결제해줘");
+  if (process.env.SWITCH_GUIDANCE_SCREENSHOT)
+    await page.screenshot({ path: "/tmp/switch-guidance-desktop.png" });
+  await page
+    .getByRole("button", { name: "수량 버튼 위치", exact: true })
+    .click();
+  await expect(page.locator(".agent-guidance")).toContainText("수량을 바꿀");
+  await page
+    .getByRole("button", { name: "카페라떼 주문 수량 늘리기", exact: true })
+    .click();
+  await expect(page.locator(".agent-guidance")).toContainText(
+    "선택한 내용을 반영",
+  );
+  await page
+    .getByRole("button", { name: "옵션 버튼 위치", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "카페라떼 옵션 변경", exact: true })
+    .click();
+  await page
+    .locator('[data-guide-option="size"][data-guide-value="large"]')
+    .click();
+  f.respond(() => ({
+    guidance: guide("editor.add", {
+      product_id: "latte",
+      line_id: "line-one",
+      instruction: "원하는 옵션을 고른 뒤 수정하기를 눌러 주세요.",
+    }),
+  }));
+  await f.say("원하는대로 고르고 있어");
+  await expect(page.locator(".agent-guide-ring")).toBeVisible();
+  f.respond((body) => ({
+    lines: [
+      {
+        id: "line-one",
+        product_id: "latte",
+        quantity: body.cart.ui_context.editor.quantity,
+        options: body.cart.ui_context.editor.options,
+      },
+    ],
+    total: 9400,
+  }));
+  await page.getByRole("button", { name: "대신 해줘", exact: true }).click();
+  await expect(page.locator(".agent-chat-thinking")).toHaveCount(0);
+  await expect.poll(() => f.requests.length).toBe(3);
+  const request = f.requests.at(-1);
+  expect(request.text).toContain("대신");
+  expect(request.cart.ui_context.editor.quantity).toBe(2);
+  expect(request.cart.ui_context.editor.options.size).toBe("large");
+  expect(
+    request.cart.ui_context.interaction.guidance_completed,
+  ).toBeGreaterThanOrEqual(1);
+  await expect(page.locator(".cart-tally")).toContainText("9,400");
+});
+
+test("Payment explanation highlights a method without starting the reader", async ({
+  page,
+}) => {
+  const f = await fixture(page);
+  f.respond(() => ({
+    phase: "checkout",
+    view: "payment",
+    place: "store",
+    lines: [{ id: "one", product_id: "latte", quantity: 1, options }],
+    total: 4200,
+    guidance: guide("payment.method", { value: "card" }),
+  }));
+  await f.say("카드 버튼이 어디야");
+  await expect(page.locator(".agent-guide-ring")).toBeVisible();
+  await expect(page.locator(".payment-method.card")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: /카드/ })).toHaveCount(0);
+});
+
+test("Narrow screen and reduced motion keep the target visible without covering navigation", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const f = await fixture(page);
+  f.respond(() => ({ guidance: guide("product", { product_id: "latte" }) }));
+  await f.say("라떼를 설명해줘");
+  const ring = page.locator(".agent-guide-ring");
+  await expect(ring).toBeVisible();
+  expect(
+    await ring.evaluate((node) => getComputedStyle(node).animationName),
+  ).toBe("none");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  expect(
+    await ring.evaluate((node) => getComputedStyle(node).pointerEvents),
+  ).toBe("none");
+  if (process.env.SWITCH_GUIDANCE_SCREENSHOT)
+    await page.screenshot({
+      path: "/tmp/switch-guidance-mobile.png",
+      fullPage: true,
+    });
+  await page.getByRole("button", { name: "표시 닫기", exact: true }).click();
+  await expect(ring).toHaveCount(0);
+});
+
+test("Explanation preserves touch choices even when an older option draft remains", async ({
+  page,
+}) => {
+  const f = await fixture(page);
+  const oldDraft = {
+    product_id: "latte",
+    quantity: 2,
+    options,
+    next_option: "size",
+  };
+  f.respond(() => ({ item_drafts: [oldDraft] }));
+  await f.say("아이스 라떼 두 잔");
+  await page
+    .locator('[data-guide-option="size"][data-guide-value="large"]')
+    .click();
+  f.respond((body) => ({
+    item_drafts: [oldDraft],
+    ui_context: body.cart.ui_context,
+    guidance: guide("editor.add", {
+      product_id: "latte",
+      instruction: "원하는 옵션을 고른 뒤 담기를 눌러 주세요.",
+    }),
+  }));
+  await f.say("설명은 짧게 해줘");
+  await expect(
+    page.locator('[data-guide-option="size"][data-guide-value="large"]'),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('[data-guide="editor.add"]')).toContainText(
+    "9,400원",
+  );
+});

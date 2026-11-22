@@ -71,6 +71,7 @@ import { applyPaymentAction } from "./agentCheckout";
 import { PaymentPanelBody, paymentMethods, type Payment } from "./PaymentFlow";
 import { paymentMethodName } from "./domain";
 import { AgentChat, type AgentState } from "./AgentChat";
+import type { Guidance, GuidanceState } from "./AgentGuidance";
 
 type Screen = "home" | "menu" | "cart" | "payment" | "finalizing" | "completed";
 type Outcome = "success" | "failure" | "timeout";
@@ -141,7 +142,11 @@ function Counter({
   max = 20,
   min = 1,
   label,
+  guideLine,
+  guideProduct,
 }: {
+  guideLine?: string;
+  guideProduct?: string;
   value: number;
   onChange: (n: number) => void;
   min?: number;
@@ -149,7 +154,18 @@ function Counter({
   label: string;
 }) {
   return (
-    <div className="counter">
+    <div
+      className="counter"
+      data-guide={
+        guideLine
+          ? "cart.quantity"
+          : guideProduct
+            ? "editor.quantity"
+            : undefined
+      }
+      data-guide-line={guideLine}
+      data-guide-product={guideProduct}
+    >
       <button
         aria-label={`${label} 줄이기`}
         disabled={value <= min}
@@ -413,6 +429,47 @@ export default function App() {
   const uiSequence = useRef(0);
   const previousUi = useRef<UiSnapshot | null>(null);
   const uiSource = useRef<"ui_or_device" | "agent">("ui_or_device");
+  const [guidance, setGuidance] = useState<GuidanceState | null>(null);
+  const interaction = useRef({
+    activations: 0,
+    option_changes: 0,
+    screen_changes: 0,
+    guidance_completed: 0,
+    started_at: Date.now(),
+    last_action_at: null as number | null,
+    recent_actions: [] as string[],
+  });
+  useEffect(() => {
+    const record = (event: MouseEvent) => {
+      if (!(event.target instanceof Element)) return;
+      const button = event.target.closest<HTMLButtonElement>(".kiosk button");
+      if (!button || button.disabled) return;
+      const metrics = interaction.current;
+      metrics.activations++;
+      metrics.last_action_at = Date.now();
+      const semantic =
+        button.dataset.guide ??
+        button.closest<HTMLElement>("[data-guide]")?.dataset.guide ??
+        "other";
+      if (semantic === "option") metrics.option_changes++;
+      if (
+        [
+          "category",
+          "product",
+          "back",
+          "checkout",
+          "confirm_payment",
+          "place",
+        ].includes(semantic)
+      )
+        metrics.screen_changes++;
+      metrics.recent_actions.push(semantic);
+      if (metrics.recent_actions.length > 12) metrics.recent_actions.shift();
+    };
+    document.addEventListener("click", record, true);
+    return () => document.removeEventListener("click", record, true);
+  }, []);
+
   useEffect(() => {
     const snapshot: UiSnapshot = {
       lines: cart,
@@ -615,6 +672,16 @@ export default function App() {
   }, [idleSeconds, overlay]);
 
   function reset() {
+    setGuidance(null);
+    interaction.current = {
+      activations: 0,
+      option_changes: 0,
+      screen_changes: 0,
+      guidance_completed: 0,
+      started_at: Date.now(),
+      last_action_at: null,
+      recent_actions: [],
+    };
     uiJournal.current.splice(0);
     previousUi.current = null;
     lastAgentPaymentAction.current = null;
@@ -639,6 +706,61 @@ export default function App() {
     setPlace(p);
     setScreen("menu");
     lastActivity.current = Date.now();
+  }
+  function showGuide(guide: Guidance) {
+    if (screen === "finalizing" || screen === "completed" || payment) return;
+    let prepared = { ...guide };
+    const target = guide.target;
+    const product = guide.product_id ? findProduct(guide.product_id) : null;
+    if (["option", "editor.quantity", "editor.add"].includes(target)) {
+      if (!product) return;
+      if (
+        editor?.product.id !== product.id ||
+        (guide.line_id && editor.lineId !== guide.line_id)
+      ) {
+        const line = guide.line_id
+          ? cart.find((item) => item.id === guide.line_id)
+          : undefined;
+        configure(product, line);
+      }
+      setScreen((previous) => (previous === "home" ? "menu" : previous));
+    } else {
+      setEditor(null);
+      if (target === "product" && product) {
+        setCategory(product.categories[0]);
+        setScreen("menu");
+      } else if (
+        target === "category" &&
+        categories.includes(guide.value as Category)
+      ) {
+        setScreen("menu");
+        // Show its button, do not select the category on the customer's behalf.
+      } else if (target.startsWith("cart.")) {
+        setScreen((previous) => (previous === "menu" ? "menu" : "cart"));
+      } else if (target === "confirm_payment") setScreen("cart");
+      else if (target === "checkout") {
+        if (screen === "cart") prepared.target = "confirm_payment";
+        else setScreen("menu");
+      }
+    }
+    setGuidance({ ...prepared, status: "showing" });
+  }
+  function guideShortcut(target: string) {
+    const line =
+      cart.find((item) => item.id === guidance?.line_id) ?? cart.at(-1);
+    if (!line) return;
+    const instructions: Record<string, string> = {
+      "cart.quantity": "이 메뉴 옆의 +와 −로 수량을 바꿀 수 있어요.",
+      "cart.options":
+        "이 버튼으로 음료의 온도와 크기 등 옵션을 바꿀 수 있어요.",
+      checkout: "이 버튼을 누르거나 ‘결제해줘’라고 말씀하면 결제로 이어져요.",
+    };
+    showGuide({
+      id: crypto.randomUUID(),
+      target,
+      instruction: instructions[target],
+      ...(target.startsWith("cart.") ? { line_id: line.id } : {}),
+    });
   }
   function applyAgentState(state: AgentState) {
     uiSource.current = "agent";
@@ -694,6 +816,74 @@ export default function App() {
       setScreen((previous) =>
         previous === "home" || previous === "payment" ? "menu" : previous,
       );
+    const rawDraft = state.item_drafts?.at(-1);
+    const syncedEditor = state.ui_context?.editor;
+    const draft =
+      rawDraft && syncedEditor?.product_id === rawDraft.product_id
+        ? {
+            ...rawDraft,
+            quantity: syncedEditor.quantity,
+            options: syncedEditor.options,
+          }
+        : rawDraft;
+    if (
+      state.guidance &&
+      draft &&
+      draft.product_id === state.guidance.product_id &&
+      ["option", "editor.add", "editor.quantity"].includes(
+        state.guidance.target,
+      )
+    ) {
+      const product = findProduct(draft.product_id);
+      if (product)
+        setEditor({
+          product,
+          quantity: draft.quantity,
+          options: draft.options,
+          error: "",
+        });
+      setGuidance({ ...state.guidance, status: "showing" });
+    } else if (state.guidance) showGuide(state.guidance);
+    else if (draft && state.phase === "ordering") {
+      const product = findProduct(draft.product_id);
+      if (product) {
+        setEditor({
+          product,
+          quantity: draft.quantity,
+          options: draft.options,
+          error: "",
+        });
+        setGuidance({
+          id: crypto.randomUUID(),
+          target: "option",
+          product_id: draft.product_id,
+          option: draft.next_option,
+          instruction: draft.question ?? "지금 이야기하는 옵션을 표시했어요.",
+          status: "showing",
+        });
+      }
+    } else if (
+      state.phase === "checkout" &&
+      !state.payment_action &&
+      !payment
+    ) {
+      setGuidance({
+        id: crypto.randomUUID(),
+        target: "payment.method",
+        value: "card",
+        instruction:
+          "원하는 결제수단을 눌러 주세요. ‘카드로 할게’처럼 말씀하셔도 돼요.",
+        status: "showing",
+      });
+    } else if (JSON.stringify(cart) !== JSON.stringify(lines) && lines.length) {
+      setGuidance({
+        id: crypto.randomUUID(),
+        target: state.view === "review" ? "confirm_payment" : "checkout",
+        instruction:
+          "수량과 옵션은 아래 버튼 위치 안내로 바꿀 수 있어요. 주문을 마치려면 표시된 버튼을 누르거나 ‘결제해줘’라고 말씀해 주세요.",
+        status: "showing",
+      });
+    } else setGuidance(null);
     lastActivity.current = Date.now();
   }
   function configure(product: Product, line?: CartLine) {
@@ -807,10 +997,19 @@ export default function App() {
     key: K,
     items: { value: Options[K]; label: string; extra?: string }[],
   ) => (
-    <div className="choice-row">
+    <div
+      className="choice-row"
+      data-guide="option"
+      data-guide-option={key}
+      data-guide-product={editor?.product.id}
+    >
       {items.map((item) => (
         <button
           key={String(item.value)}
+          data-guide="option"
+          data-guide-option={key}
+          data-guide-value={String(item.value)}
+          data-guide-product={editor?.product.id}
           className={`choice ${editor?.options[key] === item.value ? "selected" : ""}`}
           aria-pressed={editor?.options[key] === item.value}
           onClick={() => editOption(key, item.value)}
@@ -929,7 +1128,7 @@ export default function App() {
                   <ProductImage product={products[2]} />
                 </div>
                 <div className="place-cards">
-                  <button onClick={() => start("store")}>
+                  <button data-guide="place" onClick={() => start("store")}>
                     <span className="place-icon">
                       <Store size={47} strokeWidth={1.6} />
                     </span>
@@ -1086,6 +1285,7 @@ export default function App() {
                   {screen !== "cart" ? (
                     <button
                       className="icon-button"
+                      data-guide="back"
                       aria-label={screen === "menu" ? "처음으로" : "이전 화면"}
                       onClick={() => {
                         if (screen === "menu") {
@@ -1109,6 +1309,7 @@ export default function App() {
                   <Brand />
                   <button
                     className="place-switch"
+                    data-guide="place"
                     onClick={() => {
                       if (payment?.status === "processing") return;
                       setOverlay("place");
@@ -1124,6 +1325,8 @@ export default function App() {
                       {categories.map((cat) => (
                         <button
                           key={cat}
+                          data-guide="category"
+                          data-guide-value={cat}
                           className={category === cat ? "active" : ""}
                           aria-current={category === cat ? "page" : undefined}
                           onClick={() => setCategory(cat)}
@@ -1139,6 +1342,8 @@ export default function App() {
                           .map((product) => (
                             <button
                               key={product.id}
+                              data-guide="product"
+                              data-guide-product={product.id}
                               className={`product-card ${product.soldOut ? "sold-out" : ""}`}
                               disabled={product.soldOut}
                               aria-label={`${product.name} ${money(product.price + (category === "디카페인" ? 500 : 0))}${product.soldOut ? " 품절" : ""}`}
@@ -1197,6 +1402,8 @@ export default function App() {
                                 <div className="dock-line" key={line.id}>
                                   <button
                                     className="dock-item"
+                                    data-guide="cart.options"
+                                    data-guide-line={line.id}
                                     aria-label={`${product.name} 옵션 변경`}
                                     onClick={() => configure(product, line)}
                                   >
@@ -1204,6 +1411,7 @@ export default function App() {
                                     <span>{summary(line.options)}</span>
                                   </button>
                                   <Counter
+                                    guideLine={line.id}
                                     label={`${product.name} 주문 수량`}
                                     value={line.quantity}
                                     onChange={(n) => changeQuantity(line, n)}
@@ -1216,6 +1424,8 @@ export default function App() {
                                   </b>
                                   <button
                                     className="dock-delete"
+                                    data-guide="cart.remove"
+                                    data-guide-line={line.id}
                                     aria-label={`${product.name} 주문에서 삭제`}
                                     onClick={() =>
                                       setCart(
@@ -1277,6 +1487,7 @@ export default function App() {
                         <button
                           className="primary"
                           disabled={!cart.length}
+                          data-guide="checkout"
                           onClick={() => setScreen("cart")}
                         >
                           결제하기
@@ -1317,6 +1528,8 @@ export default function App() {
                                 <p>{summary(line.options)}</p>
                                 <button
                                   className="option-edit"
+                                  data-guide="cart.options"
+                                  data-guide-line={line.id}
                                   aria-label={`${product.name} 옵션 변경`}
                                   onClick={() => configure(product, line)}
                                 >
@@ -1324,6 +1537,7 @@ export default function App() {
                                 </button>
                                 <div className="cart-line-bottom">
                                   <Counter
+                                    guideLine={line.id}
                                     value={line.quantity}
                                     label={`${product.name} 수량`}
                                     onChange={(n) => changeQuantity(line, n)}
@@ -1338,6 +1552,8 @@ export default function App() {
                               </div>
                               <button
                                 className="remove-button"
+                                data-guide="cart.remove"
+                                data-guide-line={line.id}
                                 aria-label={`${product.name} 삭제`}
                                 onClick={() =>
                                   setCart(cart.filter((l) => l.id !== line.id))
@@ -1399,6 +1615,7 @@ export default function App() {
                       <div className="review-actions">
                         <button
                           className="secondary"
+                          data-guide="back"
                           onClick={() => setScreen("menu")}
                         >
                           <ArrowLeft size={23} />
@@ -1407,6 +1624,7 @@ export default function App() {
                         <button
                           className="primary"
                           disabled={!cart.length}
+                          data-guide="confirm_payment"
                           onClick={() => {
                             if (placeChosen) setScreen("payment");
                             else {
@@ -1443,6 +1661,8 @@ export default function App() {
                         <button
                           key={method}
                           className={`payment-method ${method}`}
+                          data-guide="payment.method"
+                          data-guide-value={method}
                           aria-label={methodName(method)}
                           onClick={() => {
                             setToast("");
@@ -1474,6 +1694,7 @@ export default function App() {
                     </p>
                     <button
                       className="secondary full"
+                      data-guide="back"
                       onClick={() => setScreen("cart")}
                     >
                       <ArrowLeft size={21} />
@@ -1855,12 +2076,18 @@ export default function App() {
                   <div className="option-quantity">
                     <span>수량</span>
                     <Counter
+                      guideProduct={editor.product.id}
                       label="메뉴 수량"
                       value={editor.quantity}
                       onChange={(n) => setEditor({ ...editor, quantity: n })}
                     />
                   </div>
-                  <button className="primary full" onClick={add}>
+                  <button
+                    className="primary full"
+                    data-guide="editor.add"
+                    data-guide-product={editor.product.id}
+                    onClick={add}
+                  >
                     {money(
                       unitPrice(editor.product, editor.options) *
                         editor.quantity,
@@ -1933,6 +2160,8 @@ export default function App() {
               : null,
           last_action_id: lastAgentPaymentAction.current,
           ui_context: {
+            guidance,
+            interaction: interaction.current,
             category,
             overlay,
             events: uiJournal.current,
@@ -1952,10 +2181,29 @@ export default function App() {
         onBeginOrdering={() =>
           setScreen((previous) => (previous === "home" ? "menu" : previous))
         }
+        guidance={guidance}
+        onGuideDone={() => {
+          interaction.current.guidance_completed++;
+          setGuidance((previous) =>
+            previous ? { ...previous, status: "done" } : null,
+          );
+        }}
+        onGuideDismiss={() => setGuidance(null)}
+        onGuideShortcut={guideShortcut}
         onState={applyAgentState}
         onConversationActiveChange={setChatActive}
         previousUsage={lastSessionUsage}
         onSessionEnd={(usage) => {
+          setGuidance(null);
+          interaction.current = {
+            activations: 0,
+            option_changes: 0,
+            screen_changes: 0,
+            guidance_completed: 0,
+            started_at: Date.now(),
+            last_action_at: null,
+            recent_actions: [],
+          };
           uiJournal.current.splice(0);
           setLastSessionUsage(usage ?? null);
           setChatActive(false);

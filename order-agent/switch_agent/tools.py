@@ -210,4 +210,11 @@ def handoff_to_staff(ctx: RunContextWrapper[OrderStore], reason: str, unresolved
     return encoded({"ok": True, "event": "staff.handoff_requested", "mode": "mock", "staff_notified": False})
 
 
-TOOLS = [search_menu, read_menu, find_suitable_menu, get_cart, add_item, cancel_pending_item, edit_item, split_item, remove_item, clear_order, select_item, set_order_type, request_final_confirmation, open_checkout, select_payment_method, retry_payment, cancel_payment, return_to_order, handoff_to_staff]
+@function_tool
+def guide_ui(ctx: RunContextWrapper[OrderStore], target: Literal["place", "category", "product", "option", "editor.quantity", "editor.add", "cart.quantity", "cart.options", "cart.remove", "checkout", "confirm_payment", "payment.method", "back"], instruction: str, product_id: str | None = None, line_id: str | None = None, option: Literal["temperature", "size", "ice", "sweetness", "milk", "decaf"] | None = None, value: str | None = None) -> str:
+    """손님이 직접 누르도록 버튼 하나를 강조하고 위치로 이동한다. instruction은 짧은 쉬운 안내. product는 메뉴 ID, category는 value=카테고리명, option은 옵션명과 필요시 value=값, cart.*는 항목 ID, payment.method는 value=card/samsung/apple/kakao/naver. 옵션 안내는 현재 편집 중인 선택을 유지하며 창만 준비한다. 주문 추가/변경이나 결제 실행은 하지 않는다. 대신 해달라는 요청은 기존 주문 도구를 사용한다."""
+    from .guidance import guide
+    return guarded(lambda: guide(ctx.context, target, instruction, product_id, line_id, option, value))
+
+
+TOOLS = [guide_ui, search_menu, read_menu, find_suitable_menu, get_cart, add_item, cancel_pending_item, edit_item, split_item, remove_item, clear_order, select_item, set_order_type, request_final_confirmation, open_checkout, select_payment_method, retry_payment, cancel_payment, return_to_order, handoff_to_staff]
