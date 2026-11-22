@@ -35,7 +35,7 @@ def preserve_short_reply(text, context):
     compact = re.sub(r"\s+|[.!?,…]", "", text)
     if context.get("session_active") is False:
         return None
-    words = {"네", "예", "응", "어", "아니", "아니요", "아뇨", "하나요", "하나", "둘", "셋", "차갑게", "따뜻하게", "아이스", "핫", "라떼", "아메리카노", "매장", "포장", "그거", "그걸로", "그거말고", "다른거", "다른걸로", "해줘", "해주세요", "잠깐만", "잠시만요", "뭐라고", "똑같이"}
+    words = {"네", "예", "그래", "그래요", "응", "어", "아니", "아니요", "아뇨", "하나요", "하나", "둘", "셋", "차갑게", "따뜻하게", "아이스", "핫", "라떼", "아메리카노", "매장", "포장", "그거", "그걸로", "그거말고", "다른거", "다른걸로", "해줘", "해주세요", "잠깐만", "잠시만요", "뭐라고", "똑같이"}
     quantity = r"(?:[0-9]{1,2}|한|두|세|네|다섯|여섯|하나|둘|셋)(?:개|잔)(?:요)?"
     if compact in words or re.fullmatch(quantity, compact) or re.fullmatch(r"(?:해줘|해주세요)" + quantity, compact):
         return Decision("accept", "context_for_agent", {"route": "local_conversation", "input_tokens": 0, "output_tokens": 0})

@@ -5,7 +5,7 @@ from unittest.mock import patch
 import numpy as np
 
 from voice_frontend import Candidate, Decision, NoiseFloor, SpeechCapture, TurnBuffer, Silero, FRAME_SAMPLES
-from speech_decisions import rules, jev_decision, OpenAIGate, preserve_short_reply, explicit_single_order
+from speech_decisions import rules, jev_decision, OpenAIGate, JevGate, preserve_short_reply, explicit_single_order
 
 FRAME = (np.sin(np.arange(FRAME_SAMPLES) * .08) * 1000).astype("<i2").tobytes()
 SILENCE = bytes(FRAME_SAMPLES * 2)
@@ -111,6 +111,36 @@ class AcousticTests(unittest.TestCase):
         self.assertTrue(all(0 <= p < .15 for _, _, p in frames))
         vad.reset()
         self.assertEqual(len(list(vad.frames(bytes(1536 * 2)))), 1)
+
+
+class ShortReplyTests(unittest.TestCase):
+    def test_affirmative_replies_preserve_original_words_without_calling_a_model(self):
+        for text in ["네", "네.", " 예. ", "그래", "그래요."]:
+            for question in ["", "아이스로 드릴까요?"]:
+                with self.subTest(text=text, question=question), patch("openai.OpenAI") as factory, patch("urllib.request.urlopen") as http:
+                    context = {"session_active": True, "last_question": question}
+                    openai_gate = OpenAIGate("fixture", "gpt-5.6-luna")
+                    from serial_stt import ROOT
+                    jev_gate = JevGate("fixture", ROOT / "kiosk-web/backend/certs/cacert.pem")
+                    for gate in [openai_gate, jev_gate]:
+                        buffer = TurnBuffer(context=context, join_wait=.5)
+                        buffer.speech_started(0)
+                        token = buffer.audio_finished(.4)
+                        buffer.transcript(token, text, now=.5)
+                        candidate = buffer.poll(.5)
+                        decision = gate.decide(candidate.text, candidate.context)
+                        self.assertEqual(decision.action, "accept")
+                        self.assertEqual(decision.usage["route"], "local_conversation")
+                        buffer.apply(candidate, decision, .6)
+                        final = buffer.poll(1)
+                        self.assertEqual(final[0], "accept")
+                        self.assertEqual(final[1], text.strip())
+                    factory.return_value.responses.create.assert_not_called()
+                    http.assert_not_called()
+
+    def test_inactive_session_does_not_bypass_target_judgment_for_short_replies(self):
+        for text in ["네", "예", "그래"]:
+            self.assertIsNone(preserve_short_reply(text, {"session_active": False}))
 
 
 class TurnTests(unittest.TestCase):

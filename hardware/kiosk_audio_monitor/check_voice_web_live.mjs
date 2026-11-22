@@ -6,7 +6,8 @@ import path from 'node:path';
 const here = path.dirname(fileURLToPath(import.meta.url)), root = path.resolve(here, '../..');
 const require = createRequire(path.join(root, 'kiosk-web/package.json'));
 const { chromium, expect } = require('@playwright/test');
-if (process.argv.length !== 4) throw new Error('Usage: node check_voice_web_live.mjs PRIVATE_DEMO_JSON SYNTHETIC_WAV');
+if (![4,5].includes(process.argv.length)) throw new Error('Usage: node check_voice_web_live.mjs PRIVATE_DEMO_JSON SYNTHETIC_WAV [EXPECTED_TEXT]');
+const expectedText = process.argv[4] || '아이스 아메리카노';
 const config = JSON.parse(await readFile(process.argv[2], 'utf8')), wav = await readFile(process.argv[3]);
 let pcm;
 for (let offset = 12; offset + 8 <= wav.length;) { const size = wav.readUInt32LE(offset + 4); if (wav.toString('ascii', offset, offset + 4) === 'data') { pcm = wav.subarray(offset + 8, offset + 8 + size); break; } offset += 8 + size + (size % 2); }
@@ -44,10 +45,15 @@ try {
   await page.locator('#connect').click();
   await expect(page.locator('#processing-state')).toHaveText('RUNNING', { timeout: 12000 });
   await page.evaluate(() => { window.startFixture = true; });
-  await expect(page.locator('.bubble').first()).toContainText('아이스 아메리카노', { timeout: 25000 });
+  await expect(page.locator('.bubble').first()).toContainText(expectedText, { timeout: 25000 });
   await expect(page.locator('#speech-status')).toHaveText('PASS', { timeout: 12000 });
   await expect(page.locator('#api-calls')).not.toHaveText('0');
-  const folder = path.join(root, 'tmp/voice-web-live-qa'); await mkdir(folder, { recursive: true });
+  if (process.argv[4]) {
+    const normalize = (value) => value.normalize('NFKC').replace(/[\s.!?,…。！？]+/gu, '');
+    const actual = await page.locator('#speech-text').textContent();
+    if (normalize(actual) !== normalize(expectedText)) throw new Error(`Short reply mismatch: ${actual}`);
+  }
+  const folder = path.join(root, 'tmp/voice-web-live-qa', path.basename(process.argv[3], '.wav'));  await mkdir(folder, { recursive: true });
   await page.screenshot({ path: path.join(folder, 'deployed-connected.png'), fullPage: true });
   const result = { actualPublicHTTPS: true, actualSTT: true, syntheticUSB: true, physicalESPTested: false, text: await page.locator('.bubble p').first().textContent(), timing: await page.locator('#timing').textContent(), tokens: await page.locator('#tokens-total').textContent(), usageUnknown: await page.locator('#usage-unknown').textContent(), apiResponses: await page.locator('#api-calls').textContent(), sttP50: await page.locator('#stt-p50').textContent(), gateP50: await page.locator('#filter-p50').textContent(), denoise: await page.locator('#denoise-mode').textContent(), gate: await page.locator('#gate-model').textContent(), errors, apiFailures };
   await page.locator('#processing-toggle').click(); await expect(page.locator('#processing-toggle')).toHaveText('RESUME'); await expect(page.locator('#processing-toggle')).toBeEnabled();
