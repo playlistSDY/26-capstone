@@ -74,13 +74,13 @@ class Session:
         finally:
             self.child.stdin.close()
 
-    def upload(self, sequence, data):
+    def upload(self, sequence, data, *, wait=0):
         with self.upload_lock:
             if self.closed.is_set() or sequence != self.last_sequence + 1:
                 self.close()
                 return False
             try:
-                self.queue.put_nowait(data)
+                self.queue.put(data, timeout=wait)
             except queue.Full:
                 self.close()  # Discard this turn instead of building old audio.
                 return False
@@ -120,9 +120,72 @@ class VoiceServer(ThreadingHTTPServer):
         self.session = None
         self.lock = threading.Lock()
         self.command = command or [sys.executable, "-u", str(HERE / "serial_stt.py"), "--pcm-stdin", "--json-events"]
+        self.stream_server = None
         super().__init__(address, Handler)
 
+    def start_stream(self, port=18736):
+        from websockets.sync.server import serve
+
+        def authorize(connection, request):
+            if request.path != "/voice-api/stream" or not hmac.compare_digest(request.headers.get("Authorization", ""), "Bearer " + self.token):
+                return connection.respond(401, "Device token required\n")
+
+        self.stream_server = serve(self.stream, "127.0.0.1", port, process_request=authorize, compression=None, max_size=32768, max_queue=8, ping_interval=5, ping_timeout=15, close_timeout=1)
+        threading.Thread(target=self.stream_server.serve_forever, daemon=True).start()
+        return self.stream_server.socket.getsockname()[1]
+
+    def stream(self, websocket):
+        from websockets.exceptions import ConnectionClosed
+        with self.lock:
+            if self.session and not self.session.closed.is_set():
+                websocket.send(json.dumps({"event": "stream.error", "reason": "busy", "message": "다른 수음기가 사용 중이에요. 기존 테스트를 먼저 중지해 주세요."}))
+                websocket.close(1013, "Microphone in use")
+                return
+            session = self.session = Session(self.command)
+        sender = None
+        try:
+            if not session.ready.wait(8) or session.closed.is_set():
+                websocket.close(1011, "Speech worker unavailable")
+                return
+            websocket.send(json.dumps({"event": "stream.ready", "session": session.id, "processing": "server"}))
+
+            def send_events():
+                cursor = 0
+                try:
+                    while not session.closed.is_set():
+                        for row in session.hub.since(cursor):
+                            websocket.send(json.dumps(row, ensure_ascii=False))
+                            cursor = row["id"]
+                        with session.hub.condition:
+                            if session.hub.sequence <= cursor:
+                                session.hub.condition.wait(timeout=.2)
+                except ConnectionClosed:
+                    pass
+                finally:
+                    websocket.close(1012, "Session ended")
+
+            sender = threading.Thread(target=send_events, daemon=True)
+            sender.start()
+            sequence = 0
+            while not session.closed.is_set():
+                try:
+                    data = websocket.recv(timeout=.5)
+                except TimeoutError:
+                    continue
+                if not isinstance(data, bytes) or not data or not session.upload(sequence, data, wait=.25):
+                    websocket.close(1013, "Audio stream overloaded")
+                    break
+                sequence += 1
+        except ConnectionClosed:
+            pass
+        finally:
+            session.close()
+            if sender:
+                sender.join(timeout=2)
+
     def server_close(self):
+        if self.stream_server:
+            self.stream_server.shutdown()
         if self.session:
             self.session.close()
         super().server_close()
@@ -249,8 +312,10 @@ def main():
     import signal
     parser = argparse.ArgumentParser(description="SWitch 서버 음성 처리기")
     parser.add_argument("--port", type=int, default=18734)
+    parser.add_argument("--stream-port", type=int, default=18736)
     args = parser.parse_args()
     server = VoiceServer(("127.0.0.1", args.port), os.environ.get("VOICE_REMOTE_TOKEN", ""))
+    server.start_stream(args.stream_port)
     signal.signal(signal.SIGTERM, lambda *_: threading.Thread(target=server.shutdown, daemon=True).start())
     try:
         server.serve_forever(poll_interval=.2)

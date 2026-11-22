@@ -16,55 +16,107 @@ const errors = [], external = [];
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1120 } });
   await context.addInitScript(() => {
-    let interval;
     const serial = new EventTarget();
-    serial.requestPort = async () => {
-      if (window.cancelNext) { window.cancelNext = false; throw new DOMException('cancelled', 'NotFoundError'); }
-      let streamController;
-      const port = {
-        readable: new ReadableStream({ start(controller) { streamController = controller; }, cancel() { clearInterval(interval); } }),
+    const makePort = () => {
+      let interval, controller;
+      return {
+        readable: new ReadableStream({ start(c) { controller = c; }, cancel() { clearInterval(interval); } }),
+        getInfo: () => ({ usbVendorId: 0x303a, usbProductId: 0x1001 }),
         open: async () => { window.usbOpens = (window.usbOpens || 0) + 1; },
-        setSignals: async (signals) => { window.lastSignals = signals; interval = setInterval(() => streamController.enqueue(new Uint8Array(512)), 20); },
+        setSignals: async (signals) => { window.lastSignals = signals; interval = setInterval(() => controller.enqueue(new Uint8Array(536 * 8)), 8 * 256 / 48000 * 1000); },
         close: async () => { clearInterval(interval); window.usbCloses = (window.usbCloses || 0) + 1; },
       };
-      return port;
     };
+    serial.requestPort = async () => {
+      sessionStorage.setItem('fixture.pickers', String(Number(sessionStorage.getItem('fixture.pickers') || 0) + 1));
+      if (window.cancelNext) { window.cancelNext = false; throw new DOMException('cancelled', 'NotFoundError'); }
+      localStorage.setItem('fixture.granted', 'yes'); return makePort();
+    };
+    serial.getPorts = async () => localStorage.getItem('fixture.granted') ? [makePort()] : [];
     Object.defineProperty(navigator, 'serial', { value: serial, configurable: true });
   });
   const page = await context.newPage();
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('request', (request) => { if (!request.url().startsWith(info.base)) external.push(new URL(request.url()).origin); });
+  let binaryFrames = 0;
+  page.on('websocket', (ws) => ws.on('framesent', ({ payload }) => { if (typeof payload !== 'string') binaryFrames++; }));
+  const routes = [];
+  await page.routeWebSocket('**/api/voice/stream', (client) => {
+    const server = client.connectToServer(), entry = { client, server, closed: false }; routes.push(entry);
+    const delay = routes.length === 1 ? 1100 : 0;
+    client.onMessage((data) => setTimeout(() => { if (!entry.closed) server.send(data); }, delay));
+    client.onClose((code, reason) => { entry.closed = true; void server.close({ code, reason }); });
+    server.onClose((code, reason) => { entry.closed = true; void client.close({ code, reason }); });
+    server.onMessage((data) => {
+      const row = JSON.parse(String(data));
+      if (row.event === 'turn.accept') {
+        for (const event of [
+          { event: 'speech_started' }, { event: 'audio_segment', endpoint_seconds: .45 },
+          { event: 'recognizing' }, { event: 'transcript', text: '아이스 라떼', elapsed: .7 },
+          { event: 'filter_started' },
+        ]) client.send(JSON.stringify(event));
+      }
+      client.send(data);
+    });
+  });
   await page.goto(info.base);
-  await expect(page.locator('#invitation')).toBeVisible();
+  await expect(page.locator('#connection-modal')).toBeVisible();
   await expect(page.locator('#connect')).toBeDisabled();
   await page.goto(`${info.base}#access=${info.access}`);
   await expect(page.locator('#connect')).toBeEnabled();
   if (page.url().includes('#')) throw new Error('Invitation remained in URL');
-  await page.screenshot({ path: path.join(folder, 'desktop-ready.png'), fullPage: true });
   await page.evaluate(() => { window.cancelNext = true; });
+  await page.locator('#connect').click(); await expect(page.locator('#notice')).toContainText('취소');
   await page.locator('#connect').click();
-  await expect(page.locator('#notice')).toContainText('취소');
-  await page.locator('#connect').click();
-  await expect(page.locator('.bubble').first()).toContainText('아이스 라떼');
-  await expect(page.locator('#disconnect')).toBeVisible();
+  await expect(page.locator('#connection-modal')).not.toBeVisible();
+  await expect(page.locator('.bubble').first()).toContainText('아이스 라떼', { timeout: 10000 });
+  await expect(page.locator('#logs')).toBeVisible();
+  await expect(page.locator('[data-step="stt"]')).toHaveClass(/done/);
+  await expect(page.locator('[data-step="filter"]')).toHaveClass(/done/);
+  await expect(page.locator('#processing-state')).toHaveText('음성 처리 중');
   const signals = await page.evaluate(() => window.lastSignals);
   if (!signals.dataTerminalReady || signals.requestToSend) throw new Error('Unsafe reset signal configuration');
-  await page.locator('#log-toggle').click();
-  await expect(page.locator('#logs')).toContainText('문장 확정');
+  // 1.1s per-message delay, at full ESP bit rate: no HTTP acknowledgement stall.
+  if (routes.length !== 1 || await page.evaluate(() => window.usbOpens) !== 1) throw new Error('Lag disconnected USB');
   await page.screenshot({ path: path.join(folder, 'desktop-connected.png'), fullPage: true });
-  await page.locator('#disconnect').click();
-  await expect(page.locator('#connect')).toBeEnabled();
-  await expect(page.locator('#notice')).toContainText('전송을 멈췄어요');
-  if (await page.evaluate(() => window.usbCloses) !== 1) throw new Error('Serial port leaked');
-  await page.locator('#connect').click();
-  await expect(page.locator('#disconnect')).toBeVisible();
-  await page.locator('#disconnect').click();
-  await expect(page.locator('#connect')).toBeEnabled();
+  routes[0].closed = true;
+  await routes[0].client.close({ code: 1012, reason: 'fixture-network-loss' });
+  await routes[0].server.close({ code: 1012 });
+  await expect.poll(() => routes.length).toBe(2);
+  await expect(page.locator('#connection-message')).toContainText('복구');
+  if (await page.evaluate(() => window.usbOpens) !== 1) throw new Error('Network recovery reopened USB');
+  await page.locator('#processing-toggle').click();
+  await expect(page.locator('#processing-toggle')).toHaveText('음성 처리 재개');
+  await expect(page.locator('#processing-toggle')).toBeEnabled();
+  const pausedFrames = binaryFrames; await new Promise((resolve) => setTimeout(resolve, 650));
+  if (binaryFrames !== pausedFrames) throw new Error('Audio still transmitted while paused');
+  await expect(page.locator('#connection-status')).toHaveText('마이크 연결됨');
+  await expect(page.locator('#stage')).toContainText('잠시 멈췄어요');
+  const pickerCount = await page.evaluate(() => sessionStorage.getItem('fixture.pickers'));
+  await page.reload();
+  await expect(page.locator('#connection-status')).toHaveText('마이크 연결됨');
+  await expect(page.locator('#processing-toggle')).toHaveText('음성 처리 재개');
+  await expect(page.locator('#connection-modal')).not.toBeVisible();
+  if (await page.evaluate(() => sessionStorage.getItem('fixture.pickers')) !== pickerCount) throw new Error('Reload prompted for USB permission again');
+  await page.locator('#processing-toggle').click();
+  await expect(page.locator('.bubble').first()).toContainText('아이스 라떼');
+  await expect(page.locator('#processing-state')).toHaveText('음성 처리 중');
+  await page.screenshot({ path: path.join(folder, 'desktop-ready.png'), fullPage: true });
   for (const width of [1024, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) throw new Error(`Overflow at ${width}`);
     await page.screenshot({ path: path.join(folder, `width-${width}.png`), fullPage: true });
   }
+  await page.locator('#connection-open').click(); await expect(page.locator('#connection-modal')).toBeVisible();
+  await page.locator('#disconnect').click(); await expect(page.locator('#connect')).toBeEnabled();
+  await expect(page.locator('#notice')).toContainText('전송을 멈췄어요');
+  if (await page.evaluate(() => window.usbCloses) !== 1) throw new Error('Serial port leaked');
+  // Upgrade from the previous page: a browser grant alone must be enough.
+  await page.evaluate(() => { const key = `switch.voice.${location.pathname}`; localStorage.removeItem(`${key}.auto`); localStorage.removeItem(`${key}.device`); });
+  await page.reload(); await expect(page.locator('#connection-status')).toHaveText('마이크 연결됨');
+  await expect(page.locator('#connection-modal')).not.toBeVisible();
+  if (await page.evaluate(() => sessionStorage.getItem('fixture.pickers')) !== pickerCount) throw new Error('Existing permission was not reused after upgrade');
+  await page.locator('#processing-toggle').click(); await expect(page.locator('#processing-toggle')).toHaveText('음성 처리 재개');
   const unsupported = await browser.newContext();
   await unsupported.addInitScript(() => Object.defineProperty(navigator, 'serial', { value: undefined }));
   const alternative = await unsupported.newPage();
@@ -72,10 +124,9 @@ try {
   await alternative.goto(`${info.base}#access=${info.access}`);
   await expect(alternative.locator('#browser-note')).toContainText('지원하지 않아요');
   await expect(alternative.locator('#connect')).toBeDisabled();
-  await alternative.locator('summary').click();
   const download = alternative.waitForEvent('download'); await alternative.locator('#installer').click();
   if ((await download).suggestedFilename() !== 'SWitch-Voice-Setup.cmd') throw new Error('Installer download failed');
-  const result = { realHTTPAndServerWorkers: true, simulatedWebSerial: true, microphoneAndSTTAPIsUsed: false, invitation: true, directUSBFlow: true, pickerCancellation: true, safeDTRRTS: true, stopRestart: true, unsupportedBrowserHelp: true, installerDownload: true, widths: [1440, 1024, 390], pageErrors: errors, externalRequests: external };
+  const result = { realHTTPAndServerWorkers: true, simulatedWebSerial: true, microphoneAndSTTAPIsUsed: false, invitation: true, directUSBFlow: true, pickerCancellation: true, safeDTRRTS: true, stopRestart: true, alwaysVisibleLogs: true, progressSteps: true, fullESPRate: true, delayedFramesMs: 1100, automaticServerRecovery: true, automaticUSBReload: true, pauseNoAudioTransmission: true, unsupportedBrowserHelp: true, installerDownload: true, widths: [1440, 1024, 390], pageErrors: errors, externalRequests: external };
   await writeFile(path.join(folder, 'result.json'), JSON.stringify(result, null, 2));
   if (errors.length || external.length) throw new Error(JSON.stringify(result));
   console.log(JSON.stringify(result));

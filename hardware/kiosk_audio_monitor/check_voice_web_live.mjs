@@ -41,15 +41,15 @@ try {
   await page.goto(`${config.url}#access=${config.access}`);
   await expect(page.locator('#connect')).toBeEnabled({ timeout: 12000 });
   await page.locator('#connect').click();
-  await expect(page.locator('#disconnect')).toBeVisible({ timeout: 12000 });
+  await expect(page.locator('#processing-state')).toHaveText('음성 처리 중', { timeout: 12000 });
   await page.evaluate(() => { window.startFixture = true; });
   await expect(page.locator('.bubble').first()).toContainText('아이스 아메리카노', { timeout: 25000 });
-  await page.locator('#log-toggle').click();
   const folder = path.join(root, 'tmp/voice-web-live-qa'); await mkdir(folder, { recursive: true });
   await page.screenshot({ path: path.join(folder, 'deployed-connected.png'), fullPage: true });
   const result = { actualPublicHTTPS: true, actualSTT: true, syntheticUSB: true, physicalESPTested: false, text: await page.locator('.bubble p').first().textContent(), timing: await page.locator('#timing').textContent(), errors, apiFailures };
-  await page.locator('#disconnect').click(); await expect(page.locator('#connect')).toBeEnabled();
-  result.stopReleased = true; await writeFile(path.join(folder, 'result.json'), JSON.stringify(result, null, 2));
+  await page.locator('#processing-toggle').click(); await expect(page.locator('#processing-toggle')).toHaveText('음성 처리 재개'); await expect(page.locator('#processing-toggle')).toBeEnabled();
+  await expect(page.locator('#connection-status')).toHaveText('마이크 연결됨');
+  result.pausePreservedUSB = true; result.stopReleased = true; await writeFile(path.join(folder, 'result.json'), JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result));
   if (errors.length || apiFailures.length) throw new Error('Live web check failed');
 } finally { if (page) await page.close(); await browser.close(); }

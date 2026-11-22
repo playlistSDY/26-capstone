@@ -22,7 +22,8 @@ class DemoTests(unittest.TestCase):
         self.package = Path(self.folder.name) / "test.zip"
         self.package.write_bytes(b"fixture-package")
         self.upstream = VoiceServer(("127.0.0.1", 0), TOKEN, [sys.executable, "-u", "-c", FAKE_WORKER])
-        self.server = DemoServer(("127.0.0.1", 0), access=ACCESS, device_token=TOKEN, package=self.package, public_url="http://127.0.0.1", upstream=self.upstream.server_port)
+        stream_port = self.upstream.start_stream(0)
+        self.server = DemoServer(("127.0.0.1", 0), access=ACCESS, device_token=TOKEN, package=self.package, public_url="http://127.0.0.1", upstream=self.upstream.server_port, stream_port=stream_port)
         self.threads = []
         for server in [self.server, self.upstream]:
             thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": .02}, daemon=True)
@@ -90,13 +91,32 @@ class DemoTests(unittest.TestCase):
         self.assertEqual(self.call("POST", "/api/auth", b"{}", {"Origin": "https://untrusted.example"})[0], 403)
 
     def test_static_assets_never_contain_private_credentials(self):
-        for path in ["/", "/app.js", "/styles.css", "/avatar.svg", "/font.woff2"]:
+        for path in ["/", "/app.js", "/audio_stream.js", "/styles.css", "/avatar.svg", "/font.woff2"]:
             status, headers, body = self.call("GET", path)
             self.assertEqual(status, 200)
             self.assertNotIn(TOKEN.encode(), body)
             self.assertNotIn(ACCESS.encode(), body)
             self.assertIn("serial=(self)", headers["Permissions-Policy"])
         self.assertEqual(self.call("GET", "/../../order-agent/.env")[0], 404)
+
+    def test_websocket_proxy_requires_cookie_origin_and_streams_binary(self):
+        from websockets.sync.client import connect
+        from websockets.exceptions import InvalidStatus
+        url = f"ws://127.0.0.1:{self.server.server_port}/api/voice/stream"
+        with self.assertRaises(InvalidStatus):
+            connect(url, proxy=None)
+        self.authenticate()
+        with self.assertRaises(InvalidStatus):
+            connect(url, additional_headers={"Cookie": self.cookie}, origin="https://untrusted.example", proxy=None)
+        with connect(url, additional_headers={"Cookie": self.cookie}, origin=f"http://127.0.0.1:{self.server.server_port}", proxy=None) as stream:
+            ready = json.loads(stream.recv(timeout=3))
+            self.assertEqual(ready["event"], "stream.ready")
+            self.assertEqual(json.loads(stream.recv(timeout=3))["event"], "started")
+            stream.send(b"fixture" * 512)
+            accepted = json.loads(stream.recv(timeout=3))
+            self.assertEqual(accepted["text"], "아이스 라떼")
+            self.assertEqual(accepted["bytes"], 7 * 512)
+        self.assertTrue(self.upstream.session.closed.wait(3))
 
 
 if __name__ == "__main__":

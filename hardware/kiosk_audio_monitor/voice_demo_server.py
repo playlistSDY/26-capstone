@@ -15,6 +15,8 @@ import json
 import os
 from pathlib import Path
 import secrets
+import select
+import socket
 import threading
 import time
 from urllib.parse import urlsplit, parse_qs
@@ -26,11 +28,12 @@ ROOT = HERE.parents[1]
 class DemoServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, address, *, access, device_token, package, public_url, upstream=18734):
+    def __init__(self, address, *, access, device_token, package, public_url, upstream=18734, stream_port=18736):
         if min(len(access), len(device_token)) < 32:
             raise ValueError("Separate demo invitation and device credentials are required")
         self.access, self.device_token = access, device_token
         self.package, self.public_url, self.upstream = Path(package), public_url.rstrip("/"), upstream
+        self.stream_port = stream_port
         self.cookie_name = "switch_voice_" + hashlib.sha256(public_url.encode()).hexdigest()[:10]
         self.bad_auth = {}
         self.auth_lock = threading.Lock()
@@ -183,6 +186,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         url = urlsplit(self.path)
+        if url.path == "/api/voice/stream":
+            return self.stream_proxy()
         if url.path == "/api/state":
             return self.send(200, {"authenticated": self.authenticated(), "app": "switch-voice-web-demo-v1"})
         if url.path.startswith("/api/voice/"):
@@ -216,7 +221,7 @@ class Handler(BaseHTTPRequestHandler):
                 while data := source.read(65536):
                     self.wfile.write(data)
             return
-        files = {"/": (HERE / "web_demo/index.html", "text/html; charset=utf-8"), "/app.js": (HERE / "web_demo/app.js", "text/javascript; charset=utf-8"), "/styles.css": (HERE / "web_demo/styles.css", "text/css; charset=utf-8"), "/avatar.svg": (HERE / "dashboard/avatar.svg", "image/svg+xml"), "/font.woff2": (ROOT / "kiosk-web/public/assets/fonts/PretendardVariable.woff2", "font/woff2")}
+        files = {"/": (HERE / "web_demo/index.html", "text/html; charset=utf-8"), "/app.js": (HERE / "web_demo/app.js", "text/javascript; charset=utf-8"), "/audio_stream.js": (HERE / "web_demo/audio_stream.js", "text/javascript; charset=utf-8"), "/styles.css": (HERE / "web_demo/styles.css", "text/css; charset=utf-8"), "/avatar.svg": (HERE / "dashboard/avatar.svg", "image/svg+xml"), "/font.woff2": (ROOT / "kiosk-web/public/assets/fonts/PretendardVariable.woff2", "font/woff2")}
         item = files.get(url.path)
         if not item:
             return self.send(404, {"error": "not_found"})
@@ -224,6 +229,45 @@ class Handler(BaseHTTPRequestHandler):
         self.write_headers(200, item[1], len(data))
         self.end_headers()
         self.wfile.write(data)
+
+    def stream_proxy(self):
+        if not self.authenticated() or not self.same_origin():
+            return self.send(403, {"error": "invitation_required"})
+        if self.headers.get("Upgrade", "").lower() != "websocket" or not self.headers.get("Sec-WebSocket-Key"):
+            return self.send(400, {"error": "websocket_required"})
+        self.close_connection = True
+        upstream = None
+        try:
+            upstream = socket.create_connection(("127.0.0.1", self.server.stream_port), timeout=10)
+            upstream.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            request = "GET /voice-api/stream HTTP/1.1\r\nHost: 127.0.0.1\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: " + self.headers["Sec-WebSocket-Key"] + "\r\nAuthorization: Bearer " + self.server.device_token + "\r\n\r\n"
+            upstream.sendall(request.encode("ascii"))
+            data = bytearray()
+            while b"\r\n\r\n" not in data and len(data) < 16384:
+                chunk = upstream.recv(4096)
+                if not chunk:
+                    raise OSError("Upstream handshake closed")
+                data.extend(chunk)
+            if not data.startswith(b"HTTP/1.1 101 "):
+                return self.send(502, {"error": "stream_unavailable"})
+            self.wfile.write(data)
+            self.wfile.flush()
+            # Forward frames without interpreting their content. Protocol,
+            # ping/pong, masking and limits are handled by websockets upstream.
+            self.connection.settimeout(15)
+            upstream.settimeout(15)
+            while True:
+                readable, _, _ = select.select([self.connection, upstream], [], [], 1)
+                for source in readable:
+                    chunk = source.recv(65536)
+                    if not chunk:
+                        return
+                    (upstream if source is self.connection else self.connection).sendall(chunk)
+        except OSError:
+            pass
+        finally:
+            if upstream:
+                upstream.close()
 
 
 def main():

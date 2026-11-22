@@ -2,34 +2,51 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f5f7fb">
-  <title>SWitch — 마이크 연결 테스트</title>
-  <link rel="icon" href="./avatar.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script>
+  <title>SWitch · 내 목소리</title><link rel="icon" href="./avatar.svg"><link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script>
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="./"><span class="brand-mark">S</span> SWitch <span class="brand-caption">VOICE LAB</span></a><span class="server-state" id="server-state">접속 확인 중</span></header>
-  <main>
-    <div class="intro"><div class="eyebrow">마이크 · 음성 인식 테스트</div><h1>연결하고, 편하게 말씀하세요.</h1><p>복잡한 설정 없이 ESP32 마이크를 연결해 보세요.<br>음성 처리는 서버에 맡기고, 이 화면에서는 대화에 집중하세요.</p></div>
-    <div class="workspace">
-      <section class="connection-card" aria-labelledby="connect-title">
-        <div class="device-visual" aria-hidden="true"><div class="device-halo"></div><div class="device"><div class="device-light" id="device-light"></div><div class="mic-grille"><i></i><i></i><i></i><i></i><i></i></div><span>SWitch</span><div class="device-button"></div></div><div class="usb-cable"></div><span class="device-tag">ESP32-S3 · USB</span></div>
-        <div class="connection-copy"><span class="small-label" id="device-state">마이크 연결 전</span><h2 id="connect-title">USB만 연결하면 준비 끝.</h2><p id="connection-help">마이크를 PC에 꽂고 아래 버튼을 누른 뒤<br><strong>USB JTAG/serial debug unit</strong>을 선택하세요.</p></div>
-        <button class="primary" id="connect" disabled>ESP32 마이크 연결</button>
-        <button class="secondary" id="disconnect" hidden>수음 중지하고 연결 해제</button>
-        <div class="browser-note" id="browser-note">데스크톱 Chrome·Edge에서 바로 연결할 수 있어요.</div>
-        <div class="invitation" id="invitation" hidden><label for="access">테스트 접속 키</label><div><input id="access" type="password" autocomplete="off" placeholder="초대받은 접속 키를 입력하세요"><button id="unlock">접속</button></div></div>
-        <div class="notice" id="notice" role="status" aria-live="polite">접속 권한을 확인하고 있어요.</div>
-        <a class="download-button installer-main" id="installer" href="./download/installer.cmd" download>Windows 연결 도우미 설치</a>
-        <details class="install-help"><summary>장치가 안 보이거나 설치가 어려운가요?</summary><p>웹 직접 연결은 별도 연결 프로그램 없이 사용할 수 있어요. 연결 도우미를 설치하면 별도의 설치형 테스트 화면이 열립니다. 두 방식은 동시에 사용하지 마세요.</p><a class="plain-link" id="package" href="./download/package.zip" download>설치 없이 ZIP으로 내려받기</a><p class="support-copy">장치가 목록에 없나요? 데이터 USB 케이블과 Windows 장치 관리자의 COM 포트를 확인하세요. 이미 열린 시리얼 모니터·설치형 수음기는 먼저 종료해 주세요.</p><a class="plain-link" href="https://docs.espressif.com/projects/esp-techpedia/en/latest/esp-friends/get-started/try-firmware/try-firmware-usb-driver.html" target="_blank" rel="noreferrer">Espressif 공식 USB 드라이버 안내</a></details>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="SWitch 음성 화면"><span class="brand-icon">S<span>↗</span></span><b>SWitch</b><i></i><span>음성 입력 스튜디오</span></a>
+    <div class="top-actions"><span id="server-state" class="server-state">접속 확인 중</span><button id="processing-toggle" class="process-button" disabled>음성 처리 일시정지</button><button id="connection-open" class="settings-button" aria-haspopup="dialog"><span id="connection-status">마이크 연결</span><span class="chevron" aria-hidden="true"></span></button></div>
+  </header>
+  <main class="workspace">
+    <section class="conversation" aria-label="내가 전달할 문장">
+      <div class="conversation-heading"><div><span class="eyebrow">MY VOICE</span><h1>내가 건넨 말,<br>그대로 이어지도록.</h1></div><span class="preview-tag" id="processing-state">음성 처리 대기</span></div>
+      <div class="stage">
+        <div class="bubble-history" id="messages" role="log" aria-live="polite" aria-label="필터가 통과시킨 문장"><div class="empty-bubble" id="empty-bubble"><span class="bubble-kicker">이제 편하게 말해 보세요</span><p>확정된 문장이<br>여기에 나타나요.</p><span class="small-note">인식 중인 말과 로그는 오른쪽에서 볼 수 있어요.</span></div></div>
+        <div class="person-area"><div class="avatar-wrap" id="avatar-wrap"><div class="avatar-halo"></div><img src="./avatar.svg" alt="나를 나타내는 서 있는 아바타" class="avatar"><div class="floor-shadow"></div></div><span class="name-tag">나 <i></i>말하는 사람</span></div>
+      </div>
+      <div class="listening-footer"><div class="level-track" aria-hidden="true"><div id="level"></div></div><div class="listening-line"><span class="live-dot" id="live-dot"></span><strong id="stage">마이크를 연결하고 있어요</strong></div><p id="connection-message">한 번 허용한 마이크는 자동으로 다시 연결해요.</p><button id="clear" class="text-button">대화 화면 비우기</button></div>
+    </section>
+    <aside class="inspector" aria-label="처리 상태와 로그">
+      <div class="inspector-title"><div><span class="eyebrow">LIVE INSPECTOR</span><h2>지금 처리 중인 일</h2></div><span class="live-label" id="live-label">대기</span></div>
+      <section class="pipeline" aria-label="음성 처리 흐름">
+        <div class="pipeline-step" data-step="capture"><span class="step-icon">01</span><div><b>말소리 수집</b><span class="step-description">마이크 연결 대기</span></div><span class="step-time">—</span></div>
+        <div class="pipeline-step" data-step="stt"><span class="step-icon">02</span><div><b>음성을 글자로</b><span class="step-description">STT 대기</span></div><span class="step-time">—</span></div>
+        <div class="parallel-label"><span>아래 두 단계는 함께 처리해요</span></div>
+        <div class="pipeline-step" data-step="merge"><span class="step-icon">03</span><div><b>이어지는 말 합치기</b><span class="step-description">발화 흐름 확인</span></div><span class="step-time">—</span></div>
+        <div class="pipeline-step" data-step="filter"><span class="step-icon">04</span><div><b>주변 대화 확인</b><span class="step-description">뜻과 문맥은 에이전트에게</span></div><span class="step-time">—</span></div>
       </section>
-      <section class="conversation-card" aria-labelledby="conversation-title">
-        <div class="panel-top"><div><span class="small-label">에이전트에게 전달할 문장</span><h2 id="conversation-title">내 말이 어떻게 들렸을까요?</h2></div><button class="text-button" id="clear">화면 비우기</button></div>
-        <div class="messages" id="messages" aria-live="polite"><div class="empty" id="empty"><img src="./avatar.svg" alt="말하는 사람 아바타"><strong>아이스 아메리카노 한 잔 주세요.</strong><p>짧은 대답, 메뉴 질문, 주문 변경도 괜찮아요.<br>마이크를 연결하면 여기에 내 말이 나타나요.</p></div></div>
-        <div class="processing"><div class="processing-top"><span id="stage">연결을 기다리고 있어요</span><span class="timing" id="timing">—</span></div><div class="level-track"><div id="level"></div></div><div class="candidate"><span>인식 후보</span><p id="candidate">말을 인식하면 먼저 이곳에 표시해요.</p></div></div>
-      </section>
-    </div>
-    <section class="log-panel"><div class="log-top"><h2>처리 기록 <span id="log-count">0</span></h2><button id="log-toggle" class="text-button" aria-expanded="false">자세히 보기</button></div><div id="logs" hidden></div><p class="log-caption">PC는 USB 수신과 전송만, 말소리 감지·STT·문장 정리는 서버에서 처리해요.</p></section>
-    <footer><span>수음 중에는 마이크 음성이 서버로 전송돼요. 원음은 파일로 저장하지 않아요.</span><span>입력 테스트 전용 · 실제 주문·결제 연결 전</span></footer>
+      <section class="candidate-card"><div class="section-line"><h3>인식 중인 말</h3><span id="candidate-badge">후보</span></div><p id="candidate">아직 인식한 말이 없어요.</p><div class="candidate-result" id="candidate-result">최종 확정된 말만 왼쪽에 표시해요.</div></section>
+      <section class="timing-card" aria-label="처리 시간"><div class="section-line"><h3>STT 다음에 얼마나 걸렸을까?</h3><span id="route">—</span></div><div class="timing-primary"><strong id="after-stt">—</strong><span>STT 완료 → 최종 판단</span></div><div class="timing-detail"><div><span>STT</span><b id="stt-time">—</b></div><div><span>의미 판단</span><b id="filter-time">—</b></div><div><span>발화 끝부터</span><b id="timing">—</b></div></div></section>
+      <section class="logs-section"><div class="section-line"><h3>처리 로그 <span id="log-count">0</span></h3><div class="log-actions"><button id="clear-logs">기록 비우기</button></div></div><div id="logs" class="logs" role="log" aria-live="off"><p class="logs-empty">처리가 시작되면 로그가 쌓여요.</p></div></section>
+      <details class="diagnostics"><summary>마이크 세부 수치</summary><dl><div><dt>입력 RMS</dt><dd id="rms">—</dd></div><div><dt>배경 / 문턱</dt><dd id="noise">—</dd></div><div><dt>말소리 점수</dt><dd id="probability">—</dd></div><div><dt>패킷 누락 / CRC 오류</dt><dd id="packet-errors">—</dd></div></dl></details>
+    </aside>
   </main>
-</body></html>
+  <div id="error-banner" role="alert" hidden></div>
+
+  <dialog id="connection-modal" aria-labelledby="connect-title">
+    <div class="modal-heading"><div><span class="eyebrow">CONNECTION</span><h2 id="connect-title">마이크 연결 설정</h2></div><button id="connection-close" class="close-button" aria-label="연결 설정 닫기">×</button></div>
+    <p class="device-line"><span id="device-light" class="device-light"></span><span id="device-state">마이크 연결 전</span></p>
+    <p class="modal-copy">ESP32 마이크를 USB로 연결한 뒤<br><strong>USB JTAG/serial debug unit</strong>을 선택하세요.</p>
+    <button class="primary" id="connect" disabled>ESP32 마이크 연결</button>
+    <button class="secondary" id="disconnect" hidden>마이크 연결 해제</button>
+    <label class="auto-setting"><input type="checkbox" id="auto-connect" checked>다음부터 허용한 마이크 자동 연결</label>
+    <div class="browser-note" id="browser-note">데스크톱 Chrome·Edge에서 바로 연결할 수 있어요.</div>
+    <div class="invitation" id="invitation" hidden><label for="access">테스트 접속 키</label><div><input id="access" type="password" autocomplete="off" placeholder="초대받은 접속 키를 입력하세요"><button id="unlock">접속</button></div></div>
+    <div class="notice" id="notice" role="status" aria-live="polite">접속 권한을 확인하고 있어요.</div>
+    <a class="download-button" id="installer" href="./download/installer.cmd" download>Windows 연결 도우미 설치</a>
+    <details class="install-help"><summary>장치가 보이지 않거나 설치가 어려운가요?</summary><p>웹 직접 연결은 별도 프로그램 없이 사용할 수 있어요. 도우미 설치형 수음과 웹 수음은 동시에 사용할 수 없어요.</p><a class="plain-link" id="package" href="./download/package.zip" download>설치 없이 ZIP으로 내려받기</a><p>장치가 없다면 데이터 USB 케이블과 장치 관리자의 COM 포트를 확인하고, 시리얼 모니터를 종료하세요.</p><a class="plain-link" href="https://docs.espressif.com/projects/esp-techpedia/en/latest/esp-friends/get-started/try-firmware/try-firmware-usb-driver.html" target="_blank" rel="noreferrer">Espressif 공식 USB 드라이버 안내</a></details>
+  </dialog>
+</body>
+</html>
