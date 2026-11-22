@@ -182,7 +182,7 @@ class Handler(BaseHTTPRequestHandler):
             except (BrokenPipeError, ConnectionResetError, OSError):
                 pass
             return
-        files = {"/": (HERE / "dashboard/index.html", "text/html; charset=utf-8"), "/app.js": (HERE / "dashboard/app.js", "text/javascript; charset=utf-8"), "/styles.css": (HERE / "dashboard/styles.css", "text/css; charset=utf-8"), "/avatar.svg": (HERE / "dashboard/avatar.svg", "image/svg+xml"), "/font.woff2": (ROOT / "kiosk-web/public/assets/fonts/PretendardVariable.woff2", "font/woff2")}
+        files = {"/": (HERE / "dashboard/index.html", "text/html; charset=utf-8"), "/app.js": (HERE / "dashboard/app.js", "text/javascript; charset=utf-8"), "/styles.css": (HERE / "dashboard/styles.css", "text/css; charset=utf-8"), "/avatar.png": (HERE / "dashboard/avatar.png", "image/png"), "/font.woff2": (ROOT / "kiosk-web/public/assets/fonts/PretendardVariable.woff2", "font/woff2")}
         item = files.get(url.path)
         if not item:
             return self.send(404, {"error": "not_found"})

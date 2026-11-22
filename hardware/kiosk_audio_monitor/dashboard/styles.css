@@ -9,3 +9,5 @@ body{height:100dvh;overflow:hidden}.workspace{height:calc(100dvh - 82px);min-hei
 @media(min-width:761px){.stage{min-height:0}}
 @media(min-width:761px) and (max-height:820px){.conversation{padding-top:22px;padding-bottom:12px}.conversation-heading h1{font-size:25px}.avatar-wrap{height:210px}.avatar{height:205px;width:145px}.person-area .name-tag{margin-top:6px}.listening-footer{padding-top:12px}.listening-footer>p{font-size:10px}.bubble-history{max-height:240px}.message-text{font-size:23px}.stage{padding-top:15px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+
+.avatar{object-fit:contain}

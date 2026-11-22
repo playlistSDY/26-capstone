@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SWitch · 내 목소리</title><link rel="icon" href="./avatar.svg"><link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script>
+  <title>SWitch · 내 목소리</title><link rel="icon" href="./avatar.png"><link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -14,7 +14,7 @@
       <div class="conversation-heading"><div><span class="eyebrow">MY VOICE</span><h1>내가 건넨 말,<br>그대로 이어지도록.</h1></div><span class="preview-tag" id="processing-state">음성 처리 대기</span></div>
       <div class="stage">
         <div class="bubble-history" id="messages" role="log" aria-live="polite" aria-label="필터가 통과시킨 문장"><div class="empty-bubble" id="empty-bubble"><span class="bubble-kicker">이제 편하게 말해 보세요</span><p>확정된 문장이<br>여기에 나타나요.</p><span class="small-note">인식 중인 말과 로그는 오른쪽에서 볼 수 있어요.</span></div></div>
-        <div class="person-area"><div class="avatar-wrap" id="avatar-wrap"><div class="avatar-halo"></div><img src="./avatar.svg" alt="나를 나타내는 서 있는 아바타" class="avatar"><div class="floor-shadow"></div></div><span class="name-tag">나 <i></i>말하는 사람</span></div>
+        <div class="person-area"><div class="avatar-wrap" id="avatar-wrap"><div class="avatar-halo"></div><img src="./avatar.png" alt="나를 나타내는 아바타" class="avatar"><div class="floor-shadow"></div></div><span class="name-tag">나 <i></i>말하는 사람</span></div>
       </div>
       <div class="listening-footer"><div class="level-track" aria-hidden="true"><div id="level"></div></div><div class="listening-line"><span class="live-dot" id="live-dot"></span><strong id="stage">마이크를 연결하고 있어요</strong></div><p id="connection-message">한 번 허용한 마이크는 자동으로 다시 연결해요.</p><button id="clear" class="text-button">대화 화면 비우기</button></div>
     </section>
