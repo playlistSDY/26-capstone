@@ -745,23 +745,6 @@ export default function App() {
     }
     setGuidance({ ...prepared, status: "showing" });
   }
-  function guideShortcut(target: string) {
-    const line =
-      cart.find((item) => item.id === guidance?.line_id) ?? cart.at(-1);
-    if (!line) return;
-    const instructions: Record<string, string> = {
-      "cart.quantity": "이 메뉴 옆의 +와 −로 수량을 바꿀 수 있어요.",
-      "cart.options":
-        "이 버튼으로 음료의 온도와 크기 등 옵션을 바꿀 수 있어요.",
-      checkout: "이 버튼을 누르거나 ‘결제해줘’라고 말씀하면 결제로 이어져요.",
-    };
-    showGuide({
-      id: crypto.randomUUID(),
-      target,
-      instruction: instructions[target],
-      ...(target.startsWith("cart.") ? { line_id: line.id } : {}),
-    });
-  }
   function applyAgentState(state: AgentState) {
     uiSource.current = "agent";
     const lines: CartLine[] = state.lines.map((line) => ({
@@ -880,7 +863,7 @@ export default function App() {
         id: crypto.randomUUID(),
         target: state.view === "review" ? "confirm_payment" : "checkout",
         instruction:
-          "수량과 옵션은 아래 버튼 위치 안내로 바꿀 수 있어요. 주문을 마치려면 표시된 버튼을 누르거나 ‘결제해줘’라고 말씀해 주세요.",
+          "수량·옵션 변경과 결제는 말씀하시면 처리해 드려요. 원하시면 화면에서도 직접 바꿀 수 있어요.",
         status: "showing",
       });
     } else setGuidance(null);
@@ -2189,7 +2172,6 @@ export default function App() {
           );
         }}
         onGuideDismiss={() => setGuidance(null)}
-        onGuideShortcut={guideShortcut}
         onState={applyAgentState}
         onConversationActiveChange={setChatActive}
         previousUsage={lastSessionUsage}

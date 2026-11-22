@@ -145,7 +145,8 @@ test("A customer can choose options and add manually after a brief non-prescript
     }),
   }));
   await f.say("귀찮으니까 나머지는 내가 고를게");
-  await expect(page.locator(".agent-guidance")).toContainText("원하는 옵션");
+  await expect(page.locator(".agent-guidance")).toHaveCount(0);
+  await expect(page.locator(".agent-guide-ring")).toBeVisible();
   await page
     .locator('[data-guide-option="size"][data-guide-value="large"]')
     .click();
@@ -162,7 +163,7 @@ test("A customer can choose options and add manually after a brief non-prescript
   expect(cart.ui_context.interaction.activations).toBeGreaterThanOrEqual(3);
 });
 
-test("Added drinks offer quantity/options/checkout locations and delegation preserves touch choices", async ({
+test("Highlights work through conversation without tutorial controls and preserve touch choices", async ({
   page,
 }) => {
   const f = await fixture(page);
@@ -172,22 +173,26 @@ test("Added drinks offer quantity/options/checkout locations and delegation pres
   }));
   await f.say("아이스 라떼 기본으로 담아줘");
   await expect(page.locator(".agent-guide-ring")).toBeVisible();
-  await expect(page.locator(".agent-guidance")).toContainText("결제해줘");
+  await expect(page.locator(".agent-guidance")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "사용법 알려줘", exact: true }),
+  ).toHaveCount(0);
   if (process.env.SWITCH_GUIDANCE_SCREENSHOT)
     await page.screenshot({ path: "/tmp/switch-guidance-desktop.png" });
-  await page
-    .getByRole("button", { name: "수량 버튼 위치", exact: true })
-    .click();
-  await expect(page.locator(".agent-guidance")).toContainText("수량을 바꿀");
+  f.respond(() => ({
+    guidance: guide("cart.quantity", { line_id: "line-one" }),
+  }));
+  await f.say("수량 버튼은 어디야?");
+  await expect(page.locator(".agent-guide-ring")).toBeVisible();
   await page
     .getByRole("button", { name: "카페라떼 주문 수량 늘리기", exact: true })
     .click();
-  await expect(page.locator(".agent-guidance")).toContainText(
-    "선택한 내용을 반영",
-  );
-  await page
-    .getByRole("button", { name: "옵션 버튼 위치", exact: true })
-    .click();
+  await expect(page.locator(".agent-guide-ring")).toHaveCount(0);
+  f.respond(() => ({
+    guidance: guide("cart.options", { line_id: "line-one" }),
+  }));
+  await f.say("옵션 버튼은 어디야?");
+  await expect(page.locator(".agent-guide-ring")).toBeVisible();
   await page
     .getByRole("button", { name: "카페라떼 옵션 변경", exact: true })
     .click();
@@ -214,9 +219,7 @@ test("Added drinks offer quantity/options/checkout locations and delegation pres
     ],
     total: 9400,
   }));
-  await page.getByRole("button", { name: "대신 해줘", exact: true }).click();
-  await expect(page.locator(".agent-chat-thinking")).toHaveCount(0);
-  await expect.poll(() => f.requests.length).toBe(3);
+  await f.say("이대로 대신 수정해줘");
   const request = f.requests.at(-1);
   expect(request.text).toContain("대신");
   expect(request.cart.ui_context.editor.quantity).toBe(2);
@@ -271,8 +274,11 @@ test("Narrow screen and reduced motion keep the target visible without covering 
       path: "/tmp/switch-guidance-mobile.png",
       fullPage: true,
     });
-  await page.getByRole("button", { name: "표시 닫기", exact: true }).click();
+  await page
+    .locator('[data-guide="product"][data-guide-product="latte"]')
+    .click();
   await expect(ring).toHaveCount(0);
+  await expect(page.locator(".agent-guidance")).toHaveCount(0);
 });
 
 test("Explanation preserves touch choices even when an older option draft remains", async ({

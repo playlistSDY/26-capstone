@@ -81,7 +81,7 @@ class Conversation:
                     else:
                         answer = f"{METHODS[action['method']]}를 켜고 휴대폰을 리더기에 대 주세요."
                 elif self.store.phase == "checkout" and (start_phase != "checkout" or "checkout.opened" in str(result.final_output)):
-                    answer = "결제수단을 선택해 주세요. 카드나 어떤 페이로 결제하시겠어요?"
+                    answer = "카드로 하시겠어요, 다른 결제수단으로 하시겠어요?"
                 elif self.store.phase == "handoff":
                     answer = "지금까지의 주문과 도움이 필요한 내용을 정리했어요. 아직 실제 직원 호출에는 연결되지 않았어요."
                 else:

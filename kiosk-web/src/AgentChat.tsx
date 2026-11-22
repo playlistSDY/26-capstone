@@ -156,7 +156,6 @@ export function AgentChat({
   guidance,
   onGuideDone,
   onGuideDismiss,
-  onGuideShortcut,
 }: {
   cart: ChatCart;
   disabled: boolean;
@@ -168,7 +167,6 @@ export function AgentChat({
   guidance: GuidanceState | null;
   onGuideDone: () => void;
   onGuideDismiss: () => void;
-  onGuideShortcut: (target: string) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
@@ -392,11 +390,7 @@ export function AgentChat({
     setPending(null);
   }
 
-  async function submit(
-    retry?: Pending,
-    paymentEvent = false,
-    overrideText?: string,
-  ) {
+  async function submit(retry?: Pending, paymentEvent = false) {
     if (disabled && !paymentEvent) return;
     const submission = ++submissionSequence.current;
     const submittedAt = performance.now();
@@ -405,17 +399,11 @@ export function AgentChat({
       current.current = { ...current.current, screen: "menu" };
     }
     if (ttsEnabled) unlockAgentAudio();
-    if (
-      !status?.ready ||
-      (!retry && !paymentEvent && !(overrideText ?? text).trim())
-    )
-      return;
+    if (!status?.ready || (!retry && !paymentEvent && !text.trim())) return;
     if (sending.current || speaking || delivery.current) {
       try {
         await interrupt(
-          paymentEvent
-            ? undefined
-            : (retry?.text ?? (overrideText ?? text).trim()),
+          paymentEvent ? undefined : (retry?.text ?? text.trim()),
         );
       } catch {
         setError("주문 상태를 확인하지 못했어요. 다시 연결해 주세요.");
@@ -443,9 +431,7 @@ export function AgentChat({
       if (!operation) {
         operation = {
           request_id: crypto.randomUUID(),
-          text: paymentEvent
-            ? "키오스크 결제 결과 알림"
-            : (overrideText ?? text).trim(),
+          text: paymentEvent ? "키오스크 결제 결과 알림" : text.trim(),
           payment_event: paymentEvent,
           cart: structuredClone(current.current),
           session: id,
@@ -741,12 +727,8 @@ export function AgentChat({
         </div>
         <AgentGuidance
           guide={guidance}
-          disabled={disabled || busy || !status?.ready}
           onDone={onGuideDone}
           onDismiss={onGuideDismiss}
-          onShortcut={onGuideShortcut}
-          hasCart={cart.lines.length > 0 && !cart.payment && !cart.receipt}
-          onRequest={(value) => void submit(undefined, false, value)}
         />
         {status && !status.ready && (
           <div className="agent-chat-setup" role="status">

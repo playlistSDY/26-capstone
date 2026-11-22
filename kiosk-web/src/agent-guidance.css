@@ -1,54 +1,3 @@
-.agent-guidance {
-  margin: 10px 16px;
-  padding: 12px;
-  border: 1px solid #b9cafa;
-  border-radius: 12px;
-  background: #f3f6ff;
-  color: #203659;
-}
-.agent-guidance-message strong {
-  font-size: 15px;
-}
-.agent-guidance-message p {
-  margin: 6px 0 0;
-  font-size: 14px;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-.agent-guidance-message small {
-  display: block;
-  margin-top: 5px;
-  line-height: 1.4;
-}
-.agent-guide-actions,
-.agent-guide-shortcuts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 9px;
-}
-.agent-guidance button {
-  min-height: 44px;
-  padding: 8px 10px;
-  border: 1px solid #a8bde9;
-  border-radius: 8px;
-  background: #fff;
-  color: #234b95;
-  font: inherit;
-  font-size: 14px;
-  cursor: pointer;
-}
-.agent-guidance button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-.agent-guidance button:focus-visible {
-  outline: 3px solid #235bdc;
-  outline-offset: 2px;
-}
-.agent-guide-dismiss {
-  margin-left: auto;
-}
 .agent-guide-ring {
   position: fixed;
   pointer-events: none;
@@ -79,14 +28,5 @@
 @media (prefers-reduced-motion: reduce) {
   .agent-guide-ring {
     animation: none;
-  }
-}
-@media (max-height: 750px) {
-  .agent-guidance {
-    margin-block: 6px;
-    padding: 8px;
-  }
-  .agent-guidance-message p {
-    font-size: 13px;
   }
 }
