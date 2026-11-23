@@ -707,11 +707,7 @@ export function AgentChat({
               state={presence}
               level={playback.level}
               caption={error || caption}
-              heard={
-                [...messages]
-                  .reverse()
-                  .find((message) => message.role === "user")?.text || ""
-              }
+              conversation={messages}
               guidance={guidance}
               screen={cart.screen}
             />

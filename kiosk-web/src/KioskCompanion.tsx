@@ -15,7 +15,7 @@ export function KioskCompanion({
   state,
   level,
   caption,
-  heard,
+  conversation,
   guidance,
   screen,
 }: {
@@ -23,11 +23,14 @@ export function KioskCompanion({
   state: AttendantState;
   level: number;
   caption: string;
-  heard: string;
+  conversation: { role: "assistant" | "user"; text: string }[];
   guidance: GuidanceState | null;
   screen: string;
 }) {
   const root = useRef<HTMLElement>(null);
+  const thread = useRef<HTMLDivElement>(null);
+  const follow = useRef(true);
+
   const latestGuidance = useRef(guidance);
   latestGuidance.current = guidance;
   const [position, setPosition] = useState({ x: 20, y: 700 });
@@ -209,6 +212,20 @@ export function KioskCompanion({
     width: `${(collapsed ? Math.min(physicalWidth, 180) : physicalWidth) / scale}px`,
     height: `${250 / scale}px`,
   } as CSSProperties;
+  const inputPending = receiving || state === "transcribing";
+  const showWait =
+    !inputPending &&
+    isWaiting &&
+    (conversation.at(-1)?.role !== "assistant" || state === "offline");
+  const recent = conversation.slice(-6);
+  const latestUser = recent.reduce(
+    (found, message, index) => (message.role === "user" ? index : found),
+    -1,
+  );
+  useEffect(() => {
+    if (thread.current && (follow.current || inputPending))
+      thread.current.scrollTop = thread.current.scrollHeight;
+  }, [conversation, inputPending, waitingCaption, collapsed]);
   return (
     <section
       ref={root}
@@ -274,26 +291,82 @@ export function KioskCompanion({
         <AgentAvatar state={state} level={level} />
       </button>
       {!collapsed && (
-        <div className="companion-bubbles">
-          {!receiving && state !== "transcribing" && heard && (
-            <div className="companion-user-bubble" aria-label="내가 한 말">
-              <p>{heard}</p>
-            </div>
-          )}
-          <div
-            className={`companion-speech ${receiving || isWaiting ? "is-pending" : ""}`}
-          >
-            <p className="companion-caption" aria-label="현재 응답 자막">
-              {waitingCaption}
-            </p>
-            {(receiving || isWaiting) && (
+        <div
+          ref={thread}
+          className="companion-bubbles"
+          aria-label="점원과 손님의 대화"
+          onScroll={() => {
+            if (thread.current)
+              follow.current =
+                thread.current.scrollHeight -
+                  thread.current.scrollTop -
+                  thread.current.clientHeight <
+                24;
+          }}
+        >
+          {recent.map((message, index) => {
+            const active =
+              !inputPending && !showWait && index === recent.length - 1;
+            return (
+              <div
+                key={`${conversation.length - recent.length + index}:${message.role}`}
+                className={
+                  message.role === "user"
+                    ? "companion-user-bubble"
+                    : "companion-speech"
+                }
+                aria-label={
+                  message.role === "user" &&
+                  index === latestUser &&
+                  !inputPending
+                    ? "내가 한 말"
+                    : undefined
+                }
+              >
+                <p
+                  className={`companion-text${active ? " companion-caption" : ""}`}
+                  aria-label={active ? "현재 응답 자막" : undefined}
+                >
+                  {active && message.role === "assistant"
+                    ? caption
+                    : message.text}
+                </p>
+              </div>
+            );
+          })}
+          {inputPending && (
+            <div
+              className="companion-user-bubble is-pending"
+              aria-label="손님 발화 인식 중"
+            >
+              <p
+                className="companion-text companion-caption"
+                aria-label="현재 응답 자막"
+              >
+                {receiving ? "듣고 있어요" : feedback}
+              </p>
               <span className="companion-activity" aria-hidden="true">
                 <i />
                 <i />
                 <i />
               </span>
-            )}
-          </div>
+            </div>
+          )}
+          {showWait && (
+            <div className="companion-speech is-pending">
+              <p
+                className="companion-text companion-caption"
+                aria-label="현재 응답 자막"
+              >
+                {waitingCaption}
+              </p>
+              <span className="companion-activity" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+            </div>
+          )}
         </div>
       )}
     </section>

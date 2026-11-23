@@ -319,3 +319,49 @@
 .agent-stage-layout .order-dock:has(.dock-empty) {
   display: none;
 }
+
+/* Fade the scrollable content itself so no overlay intercepts menu taps. */
+.agent-stage-layout .catalog-scroll.has-more-below {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 calc(100% - var(--catalog-fade-height, 64px)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 calc(100% - var(--catalog-fade-height, 64px)),
+    transparent 100%
+  );
+}
+
+/* A steady chat viewport: append below earlier speech without moving the actor. */
+.companion-bubbles {
+  height: calc(238px / var(--companion-scale));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  justify-content: flex-start;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c9be transparent;
+  pointer-events: auto;
+}
+.companion-bubbles > :first-child {
+  margin-top: auto;
+}
+.companion-bubbles > div {
+  flex-shrink: 0;
+}
+.companion-text {
+  font-size: calc(24px / var(--companion-scale));
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.companion-user-bubble p,
+.companion-caption {
+  max-height: none;
+  overflow: visible;
+}
+.companion-user-bubble .companion-activity i {
+  background: #dce9ff;
+}

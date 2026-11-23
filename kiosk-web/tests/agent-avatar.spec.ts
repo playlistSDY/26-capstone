@@ -175,10 +175,28 @@ test("Finished user speech appears in an opposite-colored bubble without idle la
     .evaluate((node) => getComputedStyle(node).backgroundColor);
   const agentColor = await page
     .locator(".companion-speech")
+    .last()
     .evaluate((node) => getComputedStyle(node).backgroundColor);
   expect(userColor).not.toBe(agentColor);
   await expect(page.getByRole("button", { name: /대화 내역/ })).toHaveCount(0);
   await expect(page.getByText("입력 대기", { exact: true })).toHaveCount(0);
+  await page.getByRole("textbox", { name: "주문 메시지" }).fill("다른 메뉴도");
+  await expect(page.locator(".companion-user-bubble").last()).toContainText(
+    "듣고 있어요",
+  );
+  await expect(page.locator(".companion-speech").last()).toContainText(
+    "따뜻한 라떼",
+  );
+  const order = await page
+    .locator(".companion-bubbles > div")
+    .evaluateAll((nodes) =>
+      nodes.map((node) => ({
+        user: node.classList.contains("companion-user-bubble"),
+        text: node.textContent,
+      })),
+    );
+  expect(order.at(-1)?.user).toBe(true);
+  expect(order.at(-2)?.text).toContain("따뜻한 라떼");
 });
 
 test("The character lives inside the kiosk and follows screen changes without covering buttons", async ({

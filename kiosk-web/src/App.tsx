@@ -411,6 +411,7 @@ export default function App() {
   }, [screen, overlay, chatActive]);
   const surface = useRef<HTMLDivElement>(null);
   const catalogScroll = useRef<HTMLDivElement>(null);
+  const [catalogMoreBelow, setCatalogMoreBelow] = useState(false);
   const dockScroll = useRef<HTMLDivElement>(null);
   const [dockPosition, setDockPosition] = useState({ up: false, down: false });
   const reviewScroll = useRef<HTMLDivElement>(null);
@@ -525,6 +526,30 @@ export default function App() {
   useEffect(() => {
     catalogScroll.current?.scrollTo({ top: 0 });
   }, [category, screen]);
+  useEffect(() => {
+    const el = catalogScroll.current;
+    if (!el) return;
+    const update = () => {
+      const remaining = Math.max(
+        0,
+        el.scrollHeight - el.clientHeight - el.scrollTop,
+      );
+      setCatalogMoreBelow(remaining > 2);
+      el.style.setProperty(
+        "--catalog-fade-height",
+        `${Math.min(64, remaining)}px`,
+      );
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    if (el.firstElementChild) observer.observe(el.firstElementChild);
+    return () => {
+      el.removeEventListener("scroll", update);
+      observer.disconnect();
+    };
+  }, [screen, category]);
   useEffect(() => {
     const el = dockScroll.current;
     if (!el) return;
@@ -1320,7 +1345,10 @@ export default function App() {
                         </button>
                       ))}
                     </nav>
-                    <div className="catalog-scroll" ref={catalogScroll}>
+                    <div
+                      className={`catalog-scroll${catalogMoreBelow ? " has-more-below" : ""}`}
+                      ref={catalogScroll}
+                    >
                       <div className="product-grid">
                         {products
                           .filter((p) => p.categories.includes(category))
