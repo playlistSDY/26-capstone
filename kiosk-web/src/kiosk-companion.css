@@ -93,18 +93,6 @@
   color: #fff;
   border-radius: 24px 24px 5px 24px;
 }
-.companion-user-bubble::after {
-  content: "";
-  position: absolute;
-  right: 24px;
-  bottom: -13px;
-  width: 36px;
-  height: 17px;
-  background: inherit;
-  pointer-events: none;
-  clip-path: path("M 0 0 H 36 V 4 C 30 4 27 5 27 8 C 27 10 30 12 32 14 C 34 16 32 17 29 16 C 19 14 11 10 5 7 C 3 5 2 4 0 4 Z");
-  transform: scaleX(-1);
-}
 .companion-user-bubble p {
   font-size: calc(24px / var(--companion-scale));
   line-height: 1.45;
