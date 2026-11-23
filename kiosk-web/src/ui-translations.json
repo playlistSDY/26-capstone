@@ -1,0 +1,2822 @@
+{
+  " · 가상 프린터": {
+    "en": " · Virtual printer",
+    "zh": " · 虚拟打印机",
+    "ja": " · 仮想プリンター"
+  },
+  " · 오프라인": {
+    "en": " · Offline",
+    "zh": " · 离线",
+    "ja": " · オフライン"
+  },
+  " 품절": {
+    "en": " Sold out",
+    "zh": " 售罄",
+    "ja": " 売り切れ"
+  },
+  "(병)프루츠 스파클링 복숭아": {
+    "en": "Fruit Sparkling Peach (Bottle)",
+    "zh": "水果气泡饮 桃味（瓶装）",
+    "ja": "フルーツスパークリング ピーチ（瓶）"
+  },
+  "(병)프루츠 스파클링 사과": {
+    "en": "Fruit Sparkling Apple (Bottle)",
+    "zh": "水果气泡饮 苹果味（瓶装）",
+    "ja": "フルーツスパークリング アップル（瓶）"
+  },
+  "(병)프루츠 스파클링 체리": {
+    "en": "Fruit Sparkling Cherry (Bottle)",
+    "zh": "水果气泡饮 樱桃味（瓶装）",
+    "ja": "フルーツスパークリング チェリー（瓶）"
+  },
+  "+500원": {
+    "en": "+₩500",
+    "zh": "+500韩元",
+    "ja": "+500ウォン"
+  },
+  "+600원": {
+    "en": "+₩600",
+    "zh": "+600韩元",
+    "ja": "+600ウォン"
+  },
+  "1600 × 2560 · 세로형": {
+    "en": "1600 × 2560 · Portrait",
+    "zh": "1600 × 2560 · 竖版",
+    "ja": "1600 × 2560 · 縦向き"
+  },
+  "1샷당 +500원": {
+    "en": "+₩500 per shot",
+    "zh": "每份浓缩咖啡 +500韩元",
+    "ja": "1ショットにつき +500ウォン"
+  },
+  "1회당 +300원": {
+    "en": "+₩300 each time",
+    "zh": "每次 +300韩元",
+    "ja": "1回につき +300ウォン"
+  },
+  "80mm 감열지": {
+    "en": "80mm thermal paper",
+    "zh": "80mm 热敏纸",
+    "ja": "80mm 感熱紙"
+  },
+  "80mm 감열지 · 인쇄 영역 72mm. Chrome 인쇄 창 없이 선택한 프린터로 전송해요. 자동 절단은 Epson 드라이버의 문서 종료 절단 설정을 사용해요.": {
+    "en": "80mm thermal paper · 72mm print area. Sends directly to the selected printer without opening the Chrome print dialog. Auto-cut uses the Epson driver's end-of-document cut setting.",
+    "zh": "80mm 热敏纸 · 打印区域 72mm。直接发送到所选打印机，不打开 Chrome 打印窗口。自动切纸使用 Epson 驱动程序的文档结束切纸设置。",
+    "ja": "80mm 感熱紙 · 印刷範囲 72mm。Chrome の印刷画面を開かず、選択したプリンターに送信します。自動カットには、Epson ドライバーの文書終了時のカット設定を使います。"
+  },
+  "IC칩이 위로 향하도록 아래 투입구에 끝까지 넣어 주세요.": {
+    "en": "Please insert the card all the way into the lower slot with the chip facing up.",
+    "zh": "请将芯片朝上，把卡插入下方插口，直到插到底。",
+    "ja": "ICチップを上に向け、下の差し込み口にカードを奥まで入れてください。"
+  },
+  "PNG 저장": {
+    "en": "Save PNG",
+    "zh": "保存 PNG",
+    "ja": "PNG を保存"
+  },
+  "QR · 바코드로 결제": {
+    "en": "Pay by QR code or barcode",
+    "zh": "用二维码或条形码付款",
+    "ja": "QRコード・バーコードでお支払い"
+  },
+  "SWitch 주문 키오스크": {
+    "en": "SWitch Order Kiosk",
+    "zh": "SWitch 自助点单机",
+    "ja": "SWitch セルフ注文端末"
+  },
+  "SWitch 커피": {
+    "en": "SWitch Coffee",
+    "zh": "SWitch 咖啡",
+    "ja": "SWitch コーヒー"
+  },
+  "TM-m30 · 80mm USB 출력 설정": {
+    "en": "TM-m30 · 80mm USB print settings",
+    "zh": "TM-m30 · 80mm USB 打印设置",
+    "ja": "TM-m30 · 80mm USB 印刷設定"
+  },
+  "Windows 로컬 실행": {
+    "en": "Run locally on Windows",
+    "zh": "在 Windows 本地运行",
+    "ja": "Windows でローカル実行"
+  },
+  "Windows 오프라인 패키지 받기": {
+    "en": "Download Windows offline package",
+    "zh": "下载 Windows 离线安装包",
+    "ja": "Windows 用オフラインパッケージをダウンロード"
+  },
+  "Windows 인쇄 대기열로 전송했어요. 출력물을 확인해 주세요.": {
+    "en": "Sent to the Windows print queue. Please check the printout.",
+    "zh": "已发送到 Windows 打印队列。请查看打印件。",
+    "ja": "Windows の印刷キューに送信しました。印刷物をご確認ください。"
+  },
+  "Windows 인쇄 대기열에 전송했어요. 출력물을 확인해 주세요.": {
+    "en": "Sent to the Windows print queue. Please check the printout.",
+    "zh": "已发送到 Windows 打印队列。请查看打印件。",
+    "ja": "Windows の印刷キューに送信しました。印刷物をご確認ください。"
+  },
+  "Windows에 등록된 프린터가 없어요. Epson 드라이버를 설치하고 USB 연결을 확인해 주세요.": {
+    "en": "No printer is set up in Windows. Please install the Epson driver and check the USB connection.",
+    "zh": "Windows 中没有已添加的打印机。请安装 Epson 驱动程序并检查 USB 连接。",
+    "ja": "Windows にプリンターが登録されていません。Epson ドライバーをインストールし、USB 接続を確認してください。"
+  },
+  "ZIP 파일을 모두 풀고 실행.bat을 열어 주세요. 브라우저·백엔드·이미지·글꼴이 포함되어 있어 인터넷 없이 사용할 수 있어요.": {
+    "en": "Extract all files from the ZIP, then open 실행.bat. The browser, backend, images, and fonts are included, so no internet connection is needed.",
+    "zh": "请解压 ZIP 中的所有文件，然后打开 실행.bat。内含浏览器、后端程序、图片和字体，无需联网即可使用。",
+    "ja": "ZIP ファイルをすべて展開し、실행.bat を開いてください。ブラウザー、バックエンド、画像、フォントが含まれているので、インターネット接続なしで使えます。"
+  },
+  "mm · 흑백 출력": {
+    "en": "mm · Black-and-white printing",
+    "zh": "mm · 黑白打印",
+    "ja": "mm · 白黒印刷"
+  },
+  "· 메뉴": {
+    "en": "· Menu",
+    "zh": "· 菜单",
+    "ja": "· メニュー"
+  },
+  "가나 시그니처 초콜릿": {
+    "en": "Ghana Signature Chocolate",
+    "zh": "Ghana 招牌巧克力",
+    "ja": "ガーナ シグネチャーチョコレート"
+  },
+  "가나 초코 크림 오트": {
+    "en": "Ghana Chocolate Cream Oat",
+    "zh": "Ghana 巧克力奶油燕麦",
+    "ja": "ガーナ チョコクリームオーツ"
+  },
+  "간편하게 즐기는 완제품 음료": {
+    "en": "Ready-to-drink beverages",
+    "zh": "即饮饮品",
+    "ja": "そのまま飲めるドリンク"
+  },
+  "감귤 레몬 에이드": {
+    "en": "Mandarin Lemon Ade",
+    "zh": "蜜橘柠檬特饮",
+    "ja": "みかんレモンエード"
+  },
+  "개": {
+    "en": " item(s)",
+    "zh": "件",
+    "ja": "個"
+  },
+  "개 ·": {
+    "en": " item(s) ·",
+    "zh": "件 ·",
+    "ja": "個 ·"
+  },
+  "개발용 PNG 파일을 저장했어요. 종이는 출력하지 않았어요.": {
+    "en": "Saved a PNG file for development. Nothing was printed on paper.",
+    "zh": "已保存供开发使用的 PNG 文件，未进行纸质打印。",
+    "ja": "開発用の PNG ファイルを保存しました。用紙には印刷していません。"
+  },
+  "개발용 파일 출력 모드": {
+    "en": "Development file output mode",
+    "zh": "开发用文件输出模式",
+    "ja": "開発用ファイル出力モード"
+  },
+  "결제 금액": {
+    "en": "Payment amount",
+    "zh": "付款金额",
+    "ja": "お支払い金額"
+  },
+  "결제 리더기": {
+    "en": "Payment reader",
+    "zh": "付款读卡器",
+    "ja": "決済リーダー"
+  },
+  "결제 승인": {
+    "en": "Payment approval",
+    "zh": "付款授权",
+    "ja": "決済承認"
+  },
+  "결제 시간이 초과됐어요": {
+    "en": "Payment timed out",
+    "zh": "付款超时",
+    "ja": "お支払い時間を過ぎました"
+  },
+  "결제 완료": {
+    "en": "Payment complete",
+    "zh": "付款完成",
+    "ja": "お支払い完了"
+  },
+  "결제 완료 후 영수증 자동 출력": {
+    "en": "Print receipt automatically after payment",
+    "zh": "付款后自动打印小票",
+    "ja": "お支払い完了後にレシートを自動印刷"
+  },
+  "결제 정보 확인 중": {
+    "en": "Checking payment details",
+    "zh": "正在核对付款信息",
+    "ja": "お支払い情報を確認中"
+  },
+  "결제 정보를 확인하고 있어요": {
+    "en": "We're checking your payment details",
+    "zh": "正在核对您的付款信息",
+    "ja": "お支払い情報を確認しています"
+  },
+  "결제 진행 단계": {
+    "en": "Payment progress",
+    "zh": "付款进度",
+    "ja": "お支払いの進み具合"
+  },
+  "결제 취소": {
+    "en": "Cancel payment",
+    "zh": "取消付款",
+    "ja": "お支払いをキャンセル"
+  },
+  "결제 테스트": {
+    "en": "Payment test",
+    "zh": "付款测试",
+    "ja": "決済テスト"
+  },
+  "결제 테스트 결과": {
+    "en": "Payment test result",
+    "zh": "付款测试结果",
+    "ja": "決済テスト結果"
+  },
+  "결제가 승인되지 않았어요": {
+    "en": "Payment was not approved",
+    "zh": "付款未获批准",
+    "ja": "お支払いが承認されませんでした"
+  },
+  "결제가 완료됐어요": {
+    "en": "Your payment is complete",
+    "zh": "您已完成付款",
+    "ja": "お支払いが完了しました"
+  },
+  "결제되지 않았어요. 담은 메뉴는 그대로 유지돼요.": {
+    "en": "Payment did not go through. Your items are still in the cart.",
+    "zh": "付款未成功，已选商品仍保留在购物车中。",
+    "ja": "お支払いは完了していません。カートの商品はそのまま残っています。"
+  },
+  "결제를 승인하고 있어요": {
+    "en": "Authorizing payment",
+    "zh": "正在授权付款",
+    "ja": "お支払いを承認しています"
+  },
+  "결제상태": {
+    "en": "Payment status",
+    "zh": "付款状态",
+    "ja": "お支払い状況"
+  },
+  "결제수단": {
+    "en": "Payment method",
+    "zh": "付款方式",
+    "ja": "お支払い方法"
+  },
+  "결제수단을": {
+    "en": "a payment method",
+    "zh": "付款方式",
+    "ja": "お支払い方法を"
+  },
+  "결제수단을 선택한 뒤, 리더기 안내에 따라 주세요.": {
+    "en": "Please choose a payment method, then follow the instructions on the reader.",
+    "zh": "请选择付款方式，然后按读卡器提示操作。",
+    "ja": "お支払い方法を選び、決済リーダーの案内に従ってください。"
+  },
+  "결제코드를 보여 주세요": {
+    "en": "Please show your payment code",
+    "zh": "请出示付款码",
+    "ja": "お支払いコードをかざしてください"
+  },
+  "결제코드를 읽고 있어요": {
+    "en": "Reading your payment code",
+    "zh": "正在读取付款码",
+    "ja": "お支払いコードを読み取っています"
+  },
+  "결제하기": {
+    "en": "Pay",
+    "zh": "付款",
+    "ja": "支払う"
+  },
+  "결제할 금액": {
+    "en": "Amount to pay",
+    "zh": "应付金额",
+    "ja": "お支払い額"
+  },
+  "계속 주문하기": {
+    "en": "Continue ordering",
+    "zh": "继续点单",
+    "ja": "注文を続ける"
+  },
+  "계속 주문할게요": {
+    "en": "I'll keep ordering",
+    "zh": "我想继续点单",
+    "ja": "注文を続けます"
+  },
+  "고구마 라떼": {
+    "en": "Sweet Potato Latte",
+    "zh": "红薯拿铁",
+    "ja": "さつまいもラテ"
+  },
+  "과일의 풍미를 시원하게 즐겨 보세요": {
+    "en": "Enjoy refreshing fruit flavors",
+    "zh": "畅享清爽果味",
+    "ja": "フルーツの風味を冷たいドリンクでお楽しみください"
+  },
+  "관리자 설정 열기: Ctrl + Alt + S": {
+    "en": "Open admin settings: Ctrl + Alt + S",
+    "zh": "打开管理员设置：Ctrl + Alt + S",
+    "ja": "管理者設定を開く：Ctrl + Alt + S"
+  },
+  "구망추": {
+    "en": "Gumangchu",
+    "zh": "古芒丘",
+    "ja": "グマンチュ"
+  },
+  "구아바 자스민 에이드": {
+    "en": "Guava Jasmine Ade",
+    "zh": "番石榴茉莉特饮",
+    "ja": "グァバジャスミンエード"
+  },
+  "글자 크기": {
+    "en": "Text size",
+    "zh": "字号",
+    "ja": "文字サイズ"
+  },
+  "기기 설정": {
+    "en": "Device settings",
+    "zh": "设备设置",
+    "ja": "端末設定"
+  },
+  "기본": {
+    "en": "Default",
+    "zh": "默认",
+    "ja": "標準"
+  },
+  "기본 원두": {
+    "en": "Standard coffee beans",
+    "zh": "标准咖啡豆",
+    "ja": "標準のコーヒー豆"
+  },
+  "꿀복숭아 에이드": {
+    "en": "Honey Peach Ade",
+    "zh": "蜂蜜桃子气泡饮",
+    "ja": "はちみつピーチエード"
+  },
+  "꿀복숭아 요거트 플랫치노": {
+    "en": "Honey Peach Yogurt Flatccino",
+    "zh": "蜂蜜桃子酸奶 Flatccino",
+    "ja": "はちみつピーチヨーグルト フラッチーノ"
+  },
+  "꿀복숭아 플랫치노": {
+    "en": "Honey Peach Flatccino",
+    "zh": "蜂蜜桃子 Flatccino",
+    "ja": "はちみつピーチ フラッチーノ"
+  },
+  "나의 주문번호": {
+    "en": "Your Order Number",
+    "zh": "您的订单号",
+    "ja": "お客様の注文番号"
+  },
+  "넛츠 크림 라떼": {
+    "en": "Nut Cream Latte",
+    "zh": "坚果奶油拿铁",
+    "ja": "ナッツクリームラテ"
+  },
+  "다른 결제수단 선택": {
+    "en": "Choose Another Payment Method",
+    "zh": "选择其他支付方式",
+    "ja": "別のお支払い方法を選ぶ"
+  },
+  "다시 시도하거나 결제수단을 변경해 주세요": {
+    "en": "Please try again or choose another payment method.",
+    "zh": "请重试或更换支付方式。",
+    "ja": "もう一度お試しいただくか、お支払い方法を変更してください。"
+  },
+  "다시 시도하기": {
+    "en": "Try Again",
+    "zh": "重试",
+    "ja": "もう一度試す"
+  },
+  "단가 정보 없음": {
+    "en": "Unit Price Unavailable",
+    "zh": "暂无单价信息",
+    "ja": "単価情報なし"
+  },
+  "닫기": {
+    "en": "Close",
+    "zh": "关闭",
+    "ja": "閉じる"
+  },
+  "달고나 라떼": {
+    "en": "Dalgona Latte",
+    "zh": "韩式焦糖脆糖拿铁",
+    "ja": "ダルゴナラテ"
+  },
+  "달달커피": {
+    "en": "Sweet Coffee",
+    "zh": "甜甜咖啡",
+    "ja": "甘いコーヒー"
+  },
+  "달달퐁당 오트 피스타치오": {
+    "en": "Sweet Splash Oat Pistachio",
+    "zh": "甜甜燕麦开心果",
+    "ja": "スイートポンダン オーツピスタチオ"
+  },
+  "담기": {
+    "en": "Add",
+    "zh": "加入",
+    "ja": "追加する"
+  },
+  "담아 둔 메뉴가 모두 지워져요.": {
+    "en": "All items in your cart will be removed.",
+    "zh": "购物车中的商品将全部清空。",
+    "ja": "カート内の商品がすべて削除されます。"
+  },
+  "담아 둔 메뉴와 옵션은 그대로 유지돼요.": {
+    "en": "Your items and options will stay in your cart.",
+    "zh": "购物车中的商品和已选选项将保留。",
+    "ja": "カート内の商品とオプションはそのまま残ります。"
+  },
+  "당도": {
+    "en": "Sweetness",
+    "zh": "甜度",
+    "ja": "甘さ"
+  },
+  "대기열 전송": {
+    "en": "Send to Print Queue",
+    "zh": "发送到打印队列",
+    "ja": "印刷キューに送信"
+  },
+  "대기열 전송은 종이 출력 완료를 의미하지 않아요. 오류·상태 불명은 대기열 확인 후 수동 재출력해 주세요.": {
+    "en": "Sending to the print queue does not mean printing is complete. If there is an error or the status is unknown, check the queue before reprinting manually.",
+    "zh": "发送到打印队列不代表纸张已打印完成。如遇错误或状态不明，请先检查队列，再手动重新打印。",
+    "ja": "印刷キューへの送信は、用紙への印刷完了を意味しません。エラーや状態不明の場合は、キューを確認してから手動で再印刷してください。"
+  },
+  "덜 달게": {
+    "en": "Make it less sweet",
+    "zh": "做得不那么甜",
+    "ja": "甘さ控えめで"
+  },
+  "도움 요청을 표시했어요": {
+    "en": "Your request for help is on screen",
+    "zh": "已显示求助请求",
+    "ja": "お手伝いのリクエストを表示しました"
+  },
+  "도움이 필요하시면 직원을 불러 주세요.\n담아 둔 메뉴는 그대로 유지돼요.": {
+    "en": "If you need help, please call a staff member.\nYour items will stay in your cart.",
+    "zh": "如需帮助，请呼叫店员。\n购物车中的商品将保留。",
+    "ja": "お困りのときは、スタッフをお呼びください。\nカート内の商品はそのまま残ります。"
+  },
+  "도움이 필요해요": {
+    "en": "I Need Help",
+    "zh": "我需要帮助",
+    "ja": "サポートが必要です"
+  },
+  "디자인 확인용 예시 주문이에요. 실제 주문 내역에는 저장되지 않아요.": {
+    "en": "This is a sample order for checking the design. It won’t be saved in your order history.",
+    "zh": "这是用于确认设计的示例订单，不会保存到实际订单记录中。",
+    "ja": "デザイン確認用のサンプル注文です。実際の注文履歴には保存されません。"
+  },
+  "디카페인": {
+    "en": "Decaf",
+    "zh": "低咖啡因",
+    "ja": "デカフェ"
+  },
+  "디카페인 꿀화이트 아메리카노": {
+    "en": "Decaf Honey White Americano",
+    "zh": "低因蜂蜜白美式",
+    "ja": "デカフェ はちみつホワイトアメリカーノ"
+  },
+  "디카페인 시그니처 라떼": {
+    "en": "Decaf Signature Latte",
+    "zh": "低因招牌拿铁",
+    "ja": "デカフェ シグネチャーラテ"
+  },
+  "디카페인 아메리카노": {
+    "en": "Decaf Americano",
+    "zh": "低因美式咖啡",
+    "ja": "デカフェ アメリカーノ"
+  },
+  "디카페인 아샷추 복숭아": {
+    "en": "Peach Iced Tea with a Decaf Espresso Shot",
+    "zh": "桃子冰茶加低因浓缩",
+    "ja": "デカフェエスプレッソ入りピーチアイスティー"
+  },
+  "디카페인 에스프레소": {
+    "en": "Decaf Espresso",
+    "zh": "低因浓缩咖啡",
+    "ja": "デカフェ エスプレッソ"
+  },
+  "디카페인 카페라떼": {
+    "en": "Decaf Café Latte",
+    "zh": "低因咖啡拿铁",
+    "ja": "デカフェ カフェラテ"
+  },
+  "디카페인 카페모카": {
+    "en": "Decaf Café Mocha",
+    "zh": "低因摩卡咖啡",
+    "ja": "デカフェ カフェモカ"
+  },
+  "디카페인 카푸치노": {
+    "en": "Decaf Cappuccino",
+    "zh": "低因卡布奇诺",
+    "ja": "デカフェ カプチーノ"
+  },
+  "디카페인 헤이즐넛 아메리카노": {
+    "en": "Decaf Hazelnut Americano",
+    "zh": "低因榛果美式",
+    "ja": "デカフェ ヘーゼルナッツアメリカーノ"
+  },
+  "따뜻하게": {
+    "en": "Hot",
+    "zh": "热饮",
+    "ja": "ホット"
+  },
+  "딸기 듬뿍 라떼": {
+    "en": "Extra Strawberry Latte",
+    "zh": "满满草莓拿铁",
+    "ja": "いちごたっぷりラテ"
+  },
+  "딸기 쉐이크": {
+    "en": "Strawberry Shake",
+    "zh": "草莓奶昔",
+    "ja": "いちごシェイク"
+  },
+  "딸기 요거트 플랫치노": {
+    "en": "Strawberry Yogurt Flatccino",
+    "zh": "草莓酸奶 Flatccino",
+    "ja": "いちごヨーグルト フラッチーノ"
+  },
+  "딸기 초코 라떼": {
+    "en": "Strawberry Chocolate Latte",
+    "zh": "草莓巧克力拿铁",
+    "ja": "いちごチョコラテ"
+  },
+  "딸기바나나주스": {
+    "en": "Strawberry Banana Juice",
+    "zh": "草莓香蕉汁",
+    "ja": "いちごバナナジュース"
+  },
+  "딸기주스": {
+    "en": "Strawberry Juice",
+    "zh": "草莓汁",
+    "ja": "いちごジュース"
+  },
+  "딸기퐁당 오트 피스타치오": {
+    "en": "Strawberry Splash Oat Pistachio",
+    "zh": "草莓燕麦开心果",
+    "ja": "いちごポンダン オーツピスタチオ"
+  },
+  "라지": {
+    "en": "Large",
+    "zh": "大杯",
+    "ja": "ラージ"
+  },
+  "레귤러": {
+    "en": "Regular",
+    "zh": "常规杯",
+    "ja": "レギュラー"
+  },
+  "레몬 아이스티": {
+    "en": "Lemon Iced Tea",
+    "zh": "柠檬冰茶",
+    "ja": "レモンアイスティー"
+  },
+  "레몬차": {
+    "en": "Lemon Tea",
+    "zh": "柠檬茶",
+    "ja": "レモン茶"
+  },
+  "로열 밀크티": {
+    "en": "Royal Milk Tea",
+    "zh": "皇家奶茶",
+    "ja": "ロイヤルミルクティー"
+  },
+  "로컬 백엔드 연결 확인": {
+    "en": "Check Local Backend Connection",
+    "zh": "检查本地后端连接",
+    "ja": "ローカルバックエンドの接続を確認"
+  },
+  "로컬 백엔드 연결됨 · USB 프린터": {
+    "en": "Local Backend Connected · USB Printer",
+    "zh": "本地后端已连接 · USB 打印机",
+    "ja": "ローカルバックエンド接続済み · USBプリンター"
+  },
+  "로컬 백엔드에서 출력하고 있어요.": {
+    "en": "Printing via the local backend.",
+    "zh": "正在通过本地后端打印。",
+    "ja": "ローカルバックエンド経由で印刷中です。"
+  },
+  "루이보스": {
+    "en": "Rooibos",
+    "zh": "路易波士茶",
+    "ja": "ルイボス"
+  },
+  "리더기 입력 대기": {
+    "en": "Waiting for Reader Input",
+    "zh": "等待读卡器输入",
+    "ja": "読み取り機からの入力待ち"
+  },
+  "마음에 드는 메뉴를 골라 보세요.": {
+    "en": "Choose something you like.",
+    "zh": "请选择您喜欢的商品。",
+    "ja": "お好きなメニューをお選びください。"
+  },
+  "많이": {
+    "en": "More",
+    "zh": "多一点",
+    "ja": "多め"
+  },
+  "말차 초코 쉐이크": {
+    "en": "Matcha Chocolate Shake",
+    "zh": "抹茶巧克力奶昔",
+    "ja": "抹茶チョコシェイク"
+  },
+  "말차라떼": {
+    "en": "Matcha Latte",
+    "zh": "抹茶拿铁",
+    "ja": "抹茶ラテ"
+  },
+  "말차초코라떼": {
+    "en": "Matcha Chocolate Latte",
+    "zh": "抹茶巧克力拿铁",
+    "ja": "抹茶チョコラテ"
+  },
+  "말차폼 자스민티": {
+    "en": "Jasmine Tea with Matcha Foam",
+    "zh": "抹茶顶茉莉茶",
+    "ja": "抹茶フォーム ジャスミンティー"
+  },
+  "맛있게 드세요!": {
+    "en": "Enjoy!",
+    "zh": "请慢用！",
+    "ja": "どうぞお楽しみください！"
+  },
+  "맛있게 준비해 드릴게요.": {
+    "en": "We’ll prepare your order with care.",
+    "zh": "我们会用心为您准备。",
+    "ja": "心を込めてお作りします。"
+  },
+  "망고 주스": {
+    "en": "Mango Juice",
+    "zh": "芒果汁",
+    "ja": "マンゴージュース"
+  },
+  "망고 플랫치노": {
+    "en": "Mango Flatccino",
+    "zh": "芒果 Flatccino",
+    "ja": "マンゴー フラッチーノ"
+  },
+  "망고바나나주스": {
+    "en": "Mango Banana Juice",
+    "zh": "芒果香蕉汁",
+    "ja": "マンゴーバナナジュース"
+  },
+  "매장": {
+    "en": "Dine in",
+    "zh": "堂食",
+    "ja": "店内"
+  },
+  "매장·포장 선택": {
+    "en": "Choose Dine In or Takeout",
+    "zh": "选择堂食或外带",
+    "ja": "店内・お持ち帰りを選ぶ"
+  },
+  "매장에서 편안하게": {
+    "en": "Relax and Enjoy Here",
+    "zh": "在店内悠闲享用",
+    "ja": "店内でごゆっくり"
+  },
+  "머스캣 모히또 에이드": {
+    "en": "Muscat Mojito Ade",
+    "zh": "麝香葡萄莫吉托气泡饮",
+    "ja": "マスカットモヒートエード"
+  },
+  "먹고 갈게요": {
+    "en": "I’ll Dine In",
+    "zh": "我在店内享用",
+    "ja": "店内でいただきます"
+  },
+  "메뉴 더 담기": {
+    "en": "Add More Items",
+    "zh": "继续加购",
+    "ja": "商品を追加する"
+  },
+  "메뉴 데이터가 달라 주문을 적용하지 않았어요. 에이전트와 키오스크의 카탈로그를 확인해 주세요.": {
+    "en": "The menu data doesn’t match, so the order wasn’t applied. Please check the agent and kiosk catalogs.",
+    "zh": "菜单数据不一致，未应用订单。请检查代理端和自助点单机的商品目录。",
+    "ja": "メニューデータが一致しないため、注文は反映されませんでした。エージェントとキオスクのカタログを確認してください。"
+  },
+  "메뉴 선택": {
+    "en": "Choose an item",
+    "zh": "选择商品",
+    "ja": "商品を選ぶ"
+  },
+  "메뉴 수량": {
+    "en": "Item quantity",
+    "zh": "商品数量",
+    "ja": "商品の数量"
+  },
+  "메뉴 수정": {
+    "en": "Edit items",
+    "zh": "修改商品",
+    "ja": "商品を変更"
+  },
+  "메뉴 카테고리": {
+    "en": "Menu categories",
+    "zh": "菜单分类",
+    "ja": "メニューのカテゴリ"
+  },
+  "메뉴·금액·결제 내역": {
+    "en": "Items · Amounts · Payment details",
+    "zh": "商品 · 金额 · 付款明细",
+    "ja": "商品・金額・お支払い明細"
+  },
+  "메뉴·옵션·주문 내역·결제 흐름을 직접 터치해 보세요.": {
+    "en": "Tap to try the menu, options, order details, and payment steps.",
+    "zh": "请点击体验菜单、选项、订单明细和付款流程。",
+    "ja": "メニュー・オプション・注文内容・お支払いの流れを、タッチしてお試しください。"
+  },
+  "메뉴를 담으면 여기에 주문 내역이 보여요.": {
+    "en": "Your order will appear here when you add an item.",
+    "zh": "添加商品后，订单明细会显示在这里。",
+    "ja": "商品を追加すると、ここに注文内容が表示されます。"
+  },
+  "모구모구(리치)": {
+    "en": "Mogu Mogu (Lychee)",
+    "zh": "Mogu Mogu（荔枝）",
+    "ja": "モグモグ（ライチ）"
+  },
+  "모구모구(복숭아)": {
+    "en": "Mogu Mogu (Peach)",
+    "zh": "Mogu Mogu（桃子）",
+    "ja": "モグモグ（ピーチ）"
+  },
+  "미숫가루 라떼": {
+    "en": "Misutgaru Latte",
+    "zh": "韩式谷物粉拿铁",
+    "ja": "ミスッカルラテ"
+  },
+  "민트 초콜릿": {
+    "en": "Mint Chocolate",
+    "zh": "薄荷巧克力",
+    "ja": "ミントチョコレート"
+  },
+  "민트 초콜릿칩 플랫치노": {
+    "en": "Mint Chocolate Chip Flatccino",
+    "zh": "薄荷巧克力碎片 Flatccino",
+    "ja": "ミントチョコチップフラッチーノ"
+  },
+  "민트모카": {
+    "en": "Mint Mocha",
+    "zh": "薄荷摩卡",
+    "ja": "ミントモカ"
+  },
+  "밀크 쉐이크": {
+    "en": "Milkshake",
+    "zh": "奶昔",
+    "ja": "ミルクシェイク"
+  },
+  "바닐라라떼": {
+    "en": "Vanilla Latte",
+    "zh": "香草拿铁",
+    "ja": "バニララテ"
+  },
+  "반가워요, 오늘도 SWitch": {
+    "en": "Welcome back to SWitch",
+    "zh": "欢迎您今天也来到 SWitch",
+    "ja": "今日もSWitchへようこそ"
+  },
+  "밤 크림 라떼": {
+    "en": "Chestnut Cream Latte",
+    "zh": "栗子奶油拿铁",
+    "ja": "栗クリームラテ"
+  },
+  "배모과차": {
+    "en": "Pear & Quince Tea",
+    "zh": "梨和木瓜茶",
+    "ja": "梨とカリンのお茶"
+  },
+  "버블 흑당 라떼": {
+    "en": "Brown Sugar Bubble Latte",
+    "zh": "黑糖珍珠拿铁",
+    "ja": "黒糖タピオカラテ"
+  },
+  "번으로 알려드릴게요.": {
+    "en": " is the number we’ll call.",
+    "zh": "号，届时会叫号通知您。",
+    "ja": "番でお呼びします。"
+  },
+  "복분자 뱅쇼": {
+    "en": "Korean Black Raspberry Vin Chaud",
+    "zh": "韩国覆盆子热红酒",
+    "ja": "覆盆子（ポップンジャ）のヴァンショー"
+  },
+  "복숭아 아이스티": {
+    "en": "Peach Iced Tea",
+    "zh": "桃子冰茶",
+    "ja": "ピーチアイスティー"
+  },
+  "볼륨": {
+    "en": "Volume",
+    "zh": "音量",
+    "ja": "音量"
+  },
+  "브라우저에서 전체화면을 지원하지 않아요.": {
+    "en": "This browser doesn’t support full screen.",
+    "zh": "此浏览器不支持全屏。",
+    "ja": "このブラウザは全画面表示に対応していません。"
+  },
+  "블루베리 요거트 플랫치노": {
+    "en": "Blueberry Yogurt Flatccino",
+    "zh": "蓝莓酸奶 Flatccino",
+    "ja": "ブルーベリーヨーグルトフラッチーノ"
+  },
+  "블루베리바나나주스": {
+    "en": "Blueberry Banana Juice",
+    "zh": "蓝莓香蕉汁",
+    "ja": "ブルーベリーバナナジュース"
+  },
+  "블루베리주스": {
+    "en": "Blueberry Juice",
+    "zh": "蓝莓汁",
+    "ja": "ブルーベリージュース"
+  },
+  "비타민 주스 믹스베리": {
+    "en": "Mixed Berry Vitamin Juice",
+    "zh": "混合莓果维生素果汁",
+    "ja": "ビタミンジュース ミックスベリー"
+  },
+  "비타민 주스 애플망고": {
+    "en": "Apple Mango Vitamin Juice",
+    "zh": "苹果芒果维生素果汁",
+    "ja": "ビタミンジュース アップルマンゴー"
+  },
+  "사과당근클렌즈주스": {
+    "en": "Apple & Carrot Cleanse Juice",
+    "zh": "苹果胡萝卜轻食果蔬汁",
+    "ja": "りんごとにんじんのクレンズジュース"
+  },
+  "사이즈": {
+    "en": "Size",
+    "zh": "规格",
+    "ja": "サイズ"
+  },
+  "살얼음 식혜": {
+    "en": "Slushy Sikhye",
+    "zh": "冰沙甜米露",
+    "ja": "シャーベット仕立てのシッケ"
+  },
+  "상세 영수증": {
+    "en": "Itemized receipt",
+    "zh": "明细小票",
+    "ja": "明細付きレシート"
+  },
+  "상세 영수증 · 메뉴·금액": {
+    "en": "Itemized receipt · Items and amounts",
+    "zh": "明细小票 · 商品与金额",
+    "ja": "明細付きレシート・商品と金額"
+  },
+  "상세 영수증 시안": {
+    "en": "Itemized receipt draft",
+    "zh": "明细小票样稿",
+    "ja": "明細付きレシートの見本"
+  },
+  "상큼한 과일과 청량한 탄산의 만남": {
+    "en": "Tangy fruit meets refreshing fizz",
+    "zh": "清爽果味，搭配清凉气泡",
+    "ja": "爽やかなフルーツとすっきり炭酸の組み合わせ"
+  },
+  "상태 확인 필요": {
+    "en": "Please check status",
+    "zh": "请确认状态",
+    "ja": "状態をご確認ください"
+  },
+  "생강차": {
+    "en": "Ginger Tea",
+    "zh": "姜茶",
+    "ja": "しょうが茶"
+  },
+  "생수박 과일 화채": {
+    "en": "Fresh Watermelon Fruit Punch",
+    "zh": "鲜西瓜水果捞",
+    "ja": "生スイカのフルーツファチェ"
+  },
+  "샷 추가": {
+    "en": "Add an espresso shot",
+    "zh": "加一份浓缩咖啡",
+    "ja": "エスプレッソショット追加"
+  },
+  "샹그리아 에이드": {
+    "en": "Sangria Ade",
+    "zh": "桑格利亚气泡饮",
+    "ja": "サングリアエード"
+  },
+  "선택하신 메뉴와 옵션이 맞는지 확인해 주세요.": {
+    "en": "Please check your items and options.",
+    "zh": "请确认所选商品和选项是否正确。",
+    "ja": "選んだ商品とオプションが正しいかご確認ください。"
+  },
+  "선택한 메뉴를 모두 삭제할까요?": {
+    "en": "Remove all selected items?",
+    "zh": "要删除所有已选商品吗？",
+    "ja": "選んだ商品をすべて削除しますか？"
+  },
+  "선택한 메뉴를 확인해 주세요": {
+    "en": "Please check your selected items",
+    "zh": "请确认所选商品",
+    "ja": "選んだ商品をご確認ください"
+  },
+  "선택해 주세요": {
+    "en": "Please choose",
+    "zh": "请选择",
+    "ja": "選んでください"
+  },
+  "설정 저장": {
+    "en": "Save settings",
+    "zh": "保存设置",
+    "ja": "設定を保存"
+  },
+  "설정 적용 · 테스트 출력": {
+    "en": "Apply settings · Test print",
+    "zh": "应用设置 · 测试打印",
+    "ja": "設定を適用・テスト印刷"
+  },
+  "수량": {
+    "en": "Quantity",
+    "zh": "数量",
+    "ja": "数量"
+  },
+  "수량 · 금액": {
+    "en": "Quantity · Amount",
+    "zh": "数量 · 金额",
+    "ja": "数量・金額"
+  },
+  "수량·옵션 변경과 결제는 말씀하시면 처리해 드려요. 원하시면 화면에서도 직접 바꿀 수 있어요.": {
+    "en": "Just ask for help changing quantities or options, or paying. You can also make changes on the screen.",
+    "zh": "如需更改数量或选项，或办理付款，请告诉我们。您也可以直接在屏幕上修改。",
+    "ja": "数量やオプションの変更、お支払いはお声がけいただければ対応します。変更は画面からもできます。"
+  },
+  "수정하기": {
+    "en": "Edit",
+    "zh": "修改",
+    "ja": "変更する"
+  },
+  "승인 성공": {
+    "en": "Authorization successful",
+    "zh": "授权成功",
+    "ja": "承認成功"
+  },
+  "승인 실패": {
+    "en": "Authorization failed",
+    "zh": "授权失败",
+    "ja": "承認失敗"
+  },
+  "승인 완료": {
+    "en": "Authorization complete",
+    "zh": "授权完成",
+    "ja": "承認完了"
+  },
+  "승인 응답을 기다리고 있어요": {
+    "en": "Waiting for an authorization response",
+    "zh": "正在等待授权结果",
+    "ja": "承認結果を待っています"
+  },
+  "승인이 끝날 때까지 잠시만 기다려 주세요.": {
+    "en": "Please wait until authorization is complete.",
+    "zh": "请稍候，授权完成后再继续。",
+    "ja": "承認が終わるまでお待ちください。"
+  },
+  "승인이 끝날 때까지 카드를 빼지 말아 주세요.": {
+    "en": "Please leave your card in until authorization is complete.",
+    "zh": "授权完成前，请勿拔出银行卡。",
+    "ja": "承認が終わるまでカードを抜かないでください。"
+  },
+  "시럽 없이": {
+    "en": "No syrup",
+    "zh": "不加糖浆",
+    "ja": "シロップなし"
+  },
+  "시럽 추가": {
+    "en": "Add syrup",
+    "zh": "加糖浆",
+    "ja": "シロップ追加"
+  },
+  "시안 PDF 다운로드": {
+    "en": "Download draft PDF",
+    "zh": "下载样稿PDF",
+    "ja": "見本PDFをダウンロード"
+  },
+  "시안 PDF는 미리보기의 다운로드 링크로 받을 수 있어요. 대기열 전송은 종이 출력 완료를 의미하지 않아요.": {
+    "en": "Use the download link in the preview to get the draft PDF. A job sent to the print queue hasn’t necessarily printed yet.",
+    "zh": "可通过预览中的下载链接获取样稿PDF。发送到打印队列不代表已打印完成。",
+    "ja": "見本PDFはプレビューのダウンロードリンクから取得できます。印刷待ちに追加されても、印刷が終わったわけではありません。"
+  },
+  "시원하고 부드럽게 즐기는 블렌딩 음료": {
+    "en": "Cool, smooth blended drinks",
+    "zh": "冰爽顺滑的搅打饮品",
+    "ja": "冷たくなめらかなブレンドドリンク"
+  },
+  "실물 카드를 리더기에 넣어 주세요": {
+    "en": "Please insert your physical card into the reader",
+    "zh": "请将实体卡插入读卡器",
+    "ja": "お手元のカードを読み取り機に差し込んでください"
+  },
+  "실제 크기": {
+    "en": "Actual size",
+    "zh": "实际尺寸",
+    "ja": "実際のサイズ"
+  },
+  "쌍화차": {
+    "en": "Ssanghwa Tea",
+    "zh": "双和茶",
+    "ja": "サンファ茶"
+  },
+  "아니요": {
+    "en": "No",
+    "zh": "否",
+    "ja": "いいえ"
+  },
+  "아래에서 영수증을 받아 주세요.": {
+    "en": "Please collect your receipt below.",
+    "zh": "请从下方领取小票。",
+    "ja": "下からレシートをお取りください。"
+  },
+  "아망추 복숭아": {
+    "en": "Amangchu Peach",
+    "zh": "Amangchu（桃子）",
+    "ja": "アマンチュ ピーチ"
+  },
+  "아메리카노": {
+    "en": "Americano",
+    "zh": "美式咖啡",
+    "ja": "アメリカーノ"
+  },
+  "아주 크게": {
+    "en": "Extra large",
+    "zh": "超大",
+    "ja": "特大"
+  },
+  "아직 담은 메뉴가 없어요": {
+    "en": "No items added yet",
+    "zh": "还未添加商品",
+    "ja": "まだ商品が入っていません"
+  },
+  "아직 완료한 주문이 없어요.": {
+    "en": "No completed orders yet.",
+    "zh": "还没有已完成的订单。",
+    "ja": "完了した注文はまだありません。"
+  },
+  "아포가토 오리지널": {
+    "en": "Original Affogato",
+    "zh": "原味阿芙佳朵",
+    "ja": "オリジナルアフォガート"
+  },
+  "어디서 즐기실 건가요?": {
+    "en": "For here or to go?",
+    "zh": "您要堂食还是外带？",
+    "ja": "店内でお召し上がりですか？お持ち帰りですか？"
+  },
+  "어디서나 가볍게": {
+    "en": "Easy to enjoy anywhere",
+    "zh": "随时随地轻松享用",
+    "ja": "どこでも気軽に"
+  },
+  "얼그레이 티": {
+    "en": "Earl Grey Tea",
+    "zh": "伯爵红茶",
+    "ja": "アールグレイティー"
+  },
+  "얼음": {
+    "en": "Ice",
+    "zh": "冰块",
+    "ja": "氷"
+  },
+  "없이": {
+    "en": "Without",
+    "zh": "不加",
+    "ja": "なし"
+  },
+  "에스프레소 쉐이크": {
+    "en": "Espresso Shake",
+    "zh": "浓缩咖啡奶昔",
+    "ja": "エスプレッソシェイク"
+  },
+  "연유 콜드브루": {
+    "en": "Condensed Milk Cold Brew",
+    "zh": "炼乳冷萃咖啡",
+    "ja": "練乳コールドブリュー"
+  },
+  "연유라떼": {
+    "en": "Condensed Milk Latte",
+    "zh": "炼乳拿铁",
+    "ja": "練乳ラテ"
+  },
+  "영수증": {
+    "en": "Receipt",
+    "zh": "收据",
+    "ja": "レシート"
+  },
+  "영수증 시안": {
+    "en": "Receipt Design",
+    "zh": "收据样式",
+    "ja": "レシートのデザイン"
+  },
+  "영수증 시안 선택": {
+    "en": "Choose a receipt design",
+    "zh": "选择收据样式",
+    "ja": "レシートのデザインを選択"
+  },
+  "영수증 종류": {
+    "en": "Receipt Type",
+    "zh": "收据类型",
+    "ja": "レシートの種類"
+  },
+  "영수증 출력": {
+    "en": "Print Receipt",
+    "zh": "打印收据",
+    "ja": "レシートを印刷"
+  },
+  "영수증 출력 준비중이에요.": {
+    "en": "Getting ready to print the receipt.",
+    "zh": "正在准备打印收据。",
+    "ja": "レシートの印刷を準備しています。"
+  },
+  "영수증 출력 확인이 필요해요.": {
+    "en": "Please check whether the receipt printed.",
+    "zh": "请确认收据是否已打印。",
+    "ja": "レシートが印刷されたかご確認ください。"
+  },
+  "영수증 출력중이에요.": {
+    "en": "Printing your receipt.",
+    "zh": "正在打印收据。",
+    "ja": "レシートを印刷しています。"
+  },
+  "영수증 프린터": {
+    "en": "Receipt Printer",
+    "zh": "收据打印机",
+    "ja": "レシートプリンター"
+  },
+  "영수증을 인쇄 크기로 준비하고 있어요.": {
+    "en": "Sizing the receipt for printing.",
+    "zh": "正在将收据调整为打印尺寸。",
+    "ja": "レシートを印刷用のサイズに調整しています。"
+  },
+  "영수증이 필요하면 직원에게 말씀해 주세요.": {
+    "en": "If you need a receipt, please ask a staff member.",
+    "zh": "如需收据，请告诉工作人员。",
+    "ja": "レシートが必要な方は、スタッフにお声がけください。"
+  },
+  "예": {
+    "en": "Yes",
+    "zh": "是",
+    "ja": "はい"
+  },
+  "오늘은 어디서": {
+    "en": "How would you like",
+    "zh": "今天想在哪里",
+    "ja": "今日はどちらで"
+  },
+  "오류": {
+    "en": "Error",
+    "zh": "出错了",
+    "ja": "エラー"
+  },
+  "오트 커피": {
+    "en": "Oat Coffee",
+    "zh": "燕麦咖啡",
+    "ja": "オーツコーヒー"
+  },
+  "오트 콜드브루": {
+    "en": "Oat Cold Brew",
+    "zh": "燕麦冷萃咖啡",
+    "ja": "オーツコールドブリュー"
+  },
+  "오트밀크": {
+    "en": "Oat milk",
+    "zh": "燕麦奶",
+    "ja": "オーツミルク"
+  },
+  "온도": {
+    "en": "Temperature",
+    "zh": "温度",
+    "ja": "温度"
+  },
+  "옵션 변경": {
+    "en": "Change Options",
+    "zh": "更改选项",
+    "ja": "オプションを変更"
+  },
+  "옵션을 확인하고 준비해 주세요.": {
+    "en": "Please check the options before preparing the order.",
+    "zh": "请确认选项后再制作。",
+    "ja": "オプションを確認してからご用意ください。"
+  },
+  "완료": {
+    "en": "Done",
+    "zh": "完成",
+    "ja": "完了"
+  },
+  "완료된 새 주문을 1회 출력 요청해요.": {
+    "en": "Send 1 print request for the newly completed order.",
+    "zh": "为刚完成的订单发送 1 次打印请求。",
+    "ja": "新たに完了した注文の印刷を1回リクエストします。"
+  },
+  "우유": {
+    "en": "Milk",
+    "zh": "牛奶",
+    "ja": "牛乳"
+  },
+  "원두": {
+    "en": "Coffee Beans",
+    "zh": "咖啡豆",
+    "ja": "コーヒー豆"
+  },
+  "원하는 결제수단을 눌러 주세요. ‘카드로 할게’처럼 말씀하셔도 돼요.": {
+    "en": "Tap a payment method. You can also say, “I’ll pay by card.”",
+    "zh": "请点击您想用的付款方式。也可以说“我用卡付款”。",
+    "ja": "ご希望のお支払い方法をタップしてください。「カードで払います」のように話しかけても選べます。"
+  },
+  "원하는 메뉴를 선택해 주세요.": {
+    "en": "Please select an item.",
+    "zh": "请选择您想要的商品。",
+    "ja": "ご希望の商品をお選びください。"
+  },
+  "유자몽 플랫치노": {
+    "en": "Yuzu Grapefruit Flatccino",
+    "zh": "香柚西柚冰沙（Flatccino）",
+    "ja": "ゆずグレープフルーツ フラッチーノ"
+  },
+  "유자차": {
+    "en": "Yuzu Tea",
+    "zh": "香柚茶",
+    "ja": "ゆず茶"
+  },
+  "응답 없음": {
+    "en": "No Response",
+    "zh": "无响应",
+    "ja": "応答なし"
+  },
+  "이 기기의 주문 이력": {
+    "en": "Orders on This Device",
+    "zh": "本机订单记录",
+    "ja": "この端末の注文履歴"
+  },
+  "이 메뉴는 온도와 구성이 정해져 있어요. 수량을 선택해 주세요.": {
+    "en": "This item has a set temperature and options. Please choose a quantity.",
+    "zh": "此商品的温度和搭配是固定的。请选择数量。",
+    "ja": "この商品は温度と内容が決まっています。数量をお選びください。"
+  },
+  "이 시제품에서는 직원 단말기로 전송되지 않아요.\n필요하면 가까운 직원에게 말씀해 주세요.": {
+    "en": "This prototype does not send orders to staff devices.\nIf needed, please ask a nearby staff member.",
+    "zh": "此原型不会将订单发送到员工终端。\n如有需要，请告诉附近的工作人员。",
+    "ja": "この試作機からはスタッフの端末に注文が送信されません。\n必要な場合は、お近くのスタッフにお声がけください。"
+  },
+  "이디야 감귤&한라봉 주스": {
+    "en": "EDIYA Mandarin & Hallabong Juice",
+    "zh": "EDIYA 蜜橘和汉拿峰柑橘汁",
+    "ja": "EDIYA みかん＆ハルラボンジュース"
+  },
+  "이디야 사과주스": {
+    "en": "EDIYA Apple Juice",
+    "zh": "EDIYA 苹果汁",
+    "ja": "EDIYA りんごジュース"
+  },
+  "이디야 워터": {
+    "en": "EDIYA Water",
+    "zh": "EDIYA 饮用水",
+    "ja": "EDIYA ウォーター"
+  },
+  "이디야 콤부차 복숭아 망고": {
+    "en": "EDIYA Peach Mango Kombucha",
+    "zh": "EDIYA 桃子芒果康普茶",
+    "ja": "EDIYA コンブチャ ピーチ＆マンゴー"
+  },
+  "이디야 콤부차 석류애플라임": {
+    "en": "EDIYA Pomegranate Apple Lime Kombucha",
+    "zh": "EDIYA 石榴苹果青柠康普茶",
+    "ja": "EDIYA コンブチャ ザクロ＆アップル＆ライム"
+  },
+  "이디야 콤부차 청포도 레몬": {
+    "en": "EDIYA Green Grape Lemon Kombucha",
+    "zh": "EDIYA 青葡萄柠檬康普茶",
+    "ja": "EDIYA コンブチャ グリーングレープ＆レモン"
+  },
+  "이디야키즈 뽀로로 사과매실": {
+    "en": "EDIYA Kids Pororo Apple & Green Plum",
+    "zh": "EDIYA Kids Pororo 苹果青梅",
+    "ja": "EDIYAキッズ ポロロ りんご＆梅"
+  },
+  "이디야키즈 뽀로로 오렌지": {
+    "en": "EDIYA Kids Pororo Orange",
+    "zh": "EDIYA Kids Pororo 橙子",
+    "ja": "EDIYAキッズ ポロロ オレンジ"
+  },
+  "이디야키즈 뽀로로 포도블루베리": {
+    "en": "EDIYA Kids Pororo Grape & Blueberry",
+    "zh": "EDIYA Kids Pororo 葡萄蓝莓",
+    "ja": "EDIYAキッズ ポロロ ぶどう＆ブルーベリー"
+  },
+  "이용 방법 변경": {
+    "en": "Change Dine-in or Takeout",
+    "zh": "更改堂食或外带",
+    "ja": "店内・持ち帰りを変更"
+  },
+  "이전 주문은 현재 메뉴 정보로 표시됩니다.": {
+    "en": "Past orders are shown with current menu details.",
+    "zh": "历史订单按当前菜单信息显示。",
+    "ja": "過去の注文は現在のメニュー情報で表示されます。"
+  },
+  "이전 화면": {
+    "en": "Previous Screen",
+    "zh": "上一页",
+    "ja": "前の画面"
+  },
+  "이전에 담은 주문을 불러왔어요.": {
+    "en": "Your previously added items have been restored.",
+    "zh": "已恢复您之前添加的商品。",
+    "ja": "前にカートに入れた商品を復元しました。"
+  },
+  "이전으로": {
+    "en": "Back",
+    "zh": "返回",
+    "ja": "戻る"
+  },
+  "인쇄 영역": {
+    "en": "Print Area",
+    "zh": "打印区域",
+    "ja": "印刷範囲"
+  },
+  "일반 우유": {
+    "en": "Regular Milk",
+    "zh": "普通牛奶",
+    "ja": "通常の牛乳"
+  },
+  "자몽 포멜로 에이드": {
+    "en": "Grapefruit Pomelo Ade",
+    "zh": "西柚柚子气泡饮",
+    "ja": "グレープフルーツ＆ポメロエード"
+  },
+  "자몽차": {
+    "en": "Grapefruit Tea",
+    "zh": "西柚茶",
+    "ja": "グレープフルーツティー"
+  },
+  "잠시 후 주문번호를 안내해 드릴게요.": {
+    "en": "We’ll show your order number shortly.",
+    "zh": "稍后将显示您的订单号。",
+    "ja": "まもなくご注文番号をご案内します。"
+  },
+  "잠시만 기다려 주세요.": {
+    "en": "Please wait a moment.",
+    "zh": "请稍等。",
+    "ja": "少々お待ちください。"
+  },
+  "적게": {
+    "en": "Less",
+    "zh": "少量",
+    "ja": "少なめ"
+  },
+  "전체 삭제": {
+    "en": "Clear All",
+    "zh": "清空",
+    "ja": "すべて削除"
+  },
+  "전체 삭제하기": {
+    "en": "Clear All",
+    "zh": "全部删除",
+    "ja": "すべて削除する"
+  },
+  "전체화면": {
+    "en": "Full Screen",
+    "zh": "全屏",
+    "ja": "全画面"
+  },
+  "정보 없음": {
+    "en": "No Information",
+    "zh": "暂无信息",
+    "ja": "情報なし"
+  },
+  "제로슈가 달달커피": {
+    "en": "Zero-Sugar Sweet Coffee",
+    "zh": "零糖甜咖啡",
+    "ja": "ゼロシュガー スイートコーヒー"
+  },
+  "제로슈가 아샷추 복숭아": {
+    "en": "Zero-Sugar Peach Iced Tea with Espresso",
+    "zh": "零糖蜜桃冰茶加浓缩咖啡",
+    "ja": "ゼロシュガー ピーチアイスティー エスプレッソ入り"
+  },
+  "제로슈가 아이스티 복숭아": {
+    "en": "Zero Sugar Peach Iced Tea",
+    "zh": "零糖桃味冰茶",
+    "ja": "ゼロシュガー ピーチアイスティー"
+  },
+  "종료 요청에 실패했어요. 다시 시도해 주세요.": {
+    "en": "Could not exit. Please try again.",
+    "zh": "退出失败，请重试。",
+    "ja": "終了できませんでした。もう一度お試しください。"
+  },
+  "종료 중": {
+    "en": "Exiting",
+    "zh": "正在退出",
+    "ja": "終了中"
+  },
+  "종료하시겠습니까?": {
+    "en": "Exit?",
+    "zh": "要退出吗？",
+    "ja": "終了しますか？"
+  },
+  "좋은 하루의 시작, 좋은 커피 한 잔.": {
+    "en": "Start a good day with a good cup of coffee.",
+    "zh": "一杯好咖啡，开启美好的一天。",
+    "ja": "おいしいコーヒーで、すてきな一日を。"
+  },
+  "좌우 보정": {
+    "en": "Horizontal adjustment",
+    "zh": "左右校准",
+    "ja": "左右補正"
+  },
+  "주문": {
+    "en": "Order",
+    "zh": "点单",
+    "ja": "注文"
+  },
+  "주문 ID": {
+    "en": "Order ID",
+    "zh": "订单 ID",
+    "ja": "注文ID"
+  },
+  "주문 내역": {
+    "en": "Order details",
+    "zh": "订单详情",
+    "ja": "注文内容"
+  },
+  "주문 내역 다시 보기": {
+    "en": "Review order details",
+    "zh": "再次查看订单详情",
+    "ja": "注文内容をもう一度見る"
+  },
+  "주문 내역 아래로": {
+    "en": "Scroll down in order details",
+    "zh": "向下滚动订单详情",
+    "ja": "注文内容を下にスクロール"
+  },
+  "주문 내역 위로": {
+    "en": "Scroll up in order details",
+    "zh": "向上滚动订单详情",
+    "ja": "注文内容を上にスクロール"
+  },
+  "주문 내역을 비울까요?": {
+    "en": "Clear all items from this order?",
+    "zh": "要清空本单商品吗？",
+    "ja": "注文内容を空にしますか？"
+  },
+  "주문 내용을 수정했어요.": {
+    "en": "Your order was updated.",
+    "zh": "订单内容已修改。",
+    "ja": "注文内容を変更しました。"
+  },
+  "주문 마치기": {
+    "en": "Finish order",
+    "zh": "完成点单",
+    "ja": "注文を完了する"
+  },
+  "주문 메뉴 / 옵션": {
+    "en": "Items / Options",
+    "zh": "已点商品 / 选项",
+    "ja": "注文商品 / オプション"
+  },
+  "주문 영수증": {
+    "en": "Order receipt",
+    "zh": "订单小票",
+    "ja": "注文レシート"
+  },
+  "주문 이력": {
+    "en": "Order history",
+    "zh": "历史订单",
+    "ja": "注文履歴"
+  },
+  "주문 임시 저장을 사용할 수 없어요. 브라우저 저장 공간을 확인해 주세요.": {
+    "en": "Orders cannot be saved temporarily. Please check your browser storage.",
+    "zh": "无法暂存订单，请检查浏览器存储空间。",
+    "ja": "注文を一時保存できません。ブラウザーの保存容量をご確認ください。"
+  },
+  "주문 취소": {
+    "en": "Cancel order",
+    "zh": "取消订单",
+    "ja": "注文キャンセル"
+  },
+  "주문 취소하기": {
+    "en": "Cancel order",
+    "zh": "取消订单",
+    "ja": "注文をキャンセルする"
+  },
+  "주문 확인 목록 아래로": {
+    "en": "Scroll down in the order review list",
+    "zh": "向下滚动订单确认列表",
+    "ja": "注文確認リストを下にスクロール"
+  },
+  "주문 확인 목록 위로": {
+    "en": "Scroll up in the order review list",
+    "zh": "向上滚动订单确认列表",
+    "ja": "注文確認リストを上にスクロール"
+  },
+  "주문번호": {
+    "en": "Order number",
+    "zh": "订单号",
+    "ja": "注文番号"
+  },
+  "주문번호가 불리면 픽업대에서 받아 주세요.": {
+    "en": "Please pick up your order at the counter when your number is called.",
+    "zh": "叫到您的订单号后，请到取餐台领取。",
+    "ja": "注文番号が呼ばれたら、受取カウンターでお受け取りください。"
+  },
+  "주문번호로 받아 주세요.": {
+    "en": "Please use your order number to pick up your order.",
+    "zh": "请凭订单号领取。",
+    "ja": "注文番号でお受け取りください。"
+  },
+  "주문번호를 확인해 주세요.": {
+    "en": "Please check your order number.",
+    "zh": "请确认订单号。",
+    "ja": "注文番号をご確認ください。"
+  },
+  "주문을 계속할까요?": {
+    "en": "Continue ordering?",
+    "zh": "要继续点单吗？",
+    "ja": "注文を続けますか？"
+  },
+  "주문을 완료하고 있어요": {
+    "en": "Finalizing your order",
+    "zh": "正在完成订单",
+    "ja": "注文を確定しています"
+  },
+  "주문을 저장하지 못했어요. 브라우저 저장 공간을 확인하고 다시 시도해 주세요.": {
+    "en": "Could not save your order. Please check your browser storage and try again.",
+    "zh": "无法保存订单，请检查浏览器存储空间后重试。",
+    "ja": "注文を保存できませんでした。ブラウザーの保存容量をご確認のうえ、もう一度お試しください。"
+  },
+  "주문을 접수하고 있어요. 잠시만 기다려 주세요.": {
+    "en": "We’re receiving your order. Please wait a moment.",
+    "zh": "正在接收您的订单，请稍候。",
+    "ja": "注文を受け付けています。少々お待ちください。"
+  },
+  "주문을 취소하고 처음 화면으로 돌아갈까요?": {
+    "en": "Cancel your order and return to the start screen?",
+    "zh": "要取消订单并返回首页吗？",
+    "ja": "注文をキャンセルして最初の画面に戻りますか？"
+  },
+  "주문을 취소할까요?": {
+    "en": "Cancel your order?",
+    "zh": "要取消订单吗？",
+    "ja": "注文をキャンセルしますか？"
+  },
+  "주문이 거의 끝났어요": {
+    "en": "Your order is almost complete",
+    "zh": "订单即将完成",
+    "ja": "もうすぐ注文が完了します"
+  },
+  "주문이 완료됐어요": {
+    "en": "Your order is complete",
+    "zh": "订单已完成",
+    "ja": "注文が完了しました"
+  },
+  "주문한 메뉴 목록": {
+    "en": "Ordered items",
+    "zh": "已点商品列表",
+    "ja": "注文した商品一覧"
+  },
+  "준비가 끝나면 주문번호로 불러 주세요.": {
+    "en": "Please call the order number when the order is ready.",
+    "zh": "订单准备好后，请叫订单号。",
+    "ja": "準備ができたら、注文番号でお呼びください。"
+  },
+  "즐기실 건가요?": {
+    "en": "your order today?",
+    "zh": "享用饮品？",
+    "ja": "お召し上がりですか？"
+  },
+  "지금 이야기하는 옵션을 표시했어요.": {
+    "en": "The option we’re talking about is highlighted.",
+    "zh": "已标出正在介绍的选项。",
+    "ja": "今お話ししているオプションを強調表示しました。"
+  },
+  "직원 도움 요청": {
+    "en": "Staff assistance",
+    "zh": "请求店员帮助",
+    "ja": "スタッフへのお手伝い依頼"
+  },
+  "직원 도움 요청하기": {
+    "en": "Ask staff for help",
+    "zh": "请店员帮忙",
+    "ja": "スタッフに助けを求める"
+  },
+  "직원에게 주문번호를 보여 주세요.": {
+    "en": "Please show your order number to a staff member.",
+    "zh": "请向店员出示订单号。",
+    "ja": "スタッフに注文番号をお見せください。"
+  },
+  "진행 중인 출력과 연결된 프로그램을 정리하고 있어요.\n잠시만 기다려 주세요.": {
+    "en": "Wrapping up active print jobs and connected programs.\nPlease wait a moment.",
+    "zh": "正在处理进行中的打印任务和已连接的程序。\n请稍候。",
+    "ja": "進行中の印刷処理と、接続中のプログラムの終了処理を行っています。\n少々お待ちください。"
+  },
+  "차갑게": {
+    "en": "Cold",
+    "zh": "冷饮",
+    "ja": "冷たい"
+  },
+  "차의 향과 과일의 풍미를 즐겨 보세요": {
+    "en": "Enjoy the aroma of tea and the flavor of fruit",
+    "zh": "品味茶香和果味",
+    "ja": "お茶の香りと果物の風味をお楽しみください"
+  },
+  "처리 중": {
+    "en": "Processing",
+    "zh": "正在处理",
+    "ja": "処理中"
+  },
+  "처리 중…": {
+    "en": "Processing…",
+    "zh": "正在处理…",
+    "ja": "処理中…"
+  },
+  "처음 화면으로 돌아가요.": {
+    "en": "Returning to the start screen.",
+    "zh": "将返回首页。",
+    "ja": "最初の画面に戻ります。"
+  },
+  "처음부터": {
+    "en": "Start over",
+    "zh": "重新开始",
+    "ja": "最初から"
+  },
+  "처음으로": {
+    "en": "Home",
+    "zh": "首页",
+    "ja": "最初の画面へ"
+  },
+  "처음으로 돌아가기": {
+    "en": "Back to home",
+    "zh": "返回首页",
+    "ja": "最初の画面に戻る"
+  },
+  "천천히 주문하셔도 괜찮아요.": {
+    "en": "Please take your time ordering.",
+    "zh": "您可以慢慢点单。",
+    "ja": "ごゆっくりご注文ください。"
+  },
+  "청도홍시주스": {
+    "en": "Cheongdo Ripe Persimmon Juice",
+    "zh": "清道熟柿子汁",
+    "ja": "清道（チョンド）の熟し柿ジュース"
+  },
+  "초": {
+    "en": "sec",
+    "zh": "秒",
+    "ja": "秒"
+  },
+  "초 후 처음 화면으로 돌아가요.": {
+    "en": " seconds until we return to the start screen.",
+    "zh": "秒后返回首页。",
+    "ja": "秒後に最初の画面に戻ります。"
+  },
+  "초 후에는 담은 메뉴가 지워지고": {
+    "en": " seconds until your selected items are cleared and",
+    "zh": "秒后将清空已选商品，并",
+    "ja": "秒後に選んだ商品が消去され、"
+  },
+  "초코쿠키 쉐이크": {
+    "en": "Chocolate Cookie Shake",
+    "zh": "巧克力曲奇奶昔",
+    "ja": "チョコクッキーシェイク"
+  },
+  "초콜릿 칩 플랫치노": {
+    "en": "Chocolate Chip Flatccino",
+    "zh": "巧克力碎片芙乐奇诺",
+    "ja": "チョコレートチップ フラットチーノ"
+  },
+  "초콜릿라떼": {
+    "en": "Chocolate Latte",
+    "zh": "巧克力拿铁",
+    "ja": "チョコレートラテ"
+  },
+  "총": {
+    "en": "Total",
+    "zh": "合计",
+    "ja": "合計"
+  },
+  "총 주문": {
+    "en": "Total orders",
+    "zh": "订单总数",
+    "ja": "注文総数"
+  },
+  "최근 출력 요청": {
+    "en": "Recent print requests",
+    "zh": "最近的打印请求",
+    "ja": "最近の印刷依頼"
+  },
+  "추가 샷": {
+    "en": "Extra shot",
+    "zh": "加浓缩咖啡",
+    "ja": "ショット追加"
+  },
+  "추가 시럽": {
+    "en": "Extra syrup",
+    "zh": "加糖浆",
+    "ja": "シロップ追加"
+  },
+  "추천 메뉴": {
+    "en": "Recommended items",
+    "zh": "推荐商品",
+    "ja": "おすすめ商品"
+  },
+  "출력 대상": {
+    "en": "Print destination",
+    "zh": "打印目标",
+    "ja": "印刷先"
+  },
+  "출력 안내": {
+    "en": "Printing information",
+    "zh": "打印说明",
+    "ja": "印刷のご案内"
+  },
+  "취향에 맞는 한 잔을 준비해 드릴게요.": {
+    "en": "We’ll make a drink to suit your taste.",
+    "zh": "我们会为您准备一杯合口味的饮品。",
+    "ja": "お好みに合う一杯をお作りします。"
+  },
+  "카드 · 모바일 결제": {
+    "en": "Card · Mobile payment",
+    "zh": "银行卡 · 手机支付",
+    "ja": "カード・モバイル決済"
+  },
+  "카드 인식": {
+    "en": "Read card",
+    "zh": "读取银行卡",
+    "ja": "カード読み取り"
+  },
+  "카드를 리더기에 넣어 주세요": {
+    "en": "Please insert your card into the reader",
+    "zh": "请将卡插入读卡器",
+    "ja": "カードを読み取り機に差し込んでください"
+  },
+  "카드를 빼 주세요. 주문을 접수하고 있어요.": {
+    "en": "Please remove your card. We’re processing your order.",
+    "zh": "请取出卡片。正在接收您的订单。",
+    "ja": "カードを抜いてください。ご注文を受け付けています。"
+  },
+  "카드를 읽고 있어요": {
+    "en": "Reading your card…",
+    "zh": "正在读取卡片…",
+    "ja": "カードを読み取っています"
+  },
+  "카라멜마끼아또": {
+    "en": "Caramel Macchiato",
+    "zh": "焦糖玛奇朵",
+    "ja": "キャラメルマキアート"
+  },
+  "캐모마일 티": {
+    "en": "Chamomile Tea",
+    "zh": "洋甘菊茶",
+    "ja": "カモミールティー"
+  },
+  "커피 없이 즐기는 부드럽고 달콤한 한 잔": {
+    "en": "A smooth, sweet drink without coffee",
+    "zh": "不含咖啡，口感柔和香甜",
+    "ja": "コーヒーなしで楽しめる、まろやかで甘い一杯"
+  },
+  "커피의 풍미를 즐기는 한 잔": {
+    "en": "A drink to enjoy the flavor of coffee",
+    "zh": "一杯尽享咖啡风味",
+    "ja": "コーヒーの風味を楽しめる一杯"
+  },
+  "코드 인식": {
+    "en": "Scan code",
+    "zh": "扫码",
+    "ja": "コード読み取り"
+  },
+  "콜드브루": {
+    "en": "Cold Brew",
+    "zh": "冷萃咖啡",
+    "ja": "コールドブリュー"
+  },
+  "콜드브루라떼": {
+    "en": "Cold Brew Latte",
+    "zh": "冷萃拿铁",
+    "ja": "コールドブリューラテ"
+  },
+  "크게": {
+    "en": "Large",
+    "zh": "大号",
+    "ja": "大きく"
+  },
+  "큰 주문번호·제조 옵션": {
+    "en": "Large order number · Preparation options",
+    "zh": "大号订单号 · 制作选项",
+    "ja": "大きな注文番号・作り方のオプション"
+  },
+  "키오스크 미리보기": {
+    "en": "Kiosk preview",
+    "zh": "点餐机预览",
+    "ja": "キオスクのプレビュー"
+  },
+  "키오스크 종료": {
+    "en": "Exit kiosk",
+    "zh": "退出点餐机",
+    "ja": "キオスクを終了"
+  },
+  "키오스크 종료 메뉴": {
+    "en": "Kiosk exit menu",
+    "zh": "点餐机退出菜单",
+    "ja": "キオスクの終了メニュー"
+  },
+  "키오스크 화면과 연결된 프로그램을 정리한 뒤 종료해요.": {
+    "en": "Closes the kiosk screen and connected apps, then exits.",
+    "zh": "关闭点餐机界面和关联程序后退出。",
+    "ja": "キオスク画面と連携アプリを閉じてから終了します。"
+  },
+  "키오스크를 종료하고 있어요": {
+    "en": "Closing the kiosk…",
+    "zh": "正在退出点餐机…",
+    "ja": "キオスクを終了しています"
+  },
+  "키위케일셀러리클렌즈주스": {
+    "en": "Kiwi, Kale & Celery Cleanse Juice",
+    "zh": "奇异果羽衣甘蓝芹菜轻体果蔬汁",
+    "ja": "キウイ・ケール・セロリのクレンズジュース"
+  },
+  "터치·주문·결제 효과음 사용": {
+    "en": "Enable touch, order, and payment sounds",
+    "zh": "开启触屏、下单和支付提示音",
+    "ja": "タッチ・注文・支払いの効果音をオンにする"
+  },
+  "토피넛 라떼": {
+    "en": "Toffee Nut Latte",
+    "zh": "太妃坚果拿铁",
+    "ja": "トフィーナッツラテ"
+  },
+  "토피넛 플랫치노": {
+    "en": "Toffee Nut Flatchino",
+    "zh": "太妃坚果弗莱奇诺",
+    "ja": "トフィーナッツフラッチーノ"
+  },
+  "페퍼민트": {
+    "en": "Peppermint",
+    "zh": "胡椒薄荷",
+    "ja": "ペパーミント"
+  },
+  "포장": {
+    "en": "Takeout",
+    "zh": "外带",
+    "ja": "お持ち帰り"
+  },
+  "포장할게요": {
+    "en": "To go, please",
+    "zh": "请打包",
+    "ja": "持ち帰ります"
+  },
+  "품절": {
+    "en": "Sold out",
+    "zh": "售罄",
+    "ja": "売り切れ"
+  },
+  "프린터 목록 새로고침": {
+    "en": "Refresh printer list",
+    "zh": "刷新打印机列表",
+    "ja": "プリンター一覧を更新"
+  },
+  "프린터 설정": {
+    "en": "Printer settings",
+    "zh": "打印机设置",
+    "ja": "プリンター設定"
+  },
+  "프린터 설정에서 출력 대상을 선택해 주세요. 로컬 백엔드가 한글 영수증 이미지를 만들고 Windows 인쇄 대기열로 전송해요. 자동 절단은 Epson 드라이버의 문서 종료 절단 설정을 사용해요.": {
+    "en": "Please choose a printer in Printer Settings. The local backend creates a Korean receipt image and sends it to the Windows print queue. Auto-cut uses the Epson driver’s end-of-document cut setting.",
+    "zh": "请在打印机设置中选择打印机。本地后台会生成韩文小票图片，并将其发送到 Windows 打印队列。自动切纸使用 Epson 驱动程序的文档末尾切纸设置。",
+    "ja": "プリンター設定で出力先を選んでください。ローカルのバックエンドが韓国語のレシート画像を作成し、Windows の印刷キューに送信します。自動カットには、Epson ドライバーの文書末尾でのカット設定を使用します。"
+  },
+  "프린터 설정을 저장했어요.": {
+    "en": "Printer settings saved.",
+    "zh": "已保存打印机设置。",
+    "ja": "プリンター設定を保存しました。"
+  },
+  "프린터를 선택해 주세요": {
+    "en": "Please select a printer",
+    "zh": "请选择打印机",
+    "ja": "プリンターを選んでください"
+  },
+  "플레인 요거트 플랫치노": {
+    "en": "Plain Yogurt Flatchino",
+    "zh": "原味酸奶弗莱奇诺",
+    "ja": "プレーンヨーグルトフラッチーノ"
+  },
+  "픽업 주문서": {
+    "en": "Pickup ticket",
+    "zh": "取餐单",
+    "ja": "受け取り伝票"
+  },
+  "픽업 주문서 · 주문번호·옵션": {
+    "en": "Pickup ticket · Order number and options",
+    "zh": "取餐单 · 订单号和选项",
+    "ja": "受け取り伝票・注文番号とオプション"
+  },
+  "픽업 주문서 시안": {
+    "en": "Pickup ticket mockup",
+    "zh": "取餐单样稿",
+    "ja": "受け取り伝票の見本"
+  },
+  "픽업주문서": {
+    "en": "Pickup ticket",
+    "zh": "取餐单",
+    "ja": "受け取り伝票"
+  },
+  "필수": {
+    "en": "Required",
+    "zh": "必选",
+    "ja": "必須"
+  },
+  "합계 금액": {
+    "en": "Total",
+    "zh": "合计金额",
+    "ja": "合計金額"
+  },
+  "현재 주문 내역": {
+    "en": "Current order details",
+    "zh": "当前订单明细",
+    "ja": "現在のご注文内容"
+  },
+  "화면 맞춤": {
+    "en": "Fit to screen",
+    "zh": "适合屏幕",
+    "ja": "画面に合わせる"
+  },
+  "화이트 초콜릿": {
+    "en": "White Chocolate",
+    "zh": "白巧克力",
+    "ja": "ホワイトチョコレート"
+  },
+  "화이트초콜릿모카": {
+    "en": "White Chocolate Mocha",
+    "zh": "白巧克力摩卡",
+    "ja": "ホワイトチョコレートモカ"
+  },
+  "확인": {
+    "en": "Confirm",
+    "zh": "确认",
+    "ja": "確認"
+  },
+  "확인하고 결제하기": {
+    "en": "Confirm and pay",
+    "zh": "确认并支付",
+    "ja": "確認して支払う"
+  },
+  "확인할 주문 목록": {
+    "en": "Orders to review",
+    "zh": "待确认订单列表",
+    "ja": "確認する注文一覧"
+  },
+  "확인했어요": {
+    "en": "Confirmed",
+    "zh": "已确认",
+    "ja": "確認しました"
+  },
+  "효과음": {
+    "en": "Sound effects",
+    "zh": "提示音",
+    "ja": "効果音"
+  },
+  "휘핑 제거": {
+    "en": "Remove whipped cream",
+    "zh": "去掉打发奶油",
+    "ja": "ホイップを抜く"
+  },
+  "휘핑 추가": {
+    "en": "Add whipped cream",
+    "zh": "添加打发奶油",
+    "ja": "ホイップを追加"
+  },
+  "휘핑크림": {
+    "en": "Whipped cream",
+    "zh": "打发奶油",
+    "ja": "ホイップクリーム"
+  },
+  "휴대폰 인식": {
+    "en": "Read phone",
+    "zh": "读取手机",
+    "ja": "スマートフォン読み取り"
+  },
+  "휴대폰을 리더기에 대 주세요": {
+    "en": "Please hold your phone near the reader",
+    "zh": "请将手机靠近读卡器",
+    "ja": "スマートフォンを読み取り機にかざしてください"
+  },
+  "휴대폰을 리더기에 대기": {
+    "en": "Hold your phone near the reader",
+    "zh": "将手机靠近读卡器",
+    "ja": "スマートフォンを読み取り機にかざす"
+  },
+  "휴대폰을 인식하고 있어요": {
+    "en": "Reading your phone…",
+    "zh": "正在读取手机…",
+    "ja": "スマートフォンを読み取っています"
+  },
+  "흑당 라떼": {
+    "en": "Brown Sugar Latte",
+    "zh": "黑糖拿铁",
+    "ja": "黒糖ラテ"
+  },
+  "흑당콜드브루": {
+    "en": "Brown Sugar Cold Brew",
+    "zh": "黑糖冷萃咖啡",
+    "ja": "黒糖コールドブリュー"
+  },
+  "흑임자 크림 라떼": {
+    "en": "Black Sesame Cream Latte",
+    "zh": "黑芝麻奶油拿铁",
+    "ja": "黒ごまクリームラテ"
+  },
+  "히비스커스": {
+    "en": "Hibiscus",
+    "zh": "洛神花",
+    "ja": "ハイビスカス"
+  },
+  "히비스커스 청귤티": {
+    "en": "Hibiscus Green Tangerine Tea",
+    "zh": "洛神花青橘茶",
+    "ja": "ハイビスカス青みかんティー"
+  },
+  "\n현재 서버 주문 상태 JSON\n": {
+    "en": "\nCurrent server order status (JSON)\n",
+    "zh": "\n服务器当前订单状态（JSON）\n",
+    "ja": "\nサーバー上の現在の注文状況（JSON）\n"
+  },
+  " 메뉴는 품절이에요.": {
+    "en": " is sold out.",
+    "zh": " 已售罄。",
+    "ja": " は売り切れです。"
+  },
+  " 앱의 결제코드를 스캐너에 보여 주세요.": {
+    "en": " Show the payment code in the app to the scanner.",
+    "zh": " 请将应用内的付款码对准扫描器。",
+    "ja": " アプリの支払いコードをスキャナーにかざしてください。"
+  },
+  " 재고가 부족해요.": {
+    "en": " Not enough in stock.",
+    "zh": " 库存不足。",
+    "ja": " 在庫が足りません。"
+  },
+  " 주문은 ": {
+    "en": " order: ",
+    "zh": "订单：",
+    "ja": "のご注文は、"
+  },
+  ", 이렇게 해 드릴까요?": {
+    "en": ". Is that right?",
+    "zh": "，这样可以吗？",
+    "ja": "でよろしいですか？"
+  },
+  ", 총 ": {
+    "en": ", total: ",
+    "zh": "，共 ",
+    "ja": "、合計 "
+  },
+  "OPENAI_MODEL에 사용할 모델 ID를 설정해 주세요.": {
+    "en": "Set OPENAI_MODEL to the model ID you want to use.",
+    "zh": "请将 OPENAI_MODEL 设置为要使用的模型 ID。",
+    "ja": "OPENAI_MODELに使用するモデルIDを設定してください。"
+  },
+  "OpenAI 에이전트 연결됨 · 가상 주문": {
+    "en": "OpenAI agent connected · Virtual order",
+    "zh": "OpenAI 智能助手已连接 · 虚拟订单",
+    "ja": "OpenAIエージェント接続済み · 仮想注文"
+  },
+  "SWitch 주문 점원": {
+    "en": "SWitch Order Assistant",
+    "zh": "SWitch 点单助手",
+    "ja": "SWitch 注文スタッフ"
+  },
+  "{name} {quantity}잔": {
+    "en": "{name} × {quantity}",
+    "zh": "{name} {quantity}杯",
+    "ja": "{name} {quantity}杯"
+  },
+  "가능한 온도를 확인하고 선택해 주세요.": {
+    "en": "Please choose from the available temperatures.",
+    "zh": "请从可选温度中选择。",
+    "ja": "選べる温度を確認して選んでください。"
+  },
+  "같은 옵션의 메뉴는 총 999개까지 가능해요.": {
+    "en": "You can order up to 999 of the same item with the same options.",
+    "zh": "同一商品选择相同选项时，最多可点 999 份。",
+    "ja": "同じオプションの同じ商品は、合計999点まで注文できます。"
+  },
+  "같은 요청 ID의 메시지가 달라요.": {
+    "en": "The message differs for the same request ID.",
+    "zh": "相同请求 ID 对应的消息不一致。",
+    "ja": "同じリクエストIDのメッセージが一致しません。"
+  },
+  "개 추가": {
+    "en": " extra",
+    "zh": "份加量",
+    "ja": "個追加"
+  },
+  "결제 시간이 지났어요. 같은 결제수단으로 다시 시도할까요?": {
+    "en": "Payment timed out. Try again with the same payment method?",
+    "zh": "付款超时了。要用同一种付款方式重试吗？",
+    "ja": "お支払いの時間が過ぎました。同じ支払い方法でもう一度お試しになりますか？"
+  },
+  "결제 진행 정보를 확인해 주세요.": {
+    "en": "Please check the payment details.",
+    "zh": "请查看付款进度信息。",
+    "ja": "お支払いの進行状況を確認してください。"
+  },
+  "결제 화면과 진행 상태가 맞지 않아요.": {
+    "en": "The payment screen does not match the current status.",
+    "zh": "付款页面与当前付款状态不一致。",
+    "ja": "お支払い画面と現在の状況が一致しません。"
+  },
+  "결제가 승인되지 않았어요. 같은 결제수단으로 다시 시도할까요?": {
+    "en": "Payment was not approved. Try again with the same payment method?",
+    "zh": "付款未获批准。要用同一种付款方式重试吗？",
+    "ja": "お支払いが承認されませんでした。同じ支払い方法でもう一度お試しになりますか？"
+  },
+  "결제가 완료됐어요. 주문번호는 ": {
+    "en": "Payment complete. Your order number is ",
+    "zh": "付款成功。您的订单号是 ",
+    "ja": "お支払いが完了しました。ご注文番号は"
+  },
+  "결제가 완료됐어요. 주문번호는 {number}번이에요. 맛있게 드세요!": {
+    "en": "Payment complete. Your order number is {number}. Enjoy!",
+    "zh": "付款成功。您的订单号是 {number}。请慢用！",
+    "ja": "お支払いが完了しました。ご注文番号は{number}番です。どうぞお楽しみください！"
+  },
+  "결제가 진행 중이에요. 결과를 기다리거나 먼저 취소해 주세요.": {
+    "en": "Payment is in progress. Please wait for the result or cancel the payment first.",
+    "zh": "正在付款。请等待付款结果，或先取消付款。",
+    "ja": "お支払いの処理中です。結果をお待ちいただくか、先にお支払いを取り消してください。"
+  },
+  "결제를 취소했어요. 다른 결제수단으로 하시겠어요?": {
+    "en": "Payment canceled. Would you like to use another payment method?",
+    "zh": "付款已取消。要换一种付款方式吗？",
+    "ja": "お支払いを取り消しました。別の方法でお支払いしますか？"
+  },
+  "기본 당도": {
+    "en": "Regular sweetness",
+    "zh": "标准甜度",
+    "ja": "標準の甘さ"
+  },
+  "기본 크기": {
+    "en": "Regular",
+    "zh": "标准杯型",
+    "ja": "標準サイズ"
+  },
+  "기본 휘핑": {
+    "en": "Regular whipped cream",
+    "zh": "标准奶油顶",
+    "ja": "ホイップ標準"
+  },
+  "꽤 달아요": {
+    "en": "Quite sweet",
+    "zh": "比较甜",
+    "ja": "かなり甘め"
+  },
+  "나눌 수량은 원래 수량보다 적어야 해요.": {
+    "en": "The quantity you split off must be less than the original quantity.",
+    "zh": "拆出的数量必须少于原数量。",
+    "ja": "分ける数量は元の数量より少なくしてください。"
+  },
+  "네, 말씀해 주세요.": {
+    "en": "Yes, go ahead.",
+    "zh": "好的，请说。",
+    "ja": "はい、どうぞ。"
+  },
+  "네이버페이": {
+    "en": "Naver Pay",
+    "zh": "Naver Pay",
+    "ja": "Naver Pay"
+  },
+  "달아요": {
+    "en": "Sweet",
+    "zh": "甜",
+    "ja": "甘め"
+  },
+  "대화 세션이 만료됐어요.": {
+    "en": "The chat session has expired.",
+    "zh": "对话已超时。",
+    "ja": "会話セッションの有効期限が切れました。"
+  },
+  "대화 연결을 새로 시작해 주세요. 현재 주문은 유지돼요.": {
+    "en": "Please reconnect to the chat. Your current order will be kept.",
+    "zh": "请重新连接对话。当前订单会保留。",
+    "ja": "会話に接続し直してください。現在のご注文はそのまま残ります。"
+  },
+  "대화 요청이 만료됐어요. 새 대화를 시작해 주세요.": {
+    "en": "The chat request expired. Please start a new chat.",
+    "zh": "对话请求已超时。请开始新对话。",
+    "ja": "会話リクエストの有効期限が切れました。新しい会話を始めてください。"
+  },
+  "덜 달아요": {
+    "en": "Less sweet",
+    "zh": "甜度较低",
+    "ja": "甘さ控えめ"
+  },
+  "드시고 가세요, 포장해 드릴까요?": {
+    "en": "For here or to go?",
+    "zh": "堂食还是打包？",
+    "ja": "店内でお召し上がりですか？ お持ち帰りですか？"
+  },
+  "등록된 메뉴 ID를 조회한 뒤 선택해 주세요.": {
+    "en": "Look up the registered menu item ID before making a selection.",
+    "zh": "请先查询已登记的商品 ID，再进行选择。",
+    "ja": "登録済みの商品IDを確認してから選択してください。"
+  },
+  "디카페인은 참/거짓으로 선택해 주세요.": {
+    "en": "Select true or false for decaf.",
+    "zh": "低咖啡因选项请选择真或假。",
+    "ja": "デカフェは「真」か「偽」を選択してください。"
+  },
+  "따뜻하게 드릴까요, 차갑게 드릴까요?": {
+    "en": "Would you like it hot or cold?",
+    "zh": "您要热的还是冷的？",
+    "ja": "ホットとアイス、どちらにしますか？"
+  },
+  "따뜻한": {
+    "en": "Hot",
+    "zh": "热",
+    "ja": "ホット"
+  },
+  "를 켜고 휴대폰을 리더기에 대 주세요.": {
+    "en": " on, then hold your phone near the reader.",
+    "zh": "，然后将手机靠近读卡器。",
+    "ja": "をオンにして、スマートフォンを読み取り機にかざしてください。"
+  },
+  "매장 또는 포장을 선택해 주세요.": {
+    "en": "Please choose dine-in or takeout.",
+    "zh": "请选择堂食或打包。",
+    "ja": "店内かお持ち帰りを選んでください。"
+  },
+  "매장에서 드시는": {
+    "en": "Dine-in",
+    "zh": "堂食",
+    "ja": "店内でお召し上がり"
+  },
+  "먼저 메뉴를 골라 주세요.": {
+    "en": "Please choose an item first.",
+    "zh": "请先选择商品。",
+    "ja": "先に商品を選んでください。"
+  },
+  "메뉴 옵션 형식을 확인해 주세요.": {
+    "en": "Please check the item option format.",
+    "zh": "请检查商品选项的格式。",
+    "ja": "商品のオプション形式を確認してください。"
+  },
+  "메뉴와 매장/포장 선택을 먼저 마쳐 주세요.": {
+    "en": "Please choose your items and select dine-in or takeout first.",
+    "zh": "请先选好商品，并选择堂食或打包。",
+    "ja": "先に商品を選び、店内かお持ち帰りかを指定してください。"
+  },
+  "메시지가 너무 길어요.": {
+    "en": "The message is too long.",
+    "zh": "消息太长了。",
+    "ja": "メッセージが長すぎます。"
+  },
+  "메시지와 요청 ID를 확인해 주세요.": {
+    "en": "Please check the message and request ID.",
+    "zh": "请检查消息和请求 ID。",
+    "ja": "メッセージとリクエストIDを確認してください。"
+  },
+  "모형 응답으로 UI를 시험 중이에요": {
+    "en": "Testing the UI with mock responses",
+    "zh": "正在使用模拟回复测试界面",
+    "ja": "模擬応答で画面をテスト中"
+  },
+  "발화는 1~4000자로 보내 주세요.": {
+    "en": "Please send a message of 1–4,000 characters.",
+    "zh": "请发送 1～4000 个字符的消息。",
+    "ja": "発話は1～4000文字で送信してください。"
+  },
+  "번이에요. 맛있게 드세요!": {
+    "en": ". Enjoy!",
+    "zh": "。请慢用！",
+    "ja": "番です。どうぞお楽しみください！"
+  },
+  "삼성페이": {
+    "en": "Samsung Pay",
+    "zh": "Samsung Pay",
+    "ja": "Samsung Pay"
+  },
+  "샷 ": {
+    "en": "Shots: ",
+    "zh": "浓缩咖啡：",
+    "ja": "ショット "
+  },
+  "샷 {count}개 추가": {
+    "en": "Add {count} shot(s)",
+    "zh": "加 {count} 份浓缩咖啡",
+    "ja": "ショットを{count}個追加"
+  },
+  "샷과 시럽 추가는 각각 0~3개예요.": {
+    "en": "You can add 0–3 extra shots and 0–3 servings of syrup.",
+    "zh": "浓缩咖啡和糖浆各可加 0～3 份。",
+    "ja": "ショットとシロップは、それぞれ0～3個まで追加できます。"
+  },
+  "선택 중인 메뉴를 먼저 담거나 옵션 창을 닫아 주세요.": {
+    "en": "Please add the current item to your cart or close the options window first.",
+    "zh": "请先将当前商品加入购物车，或关闭选项窗口。",
+    "ja": "先に選択中の商品をカートに入れるか、オプション画面を閉じてください。"
+  },
+  "선택 중인 메뉴를 확인해 주세요.": {
+    "en": "Please check the item you’re selecting.",
+    "zh": "请确认当前选择的商品。",
+    "ja": "選択中の商品を確認してください。"
+  },
+  "선택 중인 옵션을 확인해 주세요.": {
+    "en": "Please check the options you’re selecting.",
+    "zh": "请确认当前选择的选项。",
+    "ja": "選択中のオプションを確認してください。"
+  },
+  "수량은 1~999개로 선택해 주세요.": {
+    "en": "Please choose a quantity from 1 to 999.",
+    "zh": "数量请选择 1～999 份。",
+    "ja": "数量は1～999点の範囲で選んでください。"
+  },
+  "시럽 ": {
+    "en": "Syrup: ",
+    "zh": "糖浆：",
+    "ja": "シロップ "
+  },
+  "시럽 {count}개 추가": {
+    "en": "Add {count} serving(s) of syrup",
+    "zh": "加 {count} 份糖浆",
+    "ja": "シロップを{count}個追加"
+  },
+  "시작 화면의 주문 정보를 확인해 주세요.": {
+    "en": "Please check the order details on the start screen.",
+    "zh": "请查看起始页面上的订单信息。",
+    "ja": "開始画面の注文情報をご確認ください。"
+  },
+  "신용·체크카드": {
+    "en": "Credit or debit card",
+    "zh": "信用卡或借记卡",
+    "ja": "クレジット・デビットカード"
+  },
+  "실패하거나 시간이 초과된 결제만 다시 시도할 수 있어요.": {
+    "en": "You can only retry payments that failed or timed out.",
+    "zh": "只能重试失败或超时的付款。",
+    "ja": "失敗したか、時間切れになったお支払いのみ再試行できます。"
+  },
+  "아직 담기 전인 메뉴의 옵션을 선택하거나 그 메뉴를 취소해 주세요.": {
+    "en": "Please choose options for the item you haven't added yet, or cancel it.",
+    "zh": "请为尚未加入订单的商品选择选项，或取消该商品。",
+    "ja": "まだ追加していない商品のオプションを選ぶか、その商品を取り消してください。"
+  },
+  "아직 응답을 기다리고 있어요. 같은 요청으로 다시 확인해 주세요.": {
+    "en": "Still waiting for a response. Please check again using the same request.",
+    "zh": "仍在等待回复。请使用同一请求再次查询。",
+    "ja": "まだ応答を待っています。同じリクエストでもう一度ご確認ください。"
+  },
+  "안내할 새로운 결제 결과가 없어요.": {
+    "en": "There are no new payment results to report.",
+    "zh": "暂无新的付款结果。",
+    "ja": "お知らせする新しいお支払い結果はありません。"
+  },
+  "앞선 결제 화면 동작을 반영한 뒤 다시 요청해 주세요.": {
+    "en": "Please apply the previous action on the payment screen, then try again.",
+    "zh": "请先应用上一次付款页面操作，再提交请求。",
+    "ja": "直前のお支払い画面での操作を反映してから、再度リクエストしてください。"
+  },
+  "애플페이": {
+    "en": "Apple Pay",
+    "zh": "Apple Pay",
+    "ja": "Apple Pay"
+  },
+  "얼음 많이": {
+    "en": "Extra ice",
+    "zh": "多冰",
+    "ja": "氷多め"
+  },
+  "얼음 보통": {
+    "en": "Regular ice",
+    "zh": "正常冰",
+    "ja": "氷ふつう"
+  },
+  "얼음 없이": {
+    "en": "No ice",
+    "zh": "去冰",
+    "ja": "氷なし"
+  },
+  "얼음 적게": {
+    "en": "Less ice",
+    "zh": "少冰",
+    "ja": "氷少なめ"
+  },
+  "에이전트 응답을 완료하지 못했어요. 반영된 주문은 유지했어요.": {
+    "en": "The assistant couldn't finish responding. Order updates already applied were kept.",
+    "zh": "助手未能完成回复。已生效的订单更新已保留。",
+    "ja": "アシスタントの応答が完了しませんでした。反映済みの注文内容は保持されています。"
+  },
+  "에이전트가 안내한 문장만 읽을 수 있어요.": {
+    "en": "Only messages from the assistant can be read aloud.",
+    "zh": "只能朗读助手提供的提示。",
+    "ja": "アシスタントが案内した文だけ読み上げられます。"
+  },
+  "연결 상태를 다시 확인해 주세요.": {
+    "en": "Please check your connection again.",
+    "zh": "请再次检查连接状态。",
+    "ja": "接続状況をもう一度ご確認ください。"
+  },
+  "완료되거나 인계한 주문은 새 세션을 시작해 주세요.": {
+    "en": "If the order is complete or has been handed off, please start a new session.",
+    "zh": "如果订单已完成或已移交，请开始新的会话。",
+    "ja": "注文が完了したか、引き継ぎ済みの場合は、新しいセッションを開始してください。"
+  },
+  "완료된 주문 정보를 확인해 주세요.": {
+    "en": "Please check the details of the completed order.",
+    "zh": "请查看已完成的订单信息。",
+    "ja": "完了した注文の内容をご確認ください。"
+  },
+  "완료된 주문은 다시 결제할 수 없어요. 새 대화를 시작해 주세요.": {
+    "en": "You can't pay again for a completed order. Please start a new chat.",
+    "zh": "已完成的订单无法再次付款。请开始新的对话。",
+    "ja": "完了した注文は再度お支払いできません。新しい会話を始めてください。"
+  },
+  "요청 형식을 확인해 주세요.": {
+    "en": "Please check the request format.",
+    "zh": "请检查请求格式。",
+    "ja": "リクエストの形式をご確認ください。"
+  },
+  "원이에요. 이대로 결제할까요?": {
+    "en": " won. Would you like to pay now?",
+    "zh": "韩元。要现在付款吗？",
+    "ja": "ウォンです。このままお支払いしますか？"
+  },
+  "음성 안내 요청을 확인해 주세요.": {
+    "en": "Please check the voice guidance request.",
+    "zh": "请检查语音提示请求。",
+    "ja": "音声案内のリクエストをご確認ください。"
+  },
+  "음성 안내가 중단됐어요.": {
+    "en": "Voice guidance was interrupted.",
+    "zh": "语音提示已中断。",
+    "ja": "音声案内が中断されました。"
+  },
+  "음성을 만들지 못했어요. TTS 연결·모델 권한을 확인해 주세요.": {
+    "en": "Couldn't generate speech. Please check the TTS connection and model permissions.",
+    "zh": "无法生成语音。请检查 TTS 连接和模型权限。",
+    "ja": "音声を生成できませんでした。TTSの接続とモデルの利用権限をご確認ください。"
+  },
+  "응답을 끝내지 못했어요. 현재 주문을 확인한 뒤 이어갈게요.": {
+    "en": "I couldn't finish responding. I'll check your current order before continuing.",
+    "zh": "未能完成回复。我会先查看当前订单，再继续。",
+    "ja": "応答が完了しませんでした。現在の注文を確認してから続けます。"
+  },
+  "이 메뉴 또는 온도에서는 얼음 양을 바꿀 수 없어요.": {
+    "en": "You can't change the amount of ice for this item or temperature.",
+    "zh": "此商品或温度选项不支持调整冰量。",
+    "ja": "この商品または温度では、氷の量を変更できません。"
+  },
+  "이 메뉴는 기본 크기만 가능해요.": {
+    "en": "This item only comes in the standard size.",
+    "zh": "此商品仅提供标准规格。",
+    "ja": "この商品は標準サイズのみです。"
+  },
+  "이 메뉴는 디카페인 원두로만 주문할 수 있어요.": {
+    "en": "This item can only be ordered with decaf coffee beans.",
+    "zh": "此商品仅可选用低因咖啡豆。",
+    "ja": "この商品はデカフェのコーヒー豆でのみご注文いただけます。"
+  },
+  "이 메뉴는 수량만 변경할 수 있어요.": {
+    "en": "You can only change the quantity for this item.",
+    "zh": "此商品只能更改数量。",
+    "ja": "この商品は数量のみ変更できます。"
+  },
+  "이 메뉴에서 지원하지 않는 옵션이에요.": {
+    "en": "This option isn't available for this item.",
+    "zh": "此商品不支持该选项。",
+    "ja": "この商品では選べないオプションです。"
+  },
+  "이 메뉴에서는 휘핑을 변경할 수 없어요.": {
+    "en": "You can't change the whipped cream option for this item.",
+    "zh": "此商品不能更改打发奶油选项。",
+    "ja": "この商品はホイップクリームの設定を変更できません。"
+  },
+  "이미 승인된 결제는 다시 시작하거나 취소하지 않아요.": {
+    "en": "Payments that have already been approved won't be restarted or canceled.",
+    "zh": "已获批准的付款不会重新发起或取消。",
+    "ja": "承認済みのお支払いは、やり直しや取り消しを行いません。"
+  },
+  "이전 답변을 처리하고 있어요. 잠시 기다려 주세요.": {
+    "en": "The previous response is still being processed. Please wait a moment.",
+    "zh": "正在处理上一条回复，请稍候。",
+    "ja": "前の応答を処理しています。少々お待ちください。"
+  },
+  "잘못된 이벤트 순서예요.": {
+    "en": "Events are out of order.",
+    "zh": "事件顺序有误。",
+    "ja": "イベントの順序が正しくありません。"
+  },
+  "존재하지 않는 경로예요.": {
+    "en": "This path doesn't exist.",
+    "zh": "此路径不存在。",
+    "ja": "このパスは存在しません。"
+  },
+  "주문 내용을 확인하고 결제수단 선택 화면으로 먼저 이동해 주세요.": {
+    "en": "Please check your order and go to the payment method screen first.",
+    "zh": "请确认订单内容，并先前往选择付款方式的页面。",
+    "ja": "注文内容を確認し、先にお支払い方法の選択画面へ進んでください。"
+  },
+  "주문 수정 전에 주문 단계로 돌아가 주세요.": {
+    "en": "Please go back to the ordering step before editing your order.",
+    "zh": "请先返回点单步骤，再修改订单。",
+    "ja": "注文を変更する前に、注文のステップに戻ってください。"
+  },
+  "주문 완료 결과가 필요해요.": {
+    "en": "The order completion result is required.",
+    "zh": "需要订单完成结果。",
+    "ja": "注文完了の結果が必要です。"
+  },
+  "주문 항목을 다시 조회해 주세요.": {
+    "en": "Please look up the order items again.",
+    "zh": "请重新查询订单中的商品。",
+    "ja": "注文した商品をもう一度ご確認ください。"
+  },
+  "중단된 안내는 재생할 수 없어요.": {
+    "en": "Interrupted guidance can't be played.",
+    "zh": "无法播放已中断的提示。",
+    "ja": "中断された案内は再生できません。"
+  },
+  "중단한 이전 요청이에요.": {
+    "en": "This is a previous request that was stopped.",
+    "zh": "这是之前已中断的请求。",
+    "ja": "これは中断された前のリクエストです。"
+  },
+  "중복되거나 잘못된 주문 항목이에요.": {
+    "en": "This order item is a duplicate or is invalid.",
+    "zh": "此订单项重复或无效。",
+    "ja": "注文項目が重複しているか、正しくありません。"
+  },
+  "중앙 에이전트 서버 설정을 확인해 주세요.": {
+    "en": "Please check the central agent server settings.",
+    "zh": "请检查中央智能体服务器的设置。",
+    "ja": "中央エージェントサーバーの設定をご確認ください。"
+  },
+  "중앙 에이전트 서버의 API 키와 모델 설정을 확인해 주세요.": {
+    "en": "Please check the central agent server's API key and model settings.",
+    "zh": "请检查中央智能体服务器的 API 密钥和模型设置。",
+    "ja": "中央エージェントサーバーのAPIキーとモデル設定をご確認ください。"
+  },
+  "지금은 품절된 메뉴예요.": {
+    "en": "This item is currently sold out.",
+    "zh": "此商品暂时售罄。",
+    "ja": "この商品は現在品切れです。"
+  },
+  "지원하지 않는 결제 동작이에요.": {
+    "en": "This payment action isn't supported.",
+    "zh": "不支持此付款操作。",
+    "ja": "このお支払い操作には対応していません。"
+  },
+  "지원하지 않는 옵션: ": {
+    "en": "Unsupported option: ",
+    "zh": "不支持的选项：",
+    "ja": "対応していないオプション："
+  },
+  "진행 중인 결제가 없어요. 결제수단을 선택해 주세요.": {
+    "en": "No payment is in progress. Please choose a payment method.",
+    "zh": "当前没有正在处理的付款。请选择付款方式。",
+    "ja": "処理中のお支払いはありません。お支払い方法を選んでください。"
+  },
+  "진행 중인 결제를 먼저 취소해 주세요.": {
+    "en": "Please cancel the payment in progress first.",
+    "zh": "请先取消正在处理的付款。",
+    "ja": "先に処理中のお支払いを取り消してください。"
+  },
+  "차가운": {
+    "en": "Iced",
+    "zh": "冷",
+    "ja": "冷たい"
+  },
+  "첨가 시럽 없이": {
+    "en": "No added syrup",
+    "zh": "不加糖浆",
+    "ja": "シロップ追加なし"
+  },
+  "카드로 하시겠어요, 다른 결제수단으로 하시겠어요?": {
+    "en": "Would you like to pay by card or use another method?",
+    "zh": "您想用银行卡付款，还是选择其他付款方式？",
+    "ja": "カードでお支払いしますか、それとも別のお支払い方法にしますか？"
+  },
+  "카드를 리더기에 넣어 주세요. 승인이 끝나면 알려드릴게요.": {
+    "en": "Please insert your card into the reader. I'll let you know when it's approved.",
+    "zh": "请将银行卡插入读卡器。付款获批后会通知您。",
+    "ja": "カードを読み取り機に挿入してください。承認が完了したらお知らせします。"
+  },
+  "카카오페이": {
+    "en": "Kakao Pay",
+    "zh": "Kakao Pay",
+    "ja": "Kakao Pay"
+  },
+  "큰 크기": {
+    "en": "Large",
+    "zh": "大份",
+    "ja": "ラージサイズ"
+  },
+  "키오스크 주문 형식을 확인해 주세요.": {
+    "en": "Please check the kiosk order format.",
+    "zh": "请检查自助点单机的订单格式。",
+    "ja": "キオスクの注文形式をご確認ください。"
+  },
+  "테스트 세션이 많아요. 잠시 후 다시 시도해 주세요.": {
+    "en": "There are too many test sessions. Please try again shortly.",
+    "zh": "测试会话过多，请稍后重试。",
+    "ja": "テストセッションが多すぎます。少し待ってからもう一度お試しください。"
+  },
+  "포장하시는": {
+    "en": "for takeout",
+    "zh": "外带的",
+    "ja": "お持ち帰りの"
+  },
+  "한 주문은 총 999개까지 가능해요.": {
+    "en": "You can order up to 999 items in total per order.",
+    "zh": "每单合计最多可点 999 件商品。",
+    "ja": "1回のご注文は合計999点までです。"
+  },
+  "한 항목은 1~999개까지 가능해요.": {
+    "en": "Choose 1–999 units per item.",
+    "zh": "每个订单项的数量可为 1～999 件。",
+    "ja": "1項目につき1～999点までご注文いただけます。"
+  },
+  "허용된 키오스크 화면에서만 연결할 수 있어요.": {
+    "en": "You can only connect from an allowed kiosk screen.",
+    "zh": "只能从获准的自助点单机页面连接。",
+    "ja": "許可されたキオスク画面からのみ接続できます。"
+  },
+  "현재 화면에서는 주문 대화를 시작할 수 없어요.": {
+    "en": "You can't start an order chat from this screen.",
+    "zh": "无法在当前页面开始点单对话。",
+    "ja": "この画面では注文の会話を始められません。"
+  },
+  "화면 선택 정보를 확인해 주세요.": {
+    "en": "Please check the screen selection details.",
+    "zh": "请检查页面选择信息。",
+    "ja": "画面の選択情報をご確認ください。"
+  },
+  "화면 조작 이력을 확인해 주세요.": {
+    "en": "Please check the screen action history.",
+    "zh": "请检查页面操作记录。",
+    "ja": "画面の操作履歴をご確認ください。"
+  },
+  "화면에 있는 결제수단을 선택해 주세요.": {
+    "en": "Please choose a payment method on the screen.",
+    "zh": "请在页面上选择付款方式。",
+    "ja": "画面に表示されているお支払い方法を選んでください。"
+  },
+  "휘핑 없이": {
+    "en": "No whipped cream",
+    "zh": "不加打发奶油",
+    "ja": "ホイップなし"
+  },
+  "휘핑 옵션은 기본·추가·제거 중에서 선택해 주세요.": {
+    "en": "Please choose a whipped cream option: standard, add, or remove.",
+    "zh": "请选择打发奶油选项：默认、添加或去掉。",
+    "ja": "ホイップは「標準・追加・なし」からお選びください。"
+  },
+  "여기예요": {
+    "en": "Here",
+    "zh": "在这里",
+    "ja": "こちらです"
+  },
+  "안녕하세요. 무엇을 드릴까요?": {
+    "en": "Hello! What would you like?",
+    "zh": "您好！想喝点什么？",
+    "ja": "こんにちは。何になさいますか？"
+  },
+  "듣고 있어요": {
+    "en": "I’m listening",
+    "zh": "正在听您说",
+    "ja": "お話を聞いています"
+  },
+  "말씀 도중 멈췄어요": {
+    "en": "Reply stopped here",
+    "zh": "已停止回答",
+    "ja": "回答を止めました"
+  },
+  "생각하는 중이에요": {
+    "en": "I’m thinking",
+    "zh": "正在思考",
+    "ja": "考えています"
+  },
+  "말씀하신 내용을 확인하고 있어요": {
+    "en": "I’m checking your request",
+    "zh": "正在确认您的需求",
+    "ja": "ご希望を確認しています"
+  },
+  "답변을 기다리고 있어요. 조금만 기다려 주세요": {
+    "en": "Waiting for a reply. Just a moment.",
+    "zh": "正在等待回答，请稍候。",
+    "ja": "回答を待っています。少々お待ちください。"
+  },
+  "안내 음성을 준비하고 있어요": {
+    "en": "Preparing the voice reply",
+    "zh": "正在准备语音",
+    "ja": "音声を準備しています"
+  },
+  "음성 응답을 기다리고 있어요": {
+    "en": "Waiting for the voice reply",
+    "zh": "正在等待语音回复",
+    "ja": "音声の回答を待っています"
+  },
+  "글로 먼저 보셔도 돼요. 음성을 기다리고 있어요": {
+    "en": "You can read the reply while the voice loads.",
+    "zh": "您可以先看文字，语音正在准备。",
+    "ja": "音声を準備中です。先に文字でご覧いただけます。"
+  },
+  "연결을 확인하고 있어요": {
+    "en": "Checking the connection",
+    "zh": "正在检查连接",
+    "ja": "接続を確認しています"
+  },
+  "서버 연결을 기다리고 있어요": {
+    "en": "Waiting for the connection",
+    "zh": "正在等待连接",
+    "ja": "接続を待っています"
+  },
+  "연결이 늦어지고 있어요": {
+    "en": "The connection is taking longer",
+    "zh": "连接时间较长，请稍候",
+    "ja": "接続に時間がかかっています"
+  },
+  "응답이 늦어지고 있어요. 아직 기다리고 있어요": {
+    "en": "The reply is taking longer. Please wait.",
+    "zh": "回复需要一些时间，请稍候。",
+    "ja": "回答に時間がかかっています。お待ちください。"
+  },
+  "요청을 다시 보내지 않으셔도 돼요. 답변을 기다리고 있어요": {
+    "en": "No need to send it again. Waiting for the reply.",
+    "zh": "无需再次发送，正在等待回答。",
+    "ja": "再送は不要です。回答を待っています。"
+  },
+  "{method} 앱의 결제코드를 스캐너에 보여 주세요.": {
+    "en": "Show your {method} payment code to the scanner.",
+    "zh": "请将{method}付款码对准扫码器。",
+    "ja": "{method}の支払いコードをスキャナーにかざしてください。"
+  },
+  "{method}를 켜고 휴대폰을 리더기에 대 주세요.": {
+    "en": "Open {method} and hold your phone to the reader.",
+    "zh": "请打开{method}，将手机靠近读卡器。",
+    "ja": "{method}を開いてスマートフォンを端末にかざしてください。"
+  },
+  "커피": {
+    "en": "Coffee",
+    "zh": "咖啡",
+    "ja": "コーヒー"
+  },
+  "논커피": {
+    "en": "Non-coffee",
+    "zh": "非咖啡饮品",
+    "ja": "ノンコーヒー"
+  },
+  "에이드": {
+    "en": "Refreshers",
+    "zh": "气泡果饮",
+    "ja": "エード"
+  },
+  "블렌디드": {
+    "en": "Blended",
+    "zh": "冰沙",
+    "ja": "フローズン"
+  },
+  "과일 주스": {
+    "en": "Fruit juice",
+    "zh": "果汁",
+    "ja": "フルーツジュース"
+  },
+  "티": {
+    "en": "Tea",
+    "zh": "茶",
+    "ja": "ティー"
+  },
+  "병음료": {
+    "en": "Bottled drinks",
+    "zh": "瓶装饮品",
+    "ja": "ボトルドリンク"
+  },
+  "크기": {
+    "en": "Size",
+    "zh": "杯型",
+    "ja": "サイズ"
+  },
+  "휘핑": {
+    "en": "Whipped cream",
+    "zh": "奶油",
+    "ja": "ホイップ"
+  },
+  "말씀을 글로 확인하고 있어요": {
+    "en": "Turning your speech into text",
+    "zh": "正在识别您的语音",
+    "ja": "お話を文字にしています"
+  },
+  "말씀하신 내용을 전달받고 있어요": {
+    "en": "Receiving your speech",
+    "zh": "正在接收语音",
+    "ja": "お話を受け取っています"
+  },
+  "음성 인식 결과를 기다리고 있어요": {
+    "en": "Waiting for speech recognition",
+    "zh": "正在等待语音识别结果",
+    "ja": "音声認識の結果を待っています"
+  }
+}

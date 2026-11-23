@@ -1,3 +1,5 @@
+import { centerScroll } from "./centerScroll";
+import { uiText } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "./agent-guidance.css";
@@ -64,6 +66,7 @@ export function AgentGuidance({
     if (!guide || guide.status !== "showing") return;
     let node: HTMLElement | undefined;
     let scrolled = false;
+    let restoreScroll: (() => void) | undefined;
     const update = () => {
       node = guidanceElement(guide);
       if (!node) {
@@ -71,11 +74,7 @@ export function AgentGuidance({
         return;
       }
       if (!scrolled) {
-        node.scrollIntoView({
-          behavior: "instant",
-          block: "nearest",
-          inline: "nearest",
-        });
+        restoreScroll = centerScroll(node);
         scrolled = true;
       }
       const bounds = node.getBoundingClientRect();
@@ -105,6 +104,7 @@ export function AgentGuidance({
     window.addEventListener("resize", update);
     document.addEventListener("click", click, true);
     return () => {
+      restoreScroll?.();
       clearInterval(timer);
       window.removeEventListener("scroll", update, true);
       window.removeEventListener("resize", update);
@@ -116,7 +116,7 @@ export function AgentGuidance({
   return rect && guide?.status === "showing"
     ? createPortal(
         <div className="agent-guide-ring" style={rect} aria-hidden="true">
-          <span>여기예요</span>
+          <span>{uiText("여기예요")}</span>
         </div>,
         document.body,
       )

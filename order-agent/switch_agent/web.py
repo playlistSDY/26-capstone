@@ -18,6 +18,7 @@ from uuid import uuid4
 
 from .domain import MAX_ORDER_QUANTITY, Line, Options, OrderError, OrderStore
 from .usage import empty, add
+from .language import LANGUAGES
 
 
 def load_config():
@@ -38,6 +39,7 @@ def normalize_ui_context(store, raw):
     if not isinstance(raw, dict) or len(json.dumps(raw, ensure_ascii=False)) > 32000:
         raise OrderError("화면 선택 정보를 확인해 주세요.")
     context = {key: raw.get(key) for key in ("category", "overlay") if isinstance(raw.get(key), str)}
+    if isinstance(raw.get("language"), str) and raw["language"] in LANGUAGES: context["language"] = raw["language"]
     events = raw.get("events", [])
     if not isinstance(events,list) or len(events) > 32:
         raise OrderError("화면 조작 이력을 확인해 주세요.")
@@ -109,6 +111,8 @@ def sync_cart(store, cart):
         store.pending = store.confirmation_at_turn_start = None
         store.final_confirmation_text = None
     store.view = "review" if cart["screen"] == "cart" else "payment" if cart["screen"] in {"payment", "finalizing", "completed"} else "menu"
+    if context.get("language") and context["language"] != store.ui_context.get("language"):
+        store.language = context["language"]
     store.ui_context = context
     store.payment_ui = ui
     if store.payment_action and (cart.get("last_action_id") == store.payment_action["id"] or store.payment_action["expected_attempt"] != (ui["payment"]["attempt"] if ui["payment"] else None)):

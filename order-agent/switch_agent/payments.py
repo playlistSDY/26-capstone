@@ -2,6 +2,7 @@
 from copy import deepcopy
 from uuid import uuid4
 from .domain import OrderError
+from .language import translate, formatted
 
 METHODS = {'card': '신용·체크카드', 'samsung': '삼성페이', 'apple': '애플페이', 'kakao': '카카오페이', 'naver': '네이버페이'}
 STATUSES = {'waiting', 'reading', 'processing', 'approved', 'failure', 'timeout'}
@@ -58,10 +59,10 @@ def command(store, kind, method=None):
 def notice(store):
     receipt = store.payment_ui.get('receipt')
     if receipt:
-        return f"결제가 완료됐어요. 주문번호는 {receipt['number']}번이에요. 맛있게 드세요!"
+        return formatted(store.language, "결제가 완료됐어요. 주문번호는 {number}번이에요. 맛있게 드세요!", number=receipt["number"])
     payment = store.payment_ui.get('payment')
     if payment and payment['status'] == 'failure':
-        return '결제가 승인되지 않았어요. 같은 결제수단으로 다시 시도할까요?'
+        return translate(store.language, '결제가 승인되지 않았어요. 같은 결제수단으로 다시 시도할까요?')
     if payment and payment['status'] == 'timeout':
-        return '결제 시간이 지났어요. 같은 결제수단으로 다시 시도할까요?'
+        return translate(store.language, '결제 시간이 지났어요. 같은 결제수단으로 다시 시도할까요?')
     raise OrderError('안내할 새로운 결제 결과가 없어요.')

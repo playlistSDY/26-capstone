@@ -12,6 +12,7 @@ from .domain import OrderStore
 from .tools import TOOLS
 from .payments import METHODS
 from .usage import counts, empty, add
+from .language import LANGUAGES, translate
 
 
 class Conversation:
@@ -38,7 +39,8 @@ class Conversation:
         stage = ""
         if self.store.phase == "ordering" and (self.store.view == "review" or self.store.payment_ui.get("screen") == "cart"):
             stage = "\n현재 주문 확인 화면이다. 고객의 동의/진행 요청에는 open_checkout으로 다음 단계로 이동한다. 같은 요약을 다시 확인받지 않는다. 이용 방법만 바꾸면 반영 후 바로 이동한다."
-        return stage + self.prompt + "\n현재 서버 주문 상태 JSON\n" + json.dumps(self.store.snapshot(), ensure_ascii=False)
+        language = f"\n현재 선호 언어: {LANGUAGES.get(self.store.language, self.store.language)}. 응답과 안내는 이 언어로 한다. 손님이 다른 지원 언어를 원하거나 그 언어로 자연스럽게 말하면 set_language로 바꾼 뒤 그 언어로 계속 응대한다. 메뉴명 한 단어만으로 언어를 바꾸지 않는다.\n"
+        return stage + self.prompt + language + "\n현재 서버 주문 상태 JSON\n" + json.dumps(self.store.snapshot(), ensure_ascii=False)
 
     async def reply(self, text, emit=None, defer_delivery=False):
         async with self.lock:
@@ -99,6 +101,7 @@ class Conversation:
                         answer = stopped["message"]
                 except (ValueError, TypeError):
                     pass
+                answer = translate(self.store.language, answer)
                 last = self.history[-1] if self.history else {}
                 content = last.get("content", "")
                 previous_text = content if isinstance(content, str) else "".join(part.get("text", "") for part in content if isinstance(part, dict))

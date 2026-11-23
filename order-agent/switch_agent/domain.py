@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import time
 from uuid import uuid4
+from .language import translate, formatted
 
 
 MAX_ORDER_QUANTITY = 999
@@ -41,6 +42,7 @@ class Line:
 @dataclass
 class OrderStore:
     catalog: dict
+    language: str = "ko"
     lines: list[Line] = field(default_factory=list)
     place: str | None = None
     revision: int = 0
@@ -161,7 +163,7 @@ class OrderStore:
 
     def snapshot(self):
         return {
-            "mode": "mock", "price_source": "prototype", "phase": self.phase,
+            "mode": "mock", "price_source": "prototype", "phase": self.phase, "language": self.language,
             "revision": self.revision, "place": self.place, "focus": self.focus,
             "lines": [dict(asdict(l), name=self.product(l.product_id)["name"], unit_price=self.unit_price(l)) for l in self.lines],
             "total": sum(self.unit_price(l) * l.quantity for l in self.lines),
@@ -239,7 +241,12 @@ class OrderStore:
             if o.ice != "normal": labels.append({"more": "얼음 많이", "less": "얼음 적게", "none": "얼음 없이"}[o.ice])
             if o.whippedCream != "normal": labels.append("휘핑 추가" if o.whippedCream == "extra" else "휘핑 제거")
             if o.sweetness != "normal": labels.append("덜 달게" if o.sweetness == "less" else "시럽 없이")
-            parts.append(f"{' '.join(labels)} {self.product(l.product_id)['name']} {l.quantity}잔")
+            if self.language == "ko":
+                parts.append(f"{' '.join(labels)} {self.product(l.product_id)['name']} {l.quantity}잔")
+            else:
+                translated = [translate(self.language, label) for label in labels]
+                name = translate(self.language, self.product(l.product_id)['name'])
+                parts.append(" ".join(translated) + " " + formatted(self.language, "{name} {quantity}잔", name=name, quantity=l.quantity))
         return ", ".join(parts) if parts else "아직 담은 메뉴가 없어요"
 
     def request_confirmation(self):
@@ -254,6 +261,8 @@ class OrderStore:
         self.view = "review"
         self.pending = {"revision": self.revision, "turn": self.turn, "created": time.monotonic(), "delivered": False}
         self.final_confirmation_text = f"{'매장에서 드시는' if self.place == 'store' else '포장하시는'} 주문은 {self.summary()}, 총 {self.snapshot()['total']:,}원이에요. 이대로 결제할까요?"
+        if self.language != "ko":
+            self.final_confirmation_text = formatted(self.language, "{place} 주문은 {summary}, 총 {total}원이에요. 이대로 결제할까요?", place=translate(self.language, "매장" if self.place == "store" else "포장"), summary=self.summary(), total=f"{self.snapshot()['total']:,}")
         return {"summary": self.final_confirmation_text, "revision": self.revision}
 
     def delivered(self):

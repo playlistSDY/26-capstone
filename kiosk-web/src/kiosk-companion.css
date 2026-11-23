@@ -445,3 +445,11 @@
     grid-template-areas: "input input" "footer controls" "usage usage";
   }
 }
+
+/* Empty conversation space must never swallow taps on kiosk controls. */
+.companion-bubbles {
+  pointer-events: none;
+}
+.companion-bubbles > div {
+  pointer-events: auto;
+}

@@ -441,3 +441,33 @@ test("Long dialogue and growing usage never resize the kiosk at desktop and narr
     ).toBe(true);
   }
 });
+
+test("Even the last menu is centered within its viewport without shifting the kiosk", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const f = await fixture(page);
+  const before = await page.locator(".kiosk-space").boundingBox();
+  f.respond(() => ({
+    guidance: guide("product", { product_id: "brown-coldbrew" }),
+  }));
+  await f.say("흑당 콜드브루 보여줘");
+  await expect(page.locator(".agent-guide-ring")).toBeVisible();
+  await expect
+    .poll(() =>
+      page
+        .locator('[data-guide="product"][data-guide-product="brown-coldbrew"]')
+        .evaluate((node) => {
+          const frame = node
+              .closest(".catalog-scroll")!
+              .getBoundingClientRect(),
+            box = node.getBoundingClientRect();
+          return Math.abs(box.y + box.height / 2 - frame.y - frame.height / 2);
+        }),
+    )
+    .toBeLessThan(6);
+  const after = await page.locator(".kiosk-space").boundingBox();
+  expect(after!.width).toBeCloseTo(before!.width, 0);
+  expect(after!.height).toBeCloseTo(before!.height, 0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+});

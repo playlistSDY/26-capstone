@@ -12,6 +12,7 @@ from agents import RunContextWrapper, function_tool
 from .domain import Options, OrderError, OrderStore
 from .knowledge import details, suitable, service_policy
 from .payments import command
+from .language import translations
 from .preferences import add_with_preferences, important_options
 
 
@@ -39,8 +40,8 @@ def search_menu(ctx: RunContextWrapper[OrderStore], query: str = "", max_price: 
         if max_price is not None and p["price"] > max_price: continue
         if coffee is not None and p["coffee"] != coffee: continue
         if category is not None and category not in p["categories"]: continue
-        name = normalized(p["name"] + p["sourceName"])
-        score = 1.0 if not q or q in name or query in p["categories"] else SequenceMatcher(None, q, normalized(p["name"])).ratio()
+        names = [normalized(value) for value in [p["name"], p["sourceName"], *translations().get(p["name"], {}).values()]]
+        score = 1.0 if not q or q in names else 0.95 if any(q in name for name in names) or query in p["categories"] else max(SequenceMatcher(None, q, name).ratio() for name in names)
         if score >= 0.35:
             stock = ctx.context.stock.get(p["id"])
             candidates.append((score, {"id": p["id"], "name": p["name"], "base_price": p["price"], "available": not p.get("soldOut", False) and stock != 0, "stock_quantity": stock, "temperatures": p["temperatures"], "decaf_only": bool(p.get("decafOnly")), "whipped_cream": bool(p.get("whippedCream"))}))
@@ -217,4 +218,11 @@ def guide_ui(ctx: RunContextWrapper[OrderStore], target: Literal["place", "categ
     return guarded(lambda: guide(ctx.context, target, instruction, product_id, line_id, option, value))
 
 
-TOOLS = [guide_ui, search_menu, read_menu, find_suitable_menu, get_cart, add_item, cancel_pending_item, edit_item, split_item, remove_item, clear_order, select_item, set_order_type, request_final_confirmation, open_checkout, select_payment_method, retry_payment, cancel_payment, return_to_order, handoff_to_staff]
+@function_tool
+def set_language(ctx: RunContextWrapper[OrderStore], language: Literal["ko", "en", "zh", "ja"]) -> str:
+    """손님이 원하거나 사용 중인 언어에 따라 한국어 ko, 영어 en, 중국어 zh, 일본어 ja로 응대 언어와 화면을 바꾼다. 주문 내용과 확인 상태는 유지한다."""
+    ctx.context.language = language
+    return encoded(ctx.context.snapshot())
+
+
+TOOLS = [set_language, guide_ui, search_menu, read_menu, find_suitable_menu, get_cart, add_item, cancel_pending_item, edit_item, split_item, remove_item, clear_order, select_item, set_order_type, request_final_confirmation, open_checkout, select_payment_method, retry_payment, cancel_payment, return_to_order, handoff_to_staff]

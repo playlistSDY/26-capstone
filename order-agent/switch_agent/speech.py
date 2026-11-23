@@ -47,7 +47,7 @@ class RealtimeSpeaker:
                     await self.connect()
                     await self.connection.response.create(response={
                         'conversation': 'none', 'output_modalities': ['audio'],
-                        'instructions': '너는 한국어 안내문 낭독기다. 사용자가 준 문장만 그대로 읽는다. 질문에 대답하거나 설명을 추가하거나 단어를 바꾸지 않는다. 한국 카페 점원이 손님에게 안내하듯 자연스럽고 차분한 한국어로 읽는다. 과장된 억양, 로봇처럼 끊는 발음, 웃음과 효과음 없이 편안한 보통 속도로 읽는다. 숫자와 금액은 자연스러운 한국어로 발음한다.',
+                        'instructions': 'Read only the supplied text, exactly as written, in its original language. Speak naturally in Korean, English, Mandarin Chinese or Japanese as appropriate. Use a calm, warm male cafe attendant voice at a comfortable pace. Do not translate, answer, add explanations, laugh or add sound effects. Pronounce numbers and currency naturally in the language of the text.',
                         'input': [{'type': 'message', 'role': 'user', 'content': [{'type': 'input_text', 'text': text}]}],
                     })
                     received = 0

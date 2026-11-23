@@ -1,3 +1,4 @@
+import { uiText } from "./i18n";
 import {
   useLayoutEffect,
   useEffect,
@@ -200,7 +201,7 @@ export function KioskCompanion({
       kiosk.removeEventListener("scroll", update, true);
     };
   }, [kiosk, screen, collapsed]);
-  const feedback = companionFeedback(state, elapsed);
+  const feedback = uiText(companionFeedback(state, elapsed));
   const receiving = state === "typing" || state === "hearing";
   const waitingCaption = receiving
     ? "듣고 있어요"
@@ -369,7 +370,7 @@ export function KioskCompanion({
                 className="companion-text companion-caption"
                 aria-label="현재 응답 자막"
               >
-                {receiving ? "듣고 있어요" : feedback}
+                {receiving ? uiText("듣고 있어요") : feedback}
               </p>
               <span className="companion-activity" aria-hidden="true">
                 <i />

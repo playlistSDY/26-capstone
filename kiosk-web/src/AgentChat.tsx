@@ -1,3 +1,4 @@
+import { uiText } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { KioskCompanion } from "./KioskCompanion";
@@ -35,6 +36,7 @@ export type ChatCart = {
   } | null;
   last_action_id?: string | null;
   ui_context?: {
+    language?: string;
     guidance?: GuidanceState | null;
     interaction?: {
       activations: number;
@@ -59,6 +61,7 @@ export type ChatCart = {
   };
 };
 export type AgentState = {
+  language?: string;
   ui_context?: ChatCart["ui_context"];
   guidance?: Guidance | null;
   focus?: string | null;
@@ -118,6 +121,7 @@ type StreamEvent = Result & {
 const interruptionBarriers = new WeakMap<AgentSpeech, Promise<void>>();
 
 const greeting: Message = {
+  id: "greeting",
   role: "assistant",
   text: "안녕하세요. 무엇을 드릴까요?",
 };
@@ -316,7 +320,10 @@ export function AgentChat({
     if (log.current) log.current.scrollTop = log.current.scrollHeight;
   }, [messages, busy, error, historyOpen]);
 
-  function apply(state: AgentState) {
+  function apply(state: AgentState, languageAtRequest?: string) {
+    const preferred = current.current.ui_context?.language;
+    if (preferred && languageAtRequest && preferred !== languageAtRequest)
+      state = { ...state, language: preferred };
     onState(state);
     current.current = {
       ...current.current,
@@ -407,7 +414,7 @@ export function AgentChat({
           JSON.stringify([current.current.lines, current.current.place]) &&
         !["finalizing", "completed"].includes(current.current.screen)
       )
-        apply(result.state);
+        apply(result.state, target.cart.ui_context?.language);
     })();
     interruptionBarriers.set(speech.current!, stopping);
     try {
@@ -629,7 +636,7 @@ export function AgentChat({
                 if (event.usage) recordUsage(operation.request_id, event.usage);
                 continue;
               }
-              apply(event.state);
+              apply(event.state, operation.cart.ui_context?.language);
             }
             if (event.type === "final" && event.text) {
               setAssistant(event.text, false);
@@ -749,7 +756,11 @@ export function AgentChat({
               level={playback.level}
               caption={caption}
               notice={error}
-              conversation={messages}
+              conversation={messages.map((message) =>
+                message.id === "greeting"
+                  ? { ...message, text: uiText(message.text) }
+                  : message,
+              )}
               guidance={guidance}
               screen={cart.screen}
             />

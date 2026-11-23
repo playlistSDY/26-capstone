@@ -1,0 +1,37 @@
+.language-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  background: #f7f8fb;
+  border: 1px solid #dce3ee;
+  border-radius: 12px;
+  padding: 4px 8px;
+  color: #26364b;
+  font-size: 18px;
+}
+.language-selector select {
+  font: inherit;
+  min-height: 42px;
+  max-width: 160px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.welcome-header .language-selector {
+  margin-left: auto;
+}
+.kiosk-header {
+  gap: 8px;
+}
+.kiosk-header .language-selector {
+  font-size: 17px;
+}
+
+.kiosk-header .language-selector {
+  position: absolute;
+  left: 76px;
+  top: 7px;
+  font-size: 20px;
+}
