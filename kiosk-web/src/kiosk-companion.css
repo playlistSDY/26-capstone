@@ -64,15 +64,17 @@
   justify-content: flex-end;
   align-self: flex-end;
   gap: calc(12px / var(--companion-scale));
-  padding: calc(10px / var(--companion-scale))
-    calc(8px / var(--companion-scale)) calc(8px / var(--companion-scale));
+  padding: calc(14px / var(--companion-scale))
+    calc(22px / var(--companion-scale)) calc(22px / var(--companion-scale));
 }
 .companion-speech,
 .companion-user-bubble {
   position: relative;
   padding: calc(13px / var(--companion-scale))
     calc(18px / var(--companion-scale));
-  box-shadow: 0 5px 22px #152b4014;
+  box-shadow:
+    0 2px 7px #2429330a,
+    0 5px 15px #2429330d;
   pointer-events: none;
 }
 .companion-speech {
@@ -340,6 +342,13 @@
   height: calc(238px / var(--companion-scale));
   overflow-y: auto;
   overscroll-behavior: contain;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 12px,
+    #000 calc(100% - 12px),
+    transparent
+  );
   justify-content: flex-start;
   scrollbar-width: thin;
   scrollbar-color: #b8c9be transparent;
@@ -476,7 +485,6 @@
 .option-companion-slot .companion-bubbles {
   align-self: stretch;
   height: auto;
-  padding: 2px 8px 4px;
   pointer-events: auto;
 }
 .option-companion-slot .companion-text {
@@ -510,7 +518,6 @@
   align-self: stretch;
   min-height: 0;
   height: auto;
-  padding: 0 12px 4px;
 }
 .kiosk-companion[data-screen="home"] .companion-bubbles > :first-child {
   margin-top: 0;

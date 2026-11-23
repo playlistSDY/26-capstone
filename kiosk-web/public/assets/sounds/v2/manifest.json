@@ -8,121 +8,121 @@
       "id": "tap",
       "label": "기본 터치",
       "file": "tap.wav",
-      "durationMs": 113,
-      "peak": 0.86,
-      "rmsDbFS": -13.05,
-      "spectralCentroidHz": 3641,
-      "sha256": "f7e898b98cec8ea32be5b449b644fb92ee7f6ac870f15f9667f9bf20d5583224"
+      "durationMs": 77,
+      "peak": 0.4,
+      "rmsDbFS": -13.99,
+      "spectralCentroidHz": 519,
+      "sha256": "918add24cf57e372244d03066cb84aa89494756e65b7fed42f5bb84ad27b0a94"
     },
     {
       "id": "select",
       "label": "메뉴·옵션 선택",
       "file": "select.wav",
-      "durationMs": 273,
-      "peak": 0.7984,
-      "rmsDbFS": -9.9,
-      "spectralCentroidHz": 1172,
-      "sha256": "eb519ea7372044d7b7dad179e8389034107030a42bd9051f6e5ce9399ffd59d0"
+      "durationMs": 95,
+      "peak": 0.42,
+      "rmsDbFS": -12.8,
+      "spectralCentroidHz": 606,
+      "sha256": "1519a34f0d968b296552ec67cfe9de15c58b2a4d267b4b0a2c7ecbae82b5e23e"
     },
     {
       "id": "add",
       "label": "메뉴 담기",
       "file": "add.wav",
-      "durationMs": 418,
-      "peak": 0.7176,
-      "rmsDbFS": -9.9,
-      "spectralCentroidHz": 1224,
-      "sha256": "87d11e23483b2474045784be4d2563ed3a7769c327956b937bbbc269d6c50062"
+      "durationMs": 190,
+      "peak": 0.48,
+      "rmsDbFS": -12.34,
+      "spectralCentroidHz": 633,
+      "sha256": "e68e08cfccc1cef97396e32616a3c0ab37403ace12ac65a23f94eee9066ba48b"
     },
     {
       "id": "increase",
       "label": "수량 증가",
       "file": "increase.wav",
-      "durationMs": 143,
-      "peak": 0.86,
-      "rmsDbFS": -12.48,
-      "spectralCentroidHz": 1825,
-      "sha256": "09dbdf5482b26cd45ea164d3ea6cc426255b24b91a2a6c1ef7f0bbac9bdce4de"
+      "durationMs": 75,
+      "peak": 0.36,
+      "rmsDbFS": -15.0,
+      "spectralCentroidHz": 658,
+      "sha256": "ad66561bc49db3055300ad9e39196bf7d4bae17f705dd0096ce4a29c8ddc73ba"
     },
     {
       "id": "decrease",
       "label": "수량 감소",
       "file": "decrease.wav",
-      "durationMs": 158,
-      "peak": 0.86,
-      "rmsDbFS": -12.78,
-      "spectralCentroidHz": 1122,
-      "sha256": "a707f445cb4e70b4a4573ea78899398729d021834cc2e72344d5da421f18f569"
+      "durationMs": 84,
+      "peak": 0.35,
+      "rmsDbFS": -14.79,
+      "spectralCentroidHz": 560,
+      "sha256": "0e5b4ce48261eb1bef230a5e1ec007d61d024c1e8405af26385c22a7ebc72d83"
     },
     {
       "id": "back",
       "label": "이전·취소",
       "file": "back.wav",
-      "durationMs": 298,
-      "peak": 0.8106,
-      "rmsDbFS": -9.9,
-      "spectralCentroidHz": 851,
-      "sha256": "865a2feba9787c6217adb1c0c5d44100653da1aa239df92679028cc75f99e756"
+      "durationMs": 108,
+      "peak": 0.36,
+      "rmsDbFS": -13.79,
+      "spectralCentroidHz": 459,
+      "sha256": "6da07c2d076625ed5ce2d093373b1276099baf862bb36135a3de79c61362f2cb"
     },
     {
       "id": "remove",
       "label": "메뉴 삭제",
       "file": "remove.wav",
-      "durationMs": 223,
-      "peak": 0.86,
-      "rmsDbFS": -13.77,
-      "spectralCentroidHz": 2898,
-      "sha256": "ada8407ea45ec0ed3053448a9dadc86063455fcee9ca0156fef3671bcdfe980c"
+      "durationMs": 123,
+      "peak": 0.4,
+      "rmsDbFS": -12.58,
+      "spectralCentroidHz": 383,
+      "sha256": "1d59eff07185b3813b34c1582d107b84332c4b9a0afb1887a7ce3b00619a047d"
     },
     {
       "id": "scroll",
       "label": "목록 스크롤",
       "file": "scroll.wav",
-      "durationMs": 63,
-      "peak": 0.58,
-      "rmsDbFS": -15.38,
-      "spectralCentroidHz": 1750,
-      "sha256": "9a681c6de48bddc15370fe36f9e456aa142dff376b37121716731f464e2be7c9"
+      "durationMs": 61,
+      "peak": 0.22,
+      "rmsDbFS": -19.64,
+      "spectralCentroidHz": 452,
+      "sha256": "838204393dddaf7ecd05b1f57ce8aaea596d216f0f7307df89d39c97d76195e3"
     },
     {
       "id": "read",
       "label": "카드 인식",
       "file": "read.wav",
-      "durationMs": 288,
-      "peak": 0.4637,
-      "rmsDbFS": -9.9,
-      "spectralCentroidHz": 2803,
-      "sha256": "33cb8d3d6ea7ac59483544d2ddd03808da7ab901f996eba701143128cec92187"
+      "durationMs": 124,
+      "peak": 0.49,
+      "rmsDbFS": -10.81,
+      "spectralCentroidHz": 736,
+      "sha256": "cc0484bd5e348e71fd8dbed3ab00f4f5db79494961b12c8e3fe7f0939f9f4656"
     },
     {
       "id": "success",
       "label": "주문 완료",
       "file": "success.wav",
-      "durationMs": 818,
-      "peak": 0.847,
-      "rmsDbFS": -9.9,
-      "spectralCentroidHz": 1172,
-      "sha256": "42feb1280486208af1ea1abbb90761a96939bfd4db3bfacbc7e0d4ac6da468ae"
+      "durationMs": 318,
+      "peak": 0.58,
+      "rmsDbFS": -13.18,
+      "spectralCentroidHz": 668,
+      "sha256": "a8d6e62a9e12fe9b042bb27e1db9f757966e5c080f92243fa486495de40a992e"
     },
     {
       "id": "error",
       "label": "오류 안내",
       "file": "error.wav",
-      "durationMs": 458,
-      "peak": 0.4195,
-      "rmsDbFS": -9.9,
-      "spectralCentroidHz": 618,
-      "sha256": "15db300e3bf7ead63f81dfac8031df38fee527a86ee19d1174c1acb522d74bfc"
+      "durationMs": 301,
+      "peak": 0.52,
+      "rmsDbFS": -11.23,
+      "spectralCentroidHz": 358,
+      "sha256": "0b39c3977449fe88e2d92af1bd38c34fc7fc9209bcec51fdb17e99c2d321c9e3"
     },
     {
       "id": "print",
       "label": "출력 알림",
       "file": "print.wav",
-      "durationMs": 468,
-      "peak": 0.86,
-      "rmsDbFS": -10.45,
-      "spectralCentroidHz": 2098,
-      "sha256": "b37c752fdf3708f698b58fdd145d2e8520027d2adf911594fd723476fe21d25c"
+      "durationMs": 135,
+      "peak": 0.43,
+      "rmsDbFS": -11.78,
+      "spectralCentroidHz": 661,
+      "sha256": "d17e538d9b772e04813f9126b159fe6ceae5da44b69e6a5f5497b792d54a099f"
     }
   ]
 }

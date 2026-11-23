@@ -43,7 +43,7 @@ test("all twelve local sound previews play once with distinct recordings", async
   await page.screenshot({ path: "qa/sound-settings.png", fullPage: true });
 });
 
-test("browser decodes the offline pack at louder levels without clipping", async ({
+test("the browser plays softer touch cues and distinct confirmations without clipping", async ({
   page,
 }) => {
   await mockBackend(page);
@@ -75,6 +75,7 @@ test("browser decodes the offline pack at louder levels without clipping", async
       }
       output.push({
         id: cue.id,
+        durationMs: Math.round(buffer.duration * 1000),
         peak,
         rms: Math.sqrt(power / samples.length),
         start: samples[0],
@@ -85,13 +86,16 @@ test("browser decodes the offline pack at louder levels without clipping", async
   });
   expect(levels).toHaveLength(12);
   for (const level of levels) {
-    expect(level.peak).toBeLessThan(0.82);
-    expect(level.rms).toBeGreaterThan(0.15);
+    expect(level.peak).toBeLessThan(0.6);
+    expect(level.rms).toBeGreaterThan(0.08);
     expect(Math.abs(level.start)).toBeLessThan(0.001);
     expect(Math.abs(level.end ?? 0)).toBeLessThan(0.001);
   }
-  // Old maximum tap amplitude at saved 45% was .45 * .12 = .054.
-  const tapAtSavedVolume =
-    levels.find((level) => level.id === "tap")!.peak * 0.45;
-  expect(20 * Math.log10(tapAtSavedVolume / 0.054)).toBeGreaterThan(15);
+  const tap = levels.find((level) => level.id === "tap")!;
+  const scroll = levels.find((level) => level.id === "scroll")!;
+  const success = levels.find((level) => level.id === "success")!;
+  expect(tap.durationMs).toBeLessThan(100);
+  expect(scroll.peak).toBeLessThan(tap.peak);
+  expect(tap.peak).toBeLessThan(success.peak);
+  expect(success.durationMs).toBeLessThan(350);
 });
