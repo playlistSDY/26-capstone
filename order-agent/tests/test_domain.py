@@ -32,7 +32,7 @@ class OrderRulesTest(unittest.TestCase):
         self.assertEqual(len(self.s.lines), 1)
 
     def test_same_options_cannot_evade_quantity_limit(self):
-        with self.assertRaises(OrderError): self.s.add("latte", 19, Options(temperature="hot"))
+        with self.assertRaises(OrderError): self.s.add("latte", 998, Options(temperature="hot"))
 
     def test_sold_out_at_checkout_blocks_transition(self):
         self.confirmed()

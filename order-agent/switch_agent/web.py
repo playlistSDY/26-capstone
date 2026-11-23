@@ -16,7 +16,7 @@ import time
 from urllib.parse import urlsplit, parse_qs
 from uuid import uuid4
 
-from .domain import Line, Options, OrderError, OrderStore
+from .domain import MAX_ORDER_QUANTITY, Line, Options, OrderError, OrderStore
 from .usage import empty, add
 
 
@@ -58,7 +58,7 @@ def normalize_ui_context(store, raw):
             context["guidance"] = {key: guidance[key] for key in ("id", "target", "instruction", "product_id", "line_id", "option", "value", "status") if isinstance(guidance.get(key), str)}
     editor = raw.get("editor")
     if editor is not None:
-        if not isinstance(editor, dict) or editor.get("product_id") not in store.catalog or type(editor.get("quantity")) is not int or not 1 <= editor["quantity"] <= 20:
+        if not isinstance(editor, dict) or editor.get("product_id") not in store.catalog or type(editor.get("quantity")) is not int or not 1 <= editor["quantity"] <= MAX_ORDER_QUANTITY:
             raise OrderError("선택 중인 메뉴를 확인해 주세요.")
         try:
             options = Options(**editor["options"])
@@ -82,7 +82,7 @@ def sync_cart(store, cart):
     if not isinstance(cart, dict) or cart.get("screen") not in {"home", "menu", "cart", "payment", "finalizing", "completed"}:
         raise OrderError("현재 화면에서는 주문 대화를 시작할 수 없어요.")
     place, rows = cart.get("place"), cart.get("lines")
-    if place not in {None, "store", "takeout"} or not isinstance(rows, list) or len(rows) > 99:
+    if place not in {None, "store", "takeout"} or not isinstance(rows, list) or len(rows) > MAX_ORDER_QUANTITY:
         raise OrderError("키오스크 주문 형식을 확인해 주세요.")
     candidate = []
     ids = set()
@@ -420,7 +420,7 @@ def handler_for(bridge):
                 return self.send_json(403, {"error": "연결 상태를 다시 확인해 주세요."})
             try:
                 length = int(self.headers.get("Content-Length", "0"))
-                if not 0 < length <= 128_000:
+                if not 0 < length <= 4 * 1024 * 1024:
                     return self.send_json(413, {"error": "메시지가 너무 길어요."})
                 payload = json.loads(self.rfile.read(length))
                 if not isinstance(payload, dict): raise ValueError()

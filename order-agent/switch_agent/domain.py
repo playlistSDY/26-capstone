@@ -10,6 +10,9 @@ import time
 from uuid import uuid4
 
 
+MAX_ORDER_QUANTITY = 999
+
+
 class OrderError(ValueError):
     pass
 
@@ -131,19 +134,19 @@ class OrderStore:
             raise OrderError("이 메뉴 또는 온도에서는 얼음 양을 바꿀 수 없어요.")
 
     def validate_cart(self, lines):
-        if sum(l.quantity for l in lines) > 99:
-            raise OrderError("한 주문은 총 99개까지 가능해요.")
+        if sum(l.quantity for l in lines) > MAX_ORDER_QUANTITY:
+            raise OrderError("한 주문은 총 999개까지 가능해요.")
         quantities = {}
         combinations = {}
         for l in lines:
             p = self.product(l.product_id)
             self.validate(p, l.options)
-            if type(l.quantity) is not int or not 1 <= l.quantity <= 20:
-                raise OrderError("한 항목은 1~20개까지 가능해요.")
+            if type(l.quantity) is not int or not 1 <= l.quantity <= MAX_ORDER_QUANTITY:
+                raise OrderError("한 항목은 1~999개까지 가능해요.")
             key = (l.product_id, json.dumps(asdict(l.options), sort_keys=True))
             combinations[key] = combinations.get(key, 0) + l.quantity
-            if combinations[key] > 20:
-                raise OrderError("같은 옵션의 메뉴는 총 20개까지 가능해요.")
+            if combinations[key] > MAX_ORDER_QUANTITY:
+                raise OrderError("같은 옵션의 메뉴는 총 999개까지 가능해요.")
             if p.get("soldOut"):
                 raise OrderError(f"{p['name']} 메뉴는 품절이에요.")
             quantities[l.product_id] = quantities.get(l.product_id, 0) + l.quantity

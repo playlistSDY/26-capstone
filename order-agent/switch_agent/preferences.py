@@ -1,6 +1,6 @@
 """Persist unconfirmed additions separately from the authoritative cart."""
 from dataclasses import asdict
-from .domain import Options, OrderError
+from .domain import MAX_ORDER_QUANTITY, Options, OrderError
 from .knowledge import details
 
 
@@ -40,8 +40,8 @@ def add_with_preferences(store, product_id, quantity, options, confirmed_options
     if set(confirmed_options) - allowed:
         raise OrderError("확인 옵션은 temperature, size, ice, sweetness, whippedCream 중에서 선택해 주세요.")
     # Validate before recording a draft. An unresolved temperature is allowed.
-    if type(quantity) is not int or not 1 <= quantity <= 20:
-        raise OrderError("수량은 1~20개로 선택해 주세요.")
+    if type(quantity) is not int or not 1 <= quantity <= MAX_ORDER_QUANTITY:
+        raise OrderError("수량은 1~999개로 선택해 주세요.")
     candidate = store.resolved(product, options)
     if candidate.temperature is None and len(product["temperatures"]) == 1:
         candidate.temperature = product["temperatures"][0]
