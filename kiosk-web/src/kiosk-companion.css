@@ -287,12 +287,6 @@
   font-size: calc(20px / var(--kiosk-display-scale, 1));
   min-height: calc(44px / var(--kiosk-display-scale, 1));
 }
-@media (max-width: 600px) {
-  .companion-character {
-    flex-basis: calc(130px / var(--companion-scale));
-    width: calc(130px / var(--companion-scale));
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .companion-activity i {
     animation: none;

@@ -206,18 +206,15 @@ test("The character lives inside the kiosk and follows screen changes without co
   await fixture(page);
   const companion = page.locator(".kiosk-companion");
   await expect(companion).toBeVisible();
-  const readable = await page.locator(".companion-caption").evaluate((node) => {
-    const kiosk = node.closest(".kiosk") as HTMLElement;
-    return (
-      (parseFloat(getComputedStyle(node).fontSize) *
-        kiosk.getBoundingClientRect().width) /
-      kiosk.offsetWidth
-    );
-  });
-  expect(readable).toBeGreaterThanOrEqual(23);
-  expect(
-    (await page.locator(".companion-character").boundingBox())!.width,
-  ).toBeGreaterThanOrEqual(128);
+  const kioskBounds = await page.locator(".kiosk").boundingBox();
+  const characterBounds = await page
+    .locator(".companion-character")
+    .boundingBox();
+  expect(characterBounds!.width / kioskBounds!.width).toBeCloseTo(180 / 800, 2);
+  const font = await page
+    .locator(".companion-caption")
+    .evaluate((node) => parseFloat(getComputedStyle(node).fontSize));
+  expect(font).toBe(24);
   expect(
     await page
       .locator(".kiosk")
@@ -333,4 +330,50 @@ test("Long thinking updates a chat bubble without moving the character or repeat
       ),
   ).toBe(anchor);
   await page.screenshot({ path: "/tmp/switch-hover-waiting.png" });
+});
+
+test("The companion keeps the kiosk's proportions across test screens and native size", async ({
+  page,
+}) => {
+  await fixture(page);
+  for (const [width, height] of [
+    [1600, 2560],
+    [1360, 1040],
+    [820, 1180],
+    [430, 960],
+    [320, 740],
+    [1200, 600],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await expect
+      .poll(async () => {
+        const stage = await page.locator(".kiosk").boundingBox();
+        const character = await page
+          .locator(".companion-character")
+          .boundingBox();
+        const dialogue = await page.locator(".kiosk-companion").boundingBox();
+        if (stage!.x < -1 || stage!.x + stage!.width > width + 1) return 1;
+        return (
+          Math.abs(character!.width / stage!.width - 180 / 800) +
+          Math.abs(dialogue!.width / stage!.width - 640 / 800)
+        );
+      })
+      .toBeLessThan(0.01);
+    const font = await page
+      .locator(".companion-text")
+      .last()
+      .evaluate((n) => getComputedStyle(n).fontSize);
+    expect(font).toBe("24px");
+  }
+  await page.setViewportSize({ width: 1360, height: 1700 });
+  await page.getByRole("button", { name: "실제 크기", exact: true }).click();
+  await expect
+    .poll(
+      async () =>
+        (await page.locator(".companion-character").boundingBox())!.width,
+    )
+    .toBeCloseTo(180, 0);
+  expect(
+    (await page.locator(".kiosk-companion").boundingBox())!.height,
+  ).toBeCloseTo(250, 0);
 });

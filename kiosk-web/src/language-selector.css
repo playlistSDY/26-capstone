@@ -35,3 +35,12 @@
   top: 7px;
   font-size: 20px;
 }
+
+/* The language selector must not consume the gap beside the welcome logo. */
+.welcome-header {
+  gap: 24px;
+}
+.welcome-header > span {
+  flex-shrink: 0;
+  white-space: nowrap;
+}

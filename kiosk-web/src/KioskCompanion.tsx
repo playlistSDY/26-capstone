@@ -49,7 +49,7 @@ export function KioskCompanion({
   latestGuidance.current = guidance;
   const [position, setPosition] = useState({ x: 20, y: 700 });
   const [scale, setScale] = useState(1);
-  const [physicalWidth, setPhysicalWidth] = useState(640);
+  const [dialogueWidth, setDialogueWidth] = useState(640);
   const anchored = useRef("");
   const [collapsed, setCollapsed] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -82,7 +82,7 @@ export function KioskCompanion({
       const factor = bounds.width / kiosk.offsetWidth;
       if (!factor) return;
       setScale(factor);
-      setPhysicalWidth(Math.min(640, Math.max(240, bounds.width - 20)));
+      setDialogueWidth(Math.min(640, Math.max(0, kiosk.offsetWidth - 40)));
       kiosk.style.setProperty("--kiosk-display-scale", String(factor));
       const local = (node: HTMLElement): Rect => {
         const r = node.getBoundingClientRect();
@@ -222,9 +222,11 @@ export function KioskCompanion({
   };
   const style = {
     transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
-    "--companion-scale": scale,
-    width: `${(collapsed ? Math.min(physicalWidth, 180) : physicalWidth) / scale}px`,
-    height: `${250 / scale}px`,
+    // Use the native 800px kiosk coordinate system for all companion content.
+    // The kiosk transform scales the avatar and bubbles together with the menu.
+    "--companion-scale": 1,
+    width: `${collapsed ? Math.min(dialogueWidth, 180) : dialogueWidth}px`,
+    height: "250px",
   } as CSSProperties;
   const inputPending = receiving || state === "transcribing";
   const showWait =
