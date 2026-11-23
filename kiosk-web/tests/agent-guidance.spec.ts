@@ -266,9 +266,24 @@ test("Narrow screen and reduced motion keep the target visible without covering 
   await f.say("라떼를 설명해줘");
   const ring = page.locator(".agent-guide-ring");
   await expect(ring).toBeVisible();
-  expect(
-    await ring.evaluate((node) => getComputedStyle(node).animationName),
-  ).toBe("none");
+  await expect(ring).toBeEmpty();
+  const outline = await ring.evaluate((node) => {
+    const style = getComputedStyle(node, "::before");
+    return {
+      gap: -parseFloat(style.top) - parseFloat(style.borderTopWidth),
+      animation: style.animationName,
+      shadow: style.boxShadow,
+    };
+  });
+  expect(outline.gap).toBe(5);
+  expect(outline.animation).toBe("none");
+  expect(outline.shadow).not.toBe("none");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect
+    .poll(() =>
+      ring.evaluate((node) => getComputedStyle(node, "::before").animationName),
+    )
+    .toBe("guide-product-breathe");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,

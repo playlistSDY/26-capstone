@@ -8,25 +8,33 @@
   box-shadow: 0 0 0 4px #c7d6ff99;
   animation: guide-breathe 1.8s ease-in-out infinite;
 }
-.agent-guide-ring > span {
+.agent-guide-ring[data-target="product"] {
+  border: 0;
+  box-shadow: none;
+  animation: none;
+}
+.agent-guide-ring[data-target="product"]::before {
+  content: "";
   position: absolute;
-  bottom: 100%;
-  left: 0;
-  padding: 4px 8px;
-  margin-bottom: 5px;
-  border-radius: 7px;
-  background: #234bb0;
-  color: #fff;
-  white-space: nowrap;
-  font: 600 14px/1.4 sans-serif;
+  inset: -7px;
+  border: 2px solid #265de7;
+  border-radius: 16px;
+  box-shadow: 0 0 4px 2px #90acff66;
+  animation: guide-product-breathe 1.8s ease-in-out infinite;
 }
 @keyframes guide-breathe {
   50% {
     box-shadow: 0 0 0 9px #c7d6ff55;
   }
 }
+@keyframes guide-product-breathe {
+  50% {
+    box-shadow: 0 0 9px 4px #90acff55;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .agent-guide-ring {
+  .agent-guide-ring,
+  .agent-guide-ring[data-target="product"]::before {
     animation: none;
   }
 }

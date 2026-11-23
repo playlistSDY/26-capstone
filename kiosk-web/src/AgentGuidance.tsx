@@ -1,5 +1,4 @@
 import { centerScroll } from "./centerScroll";
-import { uiText } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "./agent-guidance.css";
@@ -115,9 +114,12 @@ export function AgentGuidance({
   // Guidance lives on the real control. Do not add a persistent tutorial panel.
   return rect && guide?.status === "showing"
     ? createPortal(
-        <div className="agent-guide-ring" style={rect} aria-hidden="true">
-          <span>{uiText("여기예요")}</span>
-        </div>,
+        <div
+          className="agent-guide-ring"
+          data-target={guide.target}
+          style={rect}
+          aria-hidden="true"
+        />,
         document.body,
       )
     : null;
