@@ -24,7 +24,9 @@ test("The basic order flow switches languages without changing prices or a saved
   await page
     .getByRole("button", { name: /Vanilla Latte.*4,500/, exact: false })
     .click();
-  await page.getByRole("dialog").getByRole("button", { name: words["차갑게"].en, exact: false })
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: words["차갑게"].en, exact: false })
     .click();
   const add = page.locator('[data-guide="editor.add"]');
   if (await add.count()) await add.click();
@@ -51,4 +53,39 @@ test("The basic order flow switches languages without changing prices or a saved
   await expect(
     page.getByRole("button", { name: /Credit or debit card/ }),
   ).toBeVisible();
+});
+
+test("Welcome branding, store name and language selector never touch", async ({
+  page,
+}) => {
+  await mockBackend(page);
+  await page.route("**/agent-api/**", (route) =>
+    route.fulfill({ json: { ready: false, token: "test" } }),
+  );
+  await page.setViewportSize({ width: 430, height: 960 });
+  await page.goto("/?kiosk=1");
+  for (const language of ["ko", "en", "zh", "ja"]) {
+    await page
+      .getByRole("combobox", { name: "Language / 언어", exact: true })
+      .selectOption(language);
+    const geometry = await page
+      .locator(".welcome-header")
+      .evaluate((header) => {
+        const logo = header.querySelector(".brand")!.getBoundingClientRect(),
+          name = header.querySelector(":scope > span")!.getBoundingClientRect(),
+          selector = header
+            .querySelector(".language-selector")!
+            .getBoundingClientRect(),
+          kiosk = header.closest(".kiosk")!;
+        const scale =
+          kiosk.getBoundingClientRect().width /
+          (kiosk as HTMLElement).offsetWidth;
+        return {
+          gap: (name.left - logo.right) / scale,
+          fits: selector.right <= header.getBoundingClientRect().right,
+        };
+      });
+    expect(geometry.gap).toBeGreaterThanOrEqual(23);
+    expect(geometry.fits).toBe(true);
+  }
 });
