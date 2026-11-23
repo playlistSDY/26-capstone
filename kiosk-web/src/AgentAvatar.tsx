@@ -8,10 +8,12 @@ export function AgentAvatar({
   state,
   level = 0,
   compact = false,
+  wink,
 }: {
   state: AttendantState;
   level?: number;
   compact?: boolean;
+  wink?: "arrival" | "speech";
 }) {
   const audible = state === "speaking";
   const open = audible && level > 0.06;
@@ -32,9 +34,9 @@ export function AgentAvatar({
       <div className="avatar-halo" />
       <div className="avatar-rig" aria-hidden="true">
         <div className="avatar-sprite avatar-body" />
-        <div className="avatar-sprite avatar-arm-rest" />
-        <div className="avatar-sprite avatar-arm-wave" />
+        <div className="avatar-sprite avatar-mouth-rest" />
         <div className="avatar-sprite avatar-blink" />
+        {wink && <div key={wink} className="avatar-sprite avatar-wink" />}
         <div
           className={`avatar-sprite avatar-mouth ${level > 0.55 ? "is-wide" : ""}`}
         />

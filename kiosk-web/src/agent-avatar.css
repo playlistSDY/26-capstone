@@ -31,24 +31,21 @@
   background-repeat: no-repeat;
 }
 .avatar-body {
-  clip-path: polygon(0 0, 100% 0, 100% 49%, 70% 49%, 70% 100%, 0 100%);
+  animation: attendant-wave 19s steps(1, end) infinite;
 }
-.avatar-arm-rest,
-.avatar-arm-wave {
-  clip-path: polygon(70% 49%, 100% 49%, 100% 100%, 70% 100%);
-}
-.avatar-arm-rest {
-  animation: attendant-rest-arm 19s ease-in-out infinite;
-}
-.avatar-arm-wave {
-  background-position: 100% 100%;
-  transform-origin: 75% 59%;
-  animation: attendant-wave 19s ease-in-out infinite;
+.avatar-mouth-rest {
+  clip-path: ellipse(9% 7% at 50% 38.5%);
 }
 .avatar-blink {
   background-position: 100% 0;
   clip-path: ellipse(14% 6% at 50% 29%);
   animation: attendant-blink 5.6s linear infinite;
+}
+.avatar-wink {
+  background-position: 100% 0;
+  clip-path: ellipse(6% 5% at 45% 29%);
+  opacity: 0;
+  animation: attendant-wink 700ms steps(1, end) 170ms;
 }
 .avatar-mouth {
   background-position: 0 100%;
@@ -63,13 +60,9 @@
 .agent-avatar[data-mouth="open"] .avatar-mouth {
   opacity: 1;
 }
-.agent-avatar.is-speaking .avatar-arm-rest {
+.agent-avatar.is-speaking .avatar-body {
   animation: none;
-  opacity: 0;
-}
-.agent-avatar.is-speaking .avatar-arm-wave {
-  opacity: 1;
-  animation: attendant-talk-hand 2.7s ease-in-out infinite;
+  background-position: 100% 100%;
 }
 @keyframes attendant-breathe {
   50% {
@@ -88,65 +81,40 @@
     opacity: 1;
   }
 }
-@keyframes attendant-rest-arm {
-  0%,
-  82%,
-  100% {
-    opacity: 1;
-  }
-  12%,
-  78% {
-    opacity: 1;
-  }
-  86%,
-  96% {
-    opacity: 0;
-  }
-}
 @keyframes attendant-wave {
   0%,
-  82%,
+  96%,
   100% {
-    opacity: 0;
-    transform: rotate(0deg);
+    background-position: 0 0;
   }
-  86%,
-  96% {
-    opacity: 1;
-  }
-  89% {
-    transform: rotate(-3deg);
-  }
-  92% {
-    transform: rotate(2deg);
+  84% {
+    background-position: 100% 100%;
   }
 }
-@keyframes attendant-talk-hand {
+@keyframes attendant-wink {
   0%,
+  74%,
   100% {
-    transform: rotate(-1deg);
+    opacity: 0;
   }
-  50% {
-    transform: rotate(2deg);
+  14% {
+    opacity: 1;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .avatar-rig,
+  .avatar-body,
   .avatar-blink,
-  .avatar-arm-rest,
-  .avatar-arm-wave,
-  .agent-avatar.is-speaking .avatar-arm-wave {
+  .avatar-wink {
     animation: none;
   }
-  .avatar-blink,
-  .avatar-arm-wave {
+  .avatar-blink {
     opacity: 0;
   }
-  .avatar-arm-rest,
-  .agent-avatar.is-speaking .avatar-arm-rest {
+  .avatar-wink {
     opacity: 1;
   }
-  .agent-avatar.is-speaking .avatar-arm-wave {
-    opacity: 0;
+  .agent-avatar.is-speaking .avatar-body {
+    background-position: 0 0;
   }
 }

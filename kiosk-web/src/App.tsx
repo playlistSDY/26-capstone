@@ -8,7 +8,6 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Coffee,
   CreditCard,
   Expand,
   Home,
@@ -22,7 +21,6 @@ import {
   ShoppingBasket,
   Store,
   X,
-  CircleHelp,
   Clock3,
   CheckCircle2,
   TriangleAlert,
@@ -90,7 +88,6 @@ type Overlay =
   | "cancel"
   | "clear"
   | "place"
-  | "help"
   | "idle"
   | "receipt"
   | "history"
@@ -195,6 +192,7 @@ function Modal({
   className = "",
   dismissOnBackdrop = true,
   closeDisabled = false,
+  hideTitle = false,
 }: {
   title: string;
   children: ReactNode;
@@ -202,6 +200,7 @@ function Modal({
   className?: string;
   dismissOnBackdrop?: boolean;
   closeDisabled?: boolean;
+  hideTitle?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -262,7 +261,7 @@ function Modal({
         }}
       >
         <div className="modal-top">
-          <span>{uiText(title)}</span>
+          {!hideTitle && <span>{uiText(title)}</span>}
           <button
             className="icon-button"
             aria-label={uiText("닫기")}
@@ -395,9 +394,12 @@ export default function App() {
   const [scale, setScale] = useState(1);
   const [idleSeconds, setIdleSeconds] = useState(20);
   const [finishSeconds, setFinishSeconds] = useState(5);
+  const [farewellSlot, setFarewellSlot] = useState<HTMLDivElement | null>(null);
+  const [optionCompanionSlot, setOptionCompanionSlot] =
+    useState<HTMLDivElement | null>(null);
+  const completionSpeechOrder = useRef<string | null>(null);
   const [storageError, setStorageError] = useState(false);
   const [history, setHistory] = useState<Order[]>([]);
-  const [helpRequested, setHelpRequested] = useState(false);
   const [exitPending, setExitPending] = useState(false);
   const [exitError, setExitError] = useState("");
   const exitRequested = useRef(false);
@@ -728,7 +730,6 @@ export default function App() {
     setOrder(null);
     setAutoPrint(null);
     setCategory("추천 메뉴");
-    setHelpRequested(false);
     processing.current = false;
     lastActivity.current = Date.now();
   }
@@ -1034,7 +1035,6 @@ export default function App() {
           >
             <span>{uiText(item.label)}</span>
             {uiText(item.extra && <small>{uiText(item.extra)}</small>)}
-            {uiText(editor?.options[key] === item.value && <Check size={19} />)}
           </button>
         )),
       )}
@@ -1163,13 +1163,6 @@ export default function App() {
                       </span>
                     </button>
                   </div>
-                  <div className="home-bottom">
-                    <span>{uiText("좋은 하루의 시작, 좋은 커피 한 잔.")}</span>
-                    <button onClick={() => setOverlay("help")}>
-                      <CircleHelp size={18} />
-                      {uiText("도움이 필요해요")}
-                    </button>
-                  </div>
                 </section>
               ) : screen === "finalizing" && order ? (
                 <section className="order-finalizing-screen" aria-busy="true">
@@ -1290,7 +1283,10 @@ export default function App() {
                     />
                   </div>
                   <div className="completion-farewell">
-                    <Coffee size={25} strokeWidth={1.6} />
+                    <div
+                      className="completion-farewell-avatar"
+                      ref={setFarewellSlot}
+                    />
                     <p>{uiText("맛있게 드세요!")}</p>
                   </div>
                   <footer className="completion-footer">
@@ -1885,13 +1881,11 @@ export default function App() {
                             ? "이 기기의 주문 이력"
                             : overlay === "place"
                               ? "이용 방법 변경"
-                              : overlay === "help"
-                                ? "직원 도움 요청"
-                                : overlay === "idle"
-                                  ? "주문을 계속할까요?"
-                                  : overlay === "clear"
-                                    ? "주문 내역을 비울까요?"
-                                    : "주문을 취소할까요?",
+                              : overlay === "idle"
+                                ? "주문을 계속할까요?"
+                                : overlay === "clear"
+                                  ? "주문 내역을 비울까요?"
+                                  : "주문을 취소할까요?",
                   )}
                   onClose={closeOverlay}
                   closeDisabled={overlay === "shutdown" && exitPending}
@@ -2018,37 +2012,6 @@ export default function App() {
                           )}
                         </div>
                       </div>
-                    ) : overlay === "help" ? (
-                      <div className="message-body">
-                        <div className="message-icon">
-                          <CircleHelp />
-                        </div>
-                        <h2>
-                          {uiText(
-                            helpRequested
-                              ? "도움 요청을 표시했어요"
-                              : "천천히 주문하셔도 괜찮아요.",
-                          )}
-                        </h2>
-                        <p>
-                          {uiText(
-                            helpRequested
-                              ? "이 시제품에서는 직원 단말기로 전송되지 않아요.\n필요하면 가까운 직원에게 말씀해 주세요."
-                              : "도움이 필요하시면 직원을 불러 주세요.\n담아 둔 메뉴는 그대로 유지돼요.",
-                          )}
-                        </p>
-                        <button
-                          className="primary full"
-                          onClick={() => {
-                            if (helpRequested) closeOverlay();
-                            else setHelpRequested(true);
-                          }}
-                        >
-                          {uiText(
-                            helpRequested ? "확인했어요" : "직원 도움 요청하기",
-                          )}
-                        </button>
-                      </div>
                     ) : overlay === "idle" ? (
                       <div className="message-body">
                         <div className="message-icon">
@@ -2137,7 +2100,12 @@ export default function App() {
                   title={uiText(editor.lineId ? "메뉴 수정" : "메뉴 선택")}
                   onClose={() => setEditor(null)}
                   className="option-modal"
+                  hideTitle={!editor.lineId}
                 >
+                  <div
+                    className="option-companion-slot"
+                    ref={setOptionCompanionSlot}
+                  />
                   <div className="option-intro">
                     <div className="option-photo">
                       <ProductImage
@@ -2146,7 +2114,6 @@ export default function App() {
                       />
                     </div>
                     <div>
-                      <span className="eyebrow">SWitch COFFEE</span>
                       <h2>{uiText(editor.product.name)}</h2>
                       <p>{uiText(editor.product.description)}</p>
                       <strong>{uiText(money(editor.product.price))}</strong>
@@ -2408,6 +2375,9 @@ export default function App() {
       )}
       <AgentChat
         key={chatGeneration}
+        farewellSlot={farewellSlot}
+        optionCompanionSlot={optionCompanionSlot}
+        completionSpeechOrder={completionSpeechOrder}
         cart={{
           lines:
             (screen === "finalizing" || screen === "completed") && order

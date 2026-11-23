@@ -14,7 +14,16 @@ test("The basic order flow switches languages without changing prices or a saved
     name: "Language / 언어",
     exact: true,
   });
-  await language.selectOption("en");
+  await language.press("Space");
+  await expect(page.locator(".language-selector select:open")).toHaveCount(1);
+  expect(
+    await language.evaluate(
+      (node) => getComputedStyle(node, "::picker(select)").borderRadius,
+    ),
+  ).toBe("13px");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  await expect(language).toHaveValue("en");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     words["안녕하세요. 무엇을 드릴까요?"].en,
   );

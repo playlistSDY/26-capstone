@@ -1,6 +1,7 @@
 import { uiText } from "./i18n";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
+import { AgentAvatar } from "./AgentAvatar";
 import { KioskCompanion } from "./KioskCompanion";
 import { attendantState, type VoiceInputState } from "./attendantState";
 import { Send, RotateCcw, Square, Volume2, VolumeX } from "lucide-react";
@@ -157,6 +158,9 @@ async function request<T>(
 export function AgentChat({
   cart,
   disabled,
+  farewellSlot,
+  optionCompanionSlot,
+  completionSpeechOrder,
   onState,
   onBeginOrdering,
   onConversationActiveChange,
@@ -169,6 +173,9 @@ export function AgentChat({
 }: {
   cart: ChatCart;
   disabled: boolean;
+  farewellSlot: HTMLDivElement | null;
+  optionCompanionSlot: HTMLDivElement | null;
+  completionSpeechOrder: RefObject<string | null>;
   onState: (state: AgentState) => void;
   onBeginOrdering: () => void;
   onConversationActiveChange: (active: boolean) => void;
@@ -198,6 +205,7 @@ export function AgentChat({
   const [pending, setPending] = useState<Pending | null>(null);
   const [speaking, setSpeaking] = useState(false);
   const [playback, setPlayback] = useState({ active: false, level: 0 });
+  const [farewellSpeechStarted, setFarewellSpeechStarted] = useState(false);
   const historyOpen = false;
   const [companionSlot, setCompanionSlot] = useState<HTMLElement | null>(null);
   useEffect(() => {
@@ -205,6 +213,42 @@ export function AgentChat({
   }, []);
 
   const [ttsEnabled, setTtsEnabled] = useState(true);
+  const farewellOrderId = cart.receipt?.id;
+  const hasVoiceSession = !!(session && status?.ready);
+  useEffect(() => {
+    if (!farewellOrderId || completionSpeechOrder.current === farewellOrderId)
+      return;
+
+    // An active agent session already speaks the payment notification.
+    if (hasVoiceSession) {
+      completionSpeechOrder.current = farewellOrderId;
+      return;
+    }
+    if (cart.screen !== "completed") return;
+
+    completionSpeechOrder.current = farewellOrderId;
+    if (!ttsEnabled || !window.speechSynthesis) return;
+    const synthesis = window.speechSynthesis;
+    const utterance = new SpeechSynthesisUtterance(uiText("맛있게 드세요!"));
+    utterance.lang = document.documentElement.lang;
+    let pending = true;
+    utterance.onstart = () => setFarewellSpeechStarted(true);
+    utterance.onend = utterance.onerror = () => {
+      pending = false;
+    };
+    synthesis.speak(utterance);
+    return () => {
+      utterance.onstart = null;
+      if (pending) synthesis.cancel();
+    };
+  }, [
+    cart.screen,
+    completionSpeechOrder,
+    farewellOrderId,
+    hasVoiceSession,
+    ttsEnabled,
+  ]);
+
   const speech = useRef<AgentSpeech | null>(null);
   if (!speech.current)
     speech.current = new AgentSpeech(setSpeaking, () =>
@@ -505,6 +549,8 @@ export function AgentChat({
       };
       const audioSession = id;
       const audioRequest = operation.request_id;
+      const completionNotice =
+        operation.payment_event && !!operation.cart.receipt;
       speech.current!.configure((text, signal) =>
         streamAgentAudio(
           assetUrl(`agent-api/sessions/${audioSession}/speech`),
@@ -521,6 +567,12 @@ export function AgentChat({
               generation.current !== turnGeneration
             )
               return;
+            if (
+              completionNotice &&
+              activity.active &&
+              text.includes(uiText("맛있게 드세요!"))
+            )
+              setFarewellSpeechStarted(true);
             const next = {
               active: activity.active,
               level: Math.round(activity.level * 10) / 10,
@@ -740,6 +792,7 @@ export function AgentChat({
     : latest?.role === "assistant"
       ? latest.text
       : "요청을 확인하고 있어요.";
+  const companionTarget = optionCompanionSlot ?? companionSlot;
   return (
     <>
       <AgentGuidance
@@ -747,23 +800,40 @@ export function AgentChat({
         onDone={onGuideDone}
         onDismiss={onGuideDismiss}
       />
+      {farewellSlot &&
+        cart.screen === "completed" &&
+        createPortal(
+          <AgentAvatar
+            state={presence}
+            level={playback.level}
+            wink={farewellSpeechStarted ? "speech" : "arrival"}
+          />,
+          farewellSlot,
+        )}
+      {companionSlot &&
+        companionTarget &&
+        cart.screen !== "completed" &&
+        createPortal(
+          <KioskCompanion
+            kiosk={companionSlot}
+            state={presence}
+            level={playback.level}
+            caption={caption}
+            notice={error}
+            conversation={messages.map((message) =>
+              message.id === "greeting"
+                ? { ...message, text: uiText(message.text) }
+                : message,
+            )}
+            guidance={guidance}
+            screen={cart.screen}
+            embedded={!!optionCompanionSlot}
+          />,
+          companionTarget,
+        )}
       {companionSlot &&
         createPortal(
           <>
-            <KioskCompanion
-              kiosk={companionSlot}
-              state={presence}
-              level={playback.level}
-              caption={caption}
-              notice={error}
-              conversation={messages.map((message) =>
-                message.id === "greeting"
-                  ? { ...message, text: uiText(message.text) }
-                  : message,
-              )}
-              guidance={guidance}
-              screen={cart.screen}
-            />
             <section
               className="kiosk-conversation-history"
               hidden={!historyOpen}

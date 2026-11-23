@@ -27,6 +27,13 @@ for (const [name, method, instruction, reading] of [
     page,
   }) => {
     const backend = await mockBackend(page, { autoPrint: true });
+    await page.addInitScript(() => {
+      window.speechSynthesis.speak = (utterance) => {
+        document.documentElement.dataset.farewellSpeech = utterance.text;
+        utterance.dispatchEvent(new Event("start"));
+        utterance.dispatchEvent(new Event("end"));
+      };
+    });
     await page.clock.install();
     await page.goto("/?kiosk=1");
     await page.getByRole("button", { name: /포장할게요/ }).click();
@@ -75,6 +82,13 @@ for (const [name, method, instruction, reading] of [
     await expect(
       page.getByText("맛있게 드세요!", { exact: true }),
     ).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-farewell-speech",
+      "맛있게 드세요!",
+    );
+    await expect(
+      page.locator(".completion-farewell .avatar-wink"),
+    ).toHaveCSS("animation-name", "attendant-wink");
     await expect.poll(() => backend.jobs.length).toBe(1);
     expect((backend.jobs[0].document as { method: string }).method).toBe(name);
     const orders = await page.evaluate(() =>

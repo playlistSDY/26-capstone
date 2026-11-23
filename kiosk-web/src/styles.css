@@ -369,6 +369,7 @@ button:disabled:active {
   display: flex;
   flex-direction: column;
   height: 100%;
+  padding-bottom: 84px;
   background: radial-gradient(
     ellipse at 50% 42%,
     #edf2ff 0%,
@@ -446,22 +447,6 @@ button:disabled:active {
   margin-top: 14px;
   font-size: 17px;
   color: #8b95a1;
-}
-.home-bottom {
-  margin-top: auto;
-  padding: 35px 42px 28px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: #9aa3af;
-  font-size: 15px;
-}
-.home-bottom button {
-  display: flex;
-  gap: 7px;
-  align-items: center;
-  color: #6b7684;
-  font-size: 16px;
 }
 .kiosk-header {
   height: 64px;
@@ -928,12 +913,22 @@ button:disabled:active {
   color: #6b7684;
 }
 .option-modal {
-  max-height: 1120px;
+  height: 1120px;
+  max-height: 100%;
+}
+.option-modal .modal-top {
+  height: 60px;
+  border-bottom: 0;
+}
+.option-modal .modal-top > .icon-button {
+  margin-inline-start: auto;
 }
 .option-intro {
   display: flex;
   gap: 26px;
-  padding: 26px 30px;
+  margin: 0 30px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
   flex-shrink: 0;
   align-items: center;
 }
@@ -952,7 +947,6 @@ button:disabled:active {
 .option-intro h2 {
   font-size: 31px;
   letter-spacing: -1px;
-  margin-top: 10px;
 }
 .option-intro p {
   font-size: 16px;
@@ -965,11 +959,8 @@ button:disabled:active {
   display: block;
   margin-top: 14px;
 }
-.option-intro .eyebrow {
-  font-size: 12px;
-  letter-spacing: 1px;
-}
 .option-scroll {
+  flex: 1;
   padding: 0 30px 14px;
   min-height: 0;
   overflow-y: auto;
@@ -979,6 +970,9 @@ button:disabled:active {
 .option-group {
   padding: 22px 0;
   border-top: 1px solid #f0f2f5;
+}
+.option-scroll > .option-group:first-child {
+  border-top: 0;
 }
 .option-group h3 {
   font-size: 21px;
@@ -1027,13 +1021,6 @@ button:disabled:active {
 }
 .choice.selected small {
   color: #788de2;
-}
-.choice > svg {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  width: 15px;
-  height: 15px;
 }
 .option-counter {
   display: flex;

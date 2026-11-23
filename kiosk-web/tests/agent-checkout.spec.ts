@@ -143,6 +143,11 @@ async function fixture(page: Page, standalone = true, startAtHome = false) {
 test("Conversation opens review then method, waits for reader and finishes one order", async ({
   page,
 }) => {
+  await page.addInitScript(() => {
+    window.speechSynthesis.speak = () => {
+      document.documentElement.dataset.farewellSpeech = "started";
+    };
+  });
   const f = await fixture(page);
   await f.say("주문 다 한 것 같아");
   await expect(
@@ -184,7 +189,11 @@ test("Conversation opens review then method, waits for reader and finishes one o
   expect(orders).toHaveLength(1);
   expect(orders[0].method).toBe("card");
   await expect.poll(() => f.backend.jobs.length).toBe(1);
-  await expect(page.locator(".kiosk-companion")).toBeVisible();
+  await expect(page.locator(".completion-farewell .agent-avatar")).toBeVisible();
+  await expect(page.locator("html")).not.toHaveAttribute(
+    "data-farewell-speech",
+    "started",
+  );
   await expect(page.locator(".agent-chat-log")).toContainText("안녕하세요");
 });
 

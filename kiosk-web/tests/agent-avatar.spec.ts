@@ -231,9 +231,24 @@ test("The character lives inside the kiosk and follows screen changes without co
     "반가워요, 오늘도 SWitch",
     "오늘은 어디서",
     "취향에 맞는 한 잔을 준비해 드릴게요.",
+    "좋은 하루의 시작, 좋은 커피 한 잔.",
   ]) {
     await expect(page.getByText(text, { exact: true })).toHaveCount(0);
   }
+  await expect(
+    page.getByRole("button", { name: "도움이 필요해요" }),
+  ).toHaveCount(0);
+  const centerX = characterBounds!.x + characterBounds!.width / 2;
+  const centerY = characterBounds!.y + characterBounds!.height / 2;
+  await page.mouse.click(centerX, centerY);
+  await page.mouse.move(centerX, centerY);
+  await page.mouse.down();
+  await page.mouse.move(centerX + 36, centerY + 24, { steps: 4 });
+  await page.mouse.up();
+  await expect(greeting).toBeVisible();
+  const afterGesture = await page.locator(".companion-character").boundingBox();
+  expect(Math.abs(afterGesture!.x - characterBounds!.x)).toBeLessThan(2);
+  expect(Math.abs(afterGesture!.y - characterBounds!.y)).toBeLessThan(2);
   expect(
     await page
       .locator(".kiosk")
@@ -287,6 +302,72 @@ test("The character lives inside the kiosk and follows screen changes without co
     path: "/tmp/switch-avatar-mobile.png",
     fullPage: true,
   });
+});
+
+test("The option dialogue sits above product details and stays fixed while scrolling", async ({ page }) => {
+  await page.setViewportSize({ width: 430, height: 960 });
+  await fixture(page);
+  await page.getByRole("button", { name: /먹고 갈게요/ }).click();
+  await page.getByRole("button", { name: /복숭아 아이스티.*3,500원/ }).click();
+  const modal = page.getByRole("dialog", { name: "메뉴 선택" });
+  await expect(modal.getByText("메뉴 선택", { exact: true })).toHaveCount(0);
+  await expect(modal.getByText("SWitch COFFEE", { exact: true })).toHaveCount(0);
+  await expect(modal.getByRole("button", { name: "닫기" })).toBeVisible();
+  const topBar = modal.locator(".modal-top");
+  await expect(topBar).toHaveCSS("border-bottom-width", "0px");
+  const dialogue = modal.locator(".option-companion-slot");
+  await expect(dialogue.locator(".agent-avatar")).toBeVisible();
+  await expect(dialogue).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(dialogue).toHaveCSS("border-bottom-width", "1px");
+  const header = await topBar.boundingBox();
+  const companion = await dialogue.boundingBox();
+  const product = await modal.locator(".option-intro").boundingBox();
+  const photo = await modal.locator(".option-photo").boundingBox();
+  const avatar = await dialogue.locator(".agent-avatar").boundingBox();
+  const bubble = await dialogue.locator(".companion-speech").boundingBox();
+  const temperature = await modal
+    .getByRole("heading", { name: /온도/ })
+    .boundingBox();
+  expect(header!.y + header!.height).toBeLessThanOrEqual(companion!.y + 1);
+  expect(companion!.y + companion!.height).toBeLessThanOrEqual(product!.y + 1);
+  expect(product!.y + product!.height).toBeLessThanOrEqual(temperature!.y);
+  const photoTopGap = photo!.y - product!.y;
+  const photoBottomGap = product!.y + product!.height - photo!.y - photo!.height;
+  expect(Math.abs(photoTopGap - photoBottomGap)).toBeLessThan(1);
+  const divider = companion!.y + companion!.height;
+  expect(divider - (avatar!.y + avatar!.height)).toBeGreaterThan(10);
+  expect(divider - (bubble!.y + bubble!.height)).toBeGreaterThan(10);
+
+  const options = modal.locator(".option-scroll");
+  await options.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  expect(await options.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  const large = modal.getByRole("button", { name: /라지/ });
+  await large.click();
+  await expect(large).toHaveAttribute("aria-pressed", "true");
+  await expect(large).toHaveCSS("border-color", "rgb(74, 107, 237)");
+  await expect(large).toHaveCSS("background-color", "rgb(245, 247, 255)");
+  await expect(large.locator("svg")).toHaveCount(0);
+  const afterSelection = await dialogue.boundingBox();
+  expect(afterSelection!.x).toBeCloseTo(companion!.x, 0);
+  expect(afterSelection!.y).toBeCloseTo(companion!.y, 0);
+  await expect(modal.getByRole("heading", { name: "복숭아 아이스티" })).toBeVisible();
+});
+
+test("The raised hand uses an unclipped full avatar frame", async ({ page }) => {
+  const { avatar } = await fixture(page);
+  const sprite = avatar.locator(".avatar-body");
+  await sprite.evaluate((element) => {
+    const wave = element.getAnimations().find(
+      (animation) =>
+        (animation as CSSAnimation).animationName === "attendant-wave",
+    )!;
+    wave.pause();
+    wave.currentTime = 17_000;
+  });
+  await expect(sprite).toHaveCSS("background-position", "100% 100%");
+  await expect(sprite).toHaveCSS("clip-path", "none");
 });
 
 test("Natural audio completion closes the mouth and reduced motion disables idle gestures", async ({

@@ -444,6 +444,36 @@
   pointer-events: auto;
 }
 
+.option-companion-slot {
+  flex: 0 0 220px;
+  margin: 0 30px;
+  padding: 21px 18px;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+}
+.option-companion-slot .kiosk-companion {
+  --companion-scale: 1;
+  position: static;
+  height: 100%;
+  gap: 12px;
+  align-items: center;
+}
+.option-companion-slot .companion-character {
+  flex: 0 0 165px;
+  width: 165px;
+  align-self: center;
+  pointer-events: none;
+}
+.option-companion-slot .companion-bubbles {
+  align-self: stretch;
+  height: auto;
+  padding: 2px 8px 4px;
+  pointer-events: auto;
+}
+.option-companion-slot .companion-text {
+  font-size: 26px;
+}
+
 .kiosk-companion[data-screen="home"] {
   z-index: 3;
   height: 600px;
@@ -456,6 +486,7 @@
   flex: none;
   align-self: center;
   width: 460px;
+  pointer-events: none;
 }
 .kiosk-companion[data-screen="home"] .avatar-halo {
   inset: 5% 0 0;

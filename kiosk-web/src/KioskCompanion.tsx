@@ -26,6 +26,7 @@ export function KioskCompanion({
   conversation,
   guidance,
   screen,
+  embedded = false,
 }: {
   kiosk: HTMLElement;
   state: AttendantState;
@@ -40,6 +41,7 @@ export function KioskCompanion({
   }[];
   guidance: GuidanceState | null;
   screen: string;
+  embedded?: boolean;
 }) {
   const root = useRef<HTMLElement>(null);
   const thread = useRef<HTMLDivElement>(null);
@@ -65,6 +67,7 @@ export function KioskCompanion({
   current.current = position;
   const size = useRef({ width: 540, height: 250 });
   const isHome = screen === "home";
+  const isFixed = isHome || embedded;
   const isWaiting = waitingState(state);
   useEffect(() => {
     setElapsed(0);
@@ -82,9 +85,13 @@ export function KioskCompanion({
       const bounds = kiosk.getBoundingClientRect();
       const factor = bounds.width / kiosk.offsetWidth;
       if (!factor) return;
+      kiosk.style.setProperty("--kiosk-display-scale", String(factor));
+      if (embedded) {
+        kiosk.style.setProperty("--agent-dialogue-space", "0px");
+        return;
+      }
       setScale(factor);
       setDialogueWidth(Math.min(640, Math.max(0, kiosk.offsetWidth - 40)));
-      kiosk.style.setProperty("--kiosk-display-scale", String(factor));
       const local = (node: HTMLElement): Rect => {
         const r = node.getBoundingClientRect();
         return {
@@ -193,7 +200,7 @@ export function KioskCompanion({
       window.removeEventListener("resize", update);
       kiosk.removeEventListener("scroll", update, true);
     };
-  }, [kiosk, screen, isHome, collapsed]);
+  }, [kiosk, screen, isHome, collapsed, embedded]);
   const feedback = uiText(companionFeedback(state, elapsed));
   const receiving = state === "typing" || state === "hearing";
   const waitingCaption = receiving
@@ -242,6 +249,7 @@ export function KioskCompanion({
     if (thread.current && (follow.current || inputPending))
       thread.current.scrollTop = thread.current.scrollHeight;
   }, [conversation, inputPending, waitingCaption, collapsed]);
+  const character = <AgentAvatar state={state} level={level} />;
   return (
     <section
       ref={root}
@@ -251,62 +259,66 @@ export function KioskCompanion({
       data-x={Math.round(position.x)}
       data-y={Math.round(position.y)}
       data-waiting={isWaiting}
-      style={style}
+      style={embedded ? undefined : style}
     >
-      <button
-        className="companion-character"
-        aria-label={
-          collapsed ? "점원 말풍선 펼치기" : "점원 옮기기 또는 말풍선 접기"
-        }
-        aria-expanded={!collapsed}
-        onPointerDown={(e) => {
-          dragged.current = false;
-          drag.current = {
-            x: e.clientX,
-            y: e.clientY,
-            left: position.x,
-            top: position.y,
-          };
-          e.currentTarget.setPointerCapture(e.pointerId);
-        }}
-        onPointerMove={(e) => {
-          if (!drag.current) return;
-          const dx = (e.clientX - drag.current.x) / scale,
-            dy = (e.clientY - drag.current.y) / scale;
-          if (Math.abs(dx) + Math.abs(dy) > 8 / scale) {
-            dragged.current = true;
-            moveTo(drag.current.left + dx, drag.current.top + dy);
+      {isFixed ? (
+        <div className="companion-character">{character}</div>
+      ) : (
+        <button
+          className="companion-character"
+          aria-label={
+            collapsed ? "점원 말풍선 펼치기" : "점원 옮기기 또는 말풍선 접기"
           }
-        }}
-        onPointerUp={() => {
-          drag.current = null;
-        }}
-        onPointerCancel={() => {
-          drag.current = null;
-        }}
-        onClick={(event) => {
-          if (event.detail === 0 || !dragged.current) setCollapsed((v) => !v);
-        }}
-        onKeyDown={(e) => {
-          const keys: Record<string, [number, number]> = {
-            ArrowLeft: [-24, 0],
-            ArrowRight: [24, 0],
-            ArrowUp: [0, -24],
-            ArrowDown: [0, 24],
-          };
-          const delta = keys[e.key];
-          if (delta) {
-            e.preventDefault();
-            moveTo(
-              position.x + delta[0] / scale,
-              position.y + delta[1] / scale,
-            );
-          }
-        }}
-      >
-        <AgentAvatar state={state} level={level} />
-      </button>
-      {!collapsed && (
+          aria-expanded={!collapsed}
+          onPointerDown={(e) => {
+            dragged.current = false;
+            drag.current = {
+              x: e.clientX,
+              y: e.clientY,
+              left: position.x,
+              top: position.y,
+            };
+            e.currentTarget.setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            if (!drag.current) return;
+            const dx = (e.clientX - drag.current.x) / scale,
+              dy = (e.clientY - drag.current.y) / scale;
+            if (Math.abs(dx) + Math.abs(dy) > 8 / scale) {
+              dragged.current = true;
+              moveTo(drag.current.left + dx, drag.current.top + dy);
+            }
+          }}
+          onPointerUp={() => {
+            drag.current = null;
+          }}
+          onPointerCancel={() => {
+            drag.current = null;
+          }}
+          onClick={(event) => {
+            if (event.detail === 0 || !dragged.current) setCollapsed((v) => !v);
+          }}
+          onKeyDown={(e) => {
+            const keys: Record<string, [number, number]> = {
+              ArrowLeft: [-24, 0],
+              ArrowRight: [24, 0],
+              ArrowUp: [0, -24],
+              ArrowDown: [0, 24],
+            };
+            const delta = keys[e.key];
+            if (delta) {
+              e.preventDefault();
+              moveTo(
+                position.x + delta[0] / scale,
+                position.y + delta[1] / scale,
+              );
+            }
+          }}
+        >
+          {character}
+        </button>
+      )}
+      {(isFixed || !collapsed) && (
         <div
           ref={thread}
           className="companion-bubbles"
