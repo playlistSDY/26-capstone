@@ -1005,7 +1005,9 @@ export default function App() {
     </div>
   );
   return (
-    <div className={`studio demo-layout ${standalone ? "standalone" : ""}`}>
+    <div
+      className={`studio demo-layout agent-stage-layout ${standalone ? "standalone" : ""}`}
+    >
       {!standalone && (
         <div className="studio-bar">
           <div className="studio-title">

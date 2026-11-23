@@ -1,0 +1,222 @@
+.studio.demo-layout.agent-stage-layout {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+}
+.studio.demo-layout.agent-stage-layout > .preview-surface {
+  grid-column: 1;
+  grid-row: 2;
+}
+.studio.demo-layout.agent-stage-layout > .agent-chat-pane {
+  grid-column: 1;
+  grid-row: 3;
+  min-width: 0;
+  min-height: 0;
+  padding: 5px 12px;
+  border: 0;
+  background: #f6f8fb;
+}
+.studio.demo-layout.agent-stage-layout > .studio-footer {
+  grid-column: 1;
+  grid-row: 4;
+}
+.kiosk {
+  padding-bottom: 180px;
+}
+.kiosk > .overlay {
+  bottom: 180px;
+}
+.kiosk-companion {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 560px;
+  height: 170px;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  transition: transform 0.55s ease-in-out;
+}
+.kiosk-companion .agent-avatar {
+  flex: 0 0 160px;
+  width: 160px;
+}
+.companion-speech {
+  position: relative;
+  width: 390px;
+  padding: 8px 14px;
+  background: #fff;
+  border: 1px solid #dfe8e6;
+  border-radius: 18px 18px 18px 4px;
+  box-shadow: 0 4px 18px #203c3210;
+  pointer-events: auto;
+}
+.companion-status {
+  color: #39604c;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 650;
+}
+.companion-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #46755b;
+}
+.companion-caption {
+  color: #243b31;
+  font-size: 19px;
+  line-height: 1.55;
+  max-height: 58px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  margin-top: 5px;
+}
+.companion-speech button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  color: #667c72;
+  padding: 6px 0 0;
+}
+.kiosk-conversation-history {
+  position: absolute;
+  z-index: 60;
+  bottom: 190px;
+  left: 32px;
+  right: 32px;
+  height: 550px;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #d9e3ea;
+  border-radius: 20px;
+  box-shadow: 0 12px 60px #182b4333;
+  overflow: hidden;
+}
+.kiosk-conversation-history[hidden] {
+  display: none;
+}
+.kiosk-history-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 22px;
+  border-bottom: 1px solid #e9eef3;
+}
+.kiosk-history-heading h2 {
+  font-size: 22px;
+}
+.kiosk-history-heading button {
+  font-size: 18px;
+  padding: 5px;
+}
+.agent-test-console {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  max-width: 1000px;
+  margin: auto;
+  gap: 4px 12px;
+}
+.agent-test-console .agent-chat-composer {
+  flex: 1;
+  min-width: 200px;
+  padding: 0;
+  align-items: center;
+}
+.agent-test-console .agent-chat-composer textarea {
+  font-size: 14px;
+  padding: 8px 10px;
+  height: 38px;
+  border-radius: 9px;
+}
+.agent-test-console .agent-chat-composer > button {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+}
+.agent-test-console .agent-chat-controls {
+  padding: 0;
+  gap: 6px;
+}
+.agent-test-console .agent-chat-controls span {
+  display: none;
+}
+.agent-test-console .agent-chat-controls button {
+  font-size: 12px;
+}
+.agent-test-console .agent-chat-footer {
+  padding: 0;
+  gap: 8px;
+}
+.agent-test-console .agent-chat-footer > span {
+  display: none;
+}
+.agent-test-console .agent-chat-footer button {
+  font-size: 12px;
+}
+.agent-test-console .agent-session-usage {
+  font-size: 10px;
+  padding: 0;
+}
+.agent-test-console .agent-chat-error {
+  flex-basis: 100%;
+  padding: 5px;
+  margin: 0;
+}
+.agent-test-caption {
+  font-size: 11px;
+  color: #7a8798;
+}
+@media (max-width: 1023px) {
+  .studio.demo-layout.agent-stage-layout {
+    grid-template-rows: auto auto auto auto;
+  }
+  .studio.demo-layout.agent-stage-layout > .preview-surface {
+    grid-row: 2;
+  }
+  .studio.demo-layout.agent-stage-layout > .agent-chat-pane {
+    grid-row: 3;
+    height: auto;
+  }
+  .studio.demo-layout.agent-stage-layout > .studio-footer {
+    grid-row: 4;
+  }
+  .agent-test-caption {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kiosk-companion {
+    transition: none;
+  }
+}
+
+.kiosk > .toast {
+  bottom: 190px;
+}
+
+.companion-heard {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 5px;
+  color: #536e91;
+  font-size: 15px;
+  line-height: 1.4;
+}
+.companion-heard > span {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 650;
+}
+.companion-heard > p {
+  max-height: 42px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}

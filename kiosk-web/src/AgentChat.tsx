@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { KioskCompanion } from "./KioskCompanion";
+import { attendantState, type VoiceInputState } from "./attendantState";
 import { Send, RotateCcw, Square, Volume2, VolumeX } from "lucide-react";
 import { assetUrl } from "./catalog";
-import { findProduct, money } from "./catalog";
 import type { Payment } from "./PaymentFlow";
 import type { PaymentAction } from "./agentCheckout";
-import { summary, totalPrice } from "./domain";
 import type { CartLine, Place, PaymentMethod } from "./domain";
 import "./agent-chat.css";
 import {
@@ -156,6 +157,7 @@ export function AgentChat({
   guidance,
   onGuideDone,
   onGuideDismiss,
+  voiceInput,
 }: {
   cart: ChatCart;
   disabled: boolean;
@@ -167,15 +169,13 @@ export function AgentChat({
   guidance: GuidanceState | null;
   onGuideDone: () => void;
   onGuideDismiss: () => void;
+  voiceInput?: VoiceInputState;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const end = useRef<HTMLDivElement>(null);
+  const log = useRef<HTMLDivElement>(null);
   const current = useRef(cart);
   current.current = cart;
-  const checkoutView = ["cart", "payment", "finalizing", "completed"].includes(
-    cart.screen,
-  );
   const open = true;
   const [messages, setMessages] = useState<Message[]>([greeting]);
   const [text, setText] = useState("");
@@ -189,6 +189,13 @@ export function AgentChat({
   const [error, setError] = useState("");
   const [pending, setPending] = useState<Pending | null>(null);
   const [speaking, setSpeaking] = useState(false);
+  const [playback, setPlayback] = useState({ active: false, level: 0 });
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [companionSlot, setCompanionSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setCompanionSlot(document.querySelector<HTMLElement>(".kiosk"));
+  }, []);
+
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const speech = useRef<AgentSpeech | null>(null);
   if (!speech.current)
@@ -292,11 +299,9 @@ export function AgentChat({
 
   useEffect(() => {
     if (open) {
-      dialog.current?.close();
-      dialog.current?.show();
       void connect();
-      input.current?.focus();
-    } else dialog.current?.close();
+      input.current?.focus({ preventScroll: true });
+    }
   }, [open]);
 
   useEffect(() => {
@@ -304,8 +309,8 @@ export function AgentChat({
   }, [session, onConversationActiveChange]);
 
   useEffect(() => {
-    end.current?.scrollIntoView({ block: "nearest" });
-  }, [messages, busy, error]);
+    if (log.current) log.current.scrollTop = log.current.scrollHeight;
+  }, [messages, busy, error, historyOpen]);
 
   function apply(state: AgentState) {
     onState(state);
@@ -361,6 +366,7 @@ export function AgentChat({
       !!target &&
       before === JSON.stringify([target.cart.lines, target.cart.place]);
     speech.current!.stop();
+    setPlayback({ active: false, level: 0 });
     delivery.current = null;
     streamAbort.current?.abort();
     if (target && status) {
@@ -474,6 +480,22 @@ export function AgentChat({
           (report) => {
             if (latestConnection.current.session === audioSession)
               recordUsage(audioRequest, report);
+          },
+          (activity) => {
+            if (
+              latestConnection.current.session !== audioSession ||
+              generation.current !== turnGeneration
+            )
+              return;
+            const next = {
+              active: activity.active,
+              level: Math.round(activity.level * 10) / 10,
+            };
+            setPlayback((previous) =>
+              previous.active === next.active && previous.level === next.level
+                ? previous
+                : next,
+            );
           },
         ),
       );
@@ -652,286 +674,284 @@ export function AgentChat({
         sending.current = false;
         setBusy(false);
       }
-      input.current?.focus();
+      input.current?.focus({ preventScroll: true });
     }
   }
 
+  const presence = attendantState({
+    ready: !!status?.ready,
+    busy,
+    speaking: playback.active,
+    audioPending: speaking,
+    typing: !!text.trim(),
+    voice: voiceInput,
+  });
+  const latest = messages.at(-1);
+  const caption = !status?.ready
+    ? "점원을 연결하고 있어요. 잠시만 기다려 주세요."
+    : latest?.role === "assistant"
+      ? latest.text
+      : "요청을 확인하고 있어요.";
   return (
-    <aside
-      className={`agent-chat-pane${open ? " is-open" : ""}`}
-      aria-label="주문 대화 패널"
-    >
-      <dialog
-        ref={dialog}
-        className={`agent-chat-dialog${checkoutView ? " is-checkout" : ""}`}
-        aria-labelledby="agent-chat-title"
-        onCancel={(event) => {
-          event.preventDefault();
-        }}
-      >
-        <div className="agent-chat-header">
-          <div>
-            <span className="agent-chat-eyebrow">
-              SWitch · 텍스트 주문 테스트
-            </span>
-            <h2 id="agent-chat-title">점원에게 말하듯 주문하세요</h2>
-          </div>
-        </div>
-        <div className="agent-chat-connection">
-          <span>
-            {checking
-              ? "연결 확인 중…"
-              : status?.ready
-                ? status.message
-                : "에이전트 연결 준비 중"}
-          </span>
-          <button disabled={checking || busy} onClick={() => void connect()}>
-            다시 연결
-          </button>
-        </div>
-        <div className="agent-chat-controls">
-          <button
-            disabled={!speech.current.supported}
-            onClick={() => {
-              const enabled = !ttsEnabled;
-              setTtsEnabled(enabled);
-              speech.current!.setEnabled(enabled);
-              if (!enabled) void acknowledge();
-            }}
-          >
-            {ttsEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            {!speech.current.supported
-              ? "음성 미지원"
-              : ttsEnabled
-                ? "음성 끄기"
-                : "음성 켜기"}
-          </button>
-          <button
-            disabled={!busy && !speaking && !pending}
-            onClick={() => {
-              submissionSequence.current++;
-              void interrupt().catch(() =>
-                setError("중단 상태를 확인하지 못했어요. 다시 연결해 주세요."),
-              );
-            }}
-          >
-            <Square size={14} /> 말 끊기
-          </button>
-          <span>
-            {speaking
-              ? "읽어드리는 중"
-              : busy
-                ? "답변 중에도 입력할 수 있어요"
-                : "텍스트 스트리밍"}
-          </span>
-        </div>
-        <AgentGuidance
-          guide={guidance}
-          onDone={onGuideDone}
-          onDismiss={onGuideDismiss}
-        />
-        {status && !status.ready && (
-          <div className="agent-chat-setup" role="status">
-            {status.message}
-            <br />
-            설정 후 에이전트 서버를 다시 실행하고 ‘다시 연결’을 눌러 주세요.
-          </div>
-        )}
-        {checkoutView && cart.lines.length > 0 && (
-          <section
-            className="agent-checkout-summary"
-            aria-label="대화 주문 확인"
-          >
-            <strong>
-              {cart.receipt
-                ? `주문번호 ${cart.receipt.number}번`
-                : cart.screen === "cart"
-                  ? "주문 내용을 확인해 주세요"
-                  : "결제를 도와드릴게요"}
-            </strong>
-            <ul>
-              {cart.lines.map((line) => (
-                <li key={line.id}>
-                  {findProduct(line.productId)?.name} {line.quantity}개
-                  <small>{summary(line.options)}</small>
-                </li>
-              ))}
-            </ul>
-            {cart.payment && (
-              <p>
-                {
-                  {
-                    waiting: "리더기 대기 중",
-                    reading: "결제 정보 확인 중",
-                    processing: "승인 처리 중",
-                    approved: "승인 완료",
-                    failure: "결제 실패",
-                    timeout: "결제 시간 초과",
-                  }[cart.payment.status]
-                }
-              </p>
-            )}
-            <b>총 {money(totalPrice(cart.lines))}</b>
-          </section>
-        )}
-        <div
-          className="agent-chat-log"
-          role="log"
-          aria-label="주문 대화"
-          aria-live="polite"
-          aria-relevant="additions"
-        >
-          {messages.map((message, index) => (
-            <div key={index} className={`agent-chat-message ${message.role}`}>
-              <span>{message.role === "user" ? "나" : "SWitch 점원"}</span>
-              <p>{message.text}</p>
-              {(message.usage || message.elapsed_ms !== undefined) && (
-                <small
-                  className="agent-token-usage"
-                  title="대화 모델의 모든 도구 호출을 합친 제공자 사용량. 입력에는 대화 이력·도구 결과·캐시가 포함됩니다."
+    <>
+      <AgentGuidance
+        guide={guidance}
+        onDone={onGuideDone}
+        onDismiss={onGuideDismiss}
+      />
+      {companionSlot &&
+        createPortal(
+          <>
+            <KioskCompanion
+              kiosk={companionSlot}
+              state={presence}
+              level={playback.level}
+              caption={caption}
+              heard={
+                voiceInput?.partial ||
+                text.trim() ||
+                [...messages]
+                  .reverse()
+                  .find((message) => message.role === "user")?.text ||
+                ""
+              }
+              guidance={guidance}
+              screen={cart.screen}
+              historyOpen={historyOpen}
+              onHistory={() => setHistoryOpen((value) => !value)}
+            />
+            <section
+              className="kiosk-conversation-history"
+              hidden={!historyOpen}
+              aria-label="대화 내역"
+            >
+              <header className="kiosk-history-heading">
+                <h2>대화 내역</h2>
+                <button
+                  onClick={() => setHistoryOpen(false)}
+                  aria-label="대화 내역 닫기"
                 >
-                  {message.usage && (
-                    <>
-                      입력 {message.usage.turn.input_tokens.toLocaleString()} ·
-                      출력 {message.usage.turn.output_tokens.toLocaleString()}{" "}
-                      토큰
-                      {message.usage.tts_turn
-                        ? ` · 음성 ${message.usage.tts_turn.total_tokens.toLocaleString()}`
-                        : ""}{" "}
-                      ·{" "}
-                      {formatEstimatedCost(
-                        message.usage.turn,
-                        message.usage.tts_turn,
-                      )}
-                    </>
-                  )}
-                  {message.elapsed_ms !== undefined && (
-                    <span title="전송부터 최종 텍스트 수신까지의 시간입니다. 네트워크와 끼어들기 처리를 포함하며 TTS 재생은 제외합니다.">
-                      {" "}
-                      · 응답 {message.elapsed_ms.toLocaleString()} ms
+                  닫기
+                </button>
+              </header>
+              <div
+                ref={log}
+                hidden={!historyOpen}
+                className="agent-chat-log"
+                role="log"
+                aria-label="주문 대화"
+                aria-live="polite"
+                aria-relevant="additions"
+              >
+                {messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`agent-chat-message ${message.role}`}
+                  >
+                    <span>
+                      {message.role === "user" ? "나" : "SWitch 점원"}
                     </span>
-                  )}
-                </small>
+                    <p>{message.text}</p>
+                    {(message.usage || message.elapsed_ms !== undefined) && (
+                      <small
+                        className="agent-token-usage"
+                        title="대화 모델의 모든 도구 호출을 합친 제공자 사용량. 입력에는 대화 이력·도구 결과·캐시가 포함됩니다."
+                      >
+                        {message.usage && (
+                          <>
+                            입력{" "}
+                            {message.usage.turn.input_tokens.toLocaleString()} ·
+                            출력{" "}
+                            {message.usage.turn.output_tokens.toLocaleString()}{" "}
+                            토큰
+                            {message.usage.tts_turn
+                              ? ` · 음성 ${message.usage.tts_turn.total_tokens.toLocaleString()}`
+                              : ""}{" "}
+                            ·{" "}
+                            {formatEstimatedCost(
+                              message.usage.turn,
+                              message.usage.tts_turn,
+                            )}
+                          </>
+                        )}
+                        {message.elapsed_ms !== undefined && (
+                          <span title="전송부터 최종 텍스트 수신까지의 시간입니다. 네트워크와 끼어들기 처리를 포함하며 TTS 재생은 제외합니다.">
+                            {" "}
+                            · 응답 {message.elapsed_ms.toLocaleString()} ms
+                          </span>
+                        )}
+                      </small>
+                    )}
+                  </div>
+                ))}
+                {busy && (
+                  <p className="agent-chat-thinking" role="status">
+                    주문을 확인하고 있어요…
+                  </p>
+                )}
+                <div ref={end} />
+              </div>
+            </section>
+          </>,
+          companionSlot,
+        )}
+      <aside className="agent-chat-pane" aria-label="STT 대용 테스트 입력">
+        <div className="agent-test-console">
+          <span className="agent-test-caption">STT 대용 입력</span>
+          {!status?.ready && (
+            <button disabled={checking} onClick={() => void connect()}>
+              다시 연결
+            </button>
+          )}
+          <form
+            className="agent-chat-composer"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void submit();
+            }}
+          >
+            <label className="sr-only" htmlFor="agent-chat-input">
+              주문 메시지
+            </label>
+            <textarea
+              ref={input}
+              id="agent-chat-input"
+              placeholder="음성 대신 입력해 주세요"
+              value={text}
+              maxLength={4000}
+              rows={1}
+              disabled={disabled || (!busy && !!pending) || !status?.ready}
+              onChange={(event) => setText(event.target.value)}
+              onKeyDown={(event) => {
+                if (
+                  event.key === "Enter" &&
+                  !event.shiftKey &&
+                  !event.nativeEvent.isComposing
+                ) {
+                  event.preventDefault();
+                  void submit();
+                }
+              }}
+            />
+            <button
+              type="submit"
+              aria-label={
+                busy || speaking ? "끼어들어 메시지 보내기" : "메시지 보내기"
+              }
+              disabled={
+                disabled ||
+                (!busy && !!pending) ||
+                !status?.ready ||
+                !text.trim()
+              }
+            >
+              <Send size={21} />
+            </button>
+          </form>
+          <div className="agent-chat-footer">
+            <span>OpenAI AI 음성 · Enter 전송</span>
+            <button
+              disabled={disabled || busy || !!pending}
+              onClick={() => {
+                speech.current!.stop();
+                delivery.current = null;
+                if (session && status)
+                  void request(
+                    `sessions/${session}/end`,
+                    status.token,
+                    {},
+                  ).catch(() => {});
+                activeRequest.current = null;
+                latestUsage.current = null;
+                setUsage(null);
+                setMessages([greeting]);
+                setSession(null);
+                setError("");
+                setText("");
+              }}
+            >
+              <RotateCcw size={14} /> 새 대화
+            </button>
+          </div>
+          <div className="agent-chat-controls">
+            <button
+              disabled={!speech.current.supported}
+              onClick={() => {
+                const enabled = !ttsEnabled;
+                setTtsEnabled(enabled);
+                speech.current!.setEnabled(enabled);
+                if (!enabled) void acknowledge();
+              }}
+            >
+              {ttsEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              {!speech.current.supported
+                ? "음성 미지원"
+                : ttsEnabled
+                  ? "음성 끄기"
+                  : "음성 켜기"}
+            </button>
+            <button
+              disabled={!busy && !speaking && !pending}
+              onClick={() => {
+                submissionSequence.current++;
+                void interrupt().catch(() =>
+                  setError(
+                    "중단 상태를 확인하지 못했어요. 다시 연결해 주세요.",
+                  ),
+                );
+              }}
+            >
+              <Square size={14} /> 말 끊기
+            </button>
+            <span>
+              {speaking
+                ? "읽어드리는 중"
+                : busy
+                  ? "답변 중에도 입력할 수 있어요"
+                  : "텍스트 스트리밍"}
+            </span>
+          </div>
+          <div
+            className="agent-session-usage"
+            aria-label="세션 토큰 사용량"
+            title="실제 제공된 사용량만 집계합니다. 중단 후 제공되지 않은 토큰은 추정하지 않습니다. 비용은 OpenAI Standard 공개 단가의 USD 예상액이며 실제 청구서·세금·할인과 다를 수 있습니다."
+          >
+            <span>
+              세션 대화 {(usage?.session.total_tokens ?? 0).toLocaleString()} ·
+              음성 {(usage?.tts_session?.total_tokens ?? 0).toLocaleString()}{" "}
+              토큰 · {formatEstimatedCost(usage?.session, usage?.tts_session)}
+            </span>
+            {!!(
+              (usage?.session.unreported_requests ?? 0) +
+              (usage?.tts_session?.unreported_requests ?? 0)
+            ) && <span>일부 중단 요청 미집계</span>}
+            {!usage && previousUsage && (
+              <span>
+                이전 세션: 대화{" "}
+                {previousUsage.session.total_tokens.toLocaleString()} · 음성{" "}
+                {(
+                  previousUsage.tts_session?.total_tokens ?? 0
+                ).toLocaleString()}{" "}
+                ·{" "}
+                {formatEstimatedCost(
+                  previousUsage.session,
+                  previousUsage.tts_session,
+                )}
+              </span>
+            )}
+          </div>
+          {error && (
+            <div className="agent-chat-error" role="alert">
+              {error}
+              {pending && !busy && (
+                <button onClick={() => void submit(pending)}>
+                  응답 다시 확인
+                </button>
               )}
             </div>
-          ))}
-          {busy && (
-            <p className="agent-chat-thinking" role="status">
-              주문을 확인하고 있어요…
-            </p>
-          )}
-          <div ref={end} />
-        </div>
-        {error && (
-          <div className="agent-chat-error" role="alert">
-            {error}
-            {pending && !busy && (
-              <button onClick={() => void submit(pending)}>
-                응답 다시 확인
-              </button>
-            )}
-          </div>
-        )}
-        <div className="agent-chat-cart">
-          <span>
-            현재 주문 {cart.lines.reduce((sum, line) => sum + line.quantity, 0)}
-            개
-          </span>
-          <span>대화로 변경한 주문은 키오스크에도 반영돼요.</span>
-        </div>
-        <div
-          className="agent-session-usage"
-          aria-label="세션 토큰 사용량"
-          title="실제 제공된 사용량만 집계합니다. 중단 후 제공되지 않은 토큰은 추정하지 않습니다. 비용은 OpenAI Standard 공개 단가의 USD 예상액이며 실제 청구서·세금·할인과 다를 수 있습니다."
-        >
-          <span>
-            세션 대화 {(usage?.session.total_tokens ?? 0).toLocaleString()} ·
-            음성 {(usage?.tts_session?.total_tokens ?? 0).toLocaleString()} 토큰
-            · {formatEstimatedCost(usage?.session, usage?.tts_session)}
-          </span>
-          {!!(
-            (usage?.session.unreported_requests ?? 0) +
-            (usage?.tts_session?.unreported_requests ?? 0)
-          ) && <span>일부 중단 요청 미집계</span>}
-          {!usage && previousUsage && (
-            <span>
-              이전 세션: 대화{" "}
-              {previousUsage.session.total_tokens.toLocaleString()} · 음성{" "}
-              {(previousUsage.tts_session?.total_tokens ?? 0).toLocaleString()}{" "}
-              ·{" "}
-              {formatEstimatedCost(
-                previousUsage.session,
-                previousUsage.tts_session,
-              )}
-            </span>
           )}
         </div>
-        <form
-          className="agent-chat-composer"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void submit();
-          }}
-        >
-          <label className="sr-only" htmlFor="agent-chat-input">
-            주문 메시지
-          </label>
-          <textarea
-            ref={input}
-            id="agent-chat-input"
-            placeholder="예: 따뜻한 라떼 한 잔 포장해 주세요"
-            value={text}
-            maxLength={4000}
-            rows={2}
-            disabled={disabled || (!busy && !!pending) || !status?.ready}
-            onChange={(event) => setText(event.target.value)}
-            onKeyDown={(event) => {
-              if (
-                event.key === "Enter" &&
-                !event.shiftKey &&
-                !event.nativeEvent.isComposing
-              ) {
-                event.preventDefault();
-                void submit();
-              }
-            }}
-          />
-          <button
-            type="submit"
-            aria-label={
-              busy || speaking ? "끼어들어 메시지 보내기" : "메시지 보내기"
-            }
-            disabled={
-              disabled || (!busy && !!pending) || !status?.ready || !text.trim()
-            }
-          >
-            <Send size={21} />
-          </button>
-        </form>
-        <div className="agent-chat-footer">
-          <span>OpenAI AI 음성 · Enter 전송</span>
-          <button
-            disabled={disabled || busy || !!pending}
-            onClick={() => {
-              speech.current!.stop();
-              delivery.current = null;
-              if (session && status)
-                void request(`sessions/${session}/end`, status.token, {}).catch(
-                  () => {},
-                );
-              activeRequest.current = null;
-              latestUsage.current = null;
-              setUsage(null);
-              setMessages([greeting]);
-              setSession(null);
-              setError("");
-              setText("");
-            }}
-          >
-            <RotateCcw size={14} /> 새 대화
-          </button>
-        </div>
-      </dialog>
-    </aside>
+      </aside>
+    </>
   );
 }

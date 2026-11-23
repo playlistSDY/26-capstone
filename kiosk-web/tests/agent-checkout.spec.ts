@@ -147,9 +147,7 @@ test("Conversation opens review then method, waits for reader and finishes one o
   await expect(
     page.getByRole("button", { name: "확인하고 결제하기", exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("region", { name: "대화 주문 확인" }),
-  ).toContainText("아메리카노");
+  await expect(page.locator(".cart-screen")).toContainText("아메리카노");
   await expect(page.locator(".payment-method")).toHaveCount(0);
   await f.say("네");
   await expect(page.locator(".payment-method")).toHaveCount(5);
@@ -185,10 +183,8 @@ test("Conversation opens review then method, waits for reader and finishes one o
   expect(orders).toHaveLength(1);
   expect(orders[0].method).toBe("card");
   await expect.poll(() => f.backend.jobs.length).toBe(1);
-  await expect(page.locator(".agent-chat-dialog")).toBeVisible();
-  await expect(page.getByRole("log", { name: "주문 대화" })).toContainText(
-    "안녕하세요",
-  );
+  await expect(page.locator(".kiosk-companion")).toBeVisible();
+  await expect(page.locator(".agent-chat-log")).toContainText("안녕하세요");
 });
 
 test("Failure is announced and conversation can retry and cancel without losing cart", async ({
@@ -209,7 +205,7 @@ test("Failure is announced and conversation can retry and cancel without losing 
       ),
     )
     .toBe(true);
-  await expect(page.getByRole("log", { name: "주문 대화" })).toContainText(
+  await expect(page.locator(".agent-chat-log")).toContainText(
     "승인되지 않았어요",
   );
   const first = f.requests.find((p) => p.payment_event).cart.payment.attempt;
@@ -225,9 +221,8 @@ test("Failure is announced and conversation can retry and cancel without losing 
   expect(f.requests.at(-1).cart.payment.attempt).not.toBe(first);
   await expect(page.locator(".payment-modal")).toHaveCount(0);
   await expect(page.locator(".payment-method")).toHaveCount(5);
-  await expect(
-    page.getByRole("region", { name: "대화 주문 확인" }),
-  ).toContainText("아메리카노");
+  expect(f.requests.at(-1).cart.lines[0].productId).toBe("americano");
+  await expect(page.locator(".kiosk-companion")).toBeVisible();
   expect(
     await page.evaluate(() =>
       JSON.parse(localStorage.getItem("switch.kiosk.orders.v1") || "[]"),
@@ -235,7 +230,7 @@ test("Failure is announced and conversation can retry and cancel without losing 
   ).toHaveLength(0);
 });
 
-test("Chat stays beside the kiosk without covering it at every viewport width", async ({
+test("The attendant stays inside the kiosk and test input stays outside it at every width", async ({
   page,
 }) => {
   await fixture(page, false);
@@ -245,17 +240,17 @@ test("Chat stays beside the kiosk without covering it at every viewport width", 
     await expect
       .poll(async () => {
         const kiosk = await page.locator(".kiosk-space").boundingBox();
-        const chat = await page.locator(".agent-chat-dialog").boundingBox();
+        const chat = await page.locator(".kiosk-companion").boundingBox();
         const nav = await page.locator(".studio-bar").boundingBox();
         return (
           !!kiosk &&
           !!chat &&
           !!nav &&
-          (width >= 1024
-            ? kiosk.x + kiosk.width <= chat.x
-            : kiosk.y + kiosk.height <= chat.y) &&
+          chat.x >= kiosk.x &&
+          chat.y >= kiosk.y &&
+          chat.x + chat.width <= kiosk.x + kiosk.width + 1 &&
+          chat.y + chat.height <= kiosk.y + kiosk.height + 1 &&
           nav.y + nav.height <= chat.y &&
-          nav.x + nav.width >= chat.x + chat.width &&
           chat.x + chat.width <= width + 1 &&
           nav.width <= width + 1
         );
@@ -268,7 +263,7 @@ test("Chat stays beside the kiosk without covering it at every viewport width", 
   await expect(
     page.getByRole("button", { name: "확인하고 결제하기", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".agent-chat-dialog")).toBeVisible();
+  await expect(page.locator(".kiosk-companion")).toBeVisible();
 });
 
 test("Acknowledging a visible summary can interrupt its speech without losing consent", async ({
@@ -339,7 +334,7 @@ test("A late interrupted response cannot overwrite a newer reply", async ({
   await page
     .getByRole("button", { name: "메시지 보내기", exact: true })
     .click();
-  await expect(page.getByRole("log", { name: "주문 대화" })).toContainText(
+  await expect(page.locator(".agent-chat-log")).toContainText(
     "이전 답변을 말하고",
   );
   await input.fill("네");
@@ -383,14 +378,17 @@ test("Direct touch changes during an answer survive and are sent in the next tur
   await page
     .getByRole("button", { name: "메시지 보내기", exact: true })
     .click();
-  await expect(page.locator(".agent-chat-thinking")).toBeVisible();
+  await expect(page.locator(".kiosk-companion .agent-avatar")).toHaveAttribute(
+    "data-state",
+    "thinking",
+  );
   await page.getByRole("button", { name: "결제하기", exact: true }).click();
   await page
     .getByRole("button", { name: "아메리카노 수량 늘리기" })
     .first()
     .click();
   release();
-  await expect(page.getByRole("log", { name: "주문 대화" })).toContainText(
+  await expect(page.locator(".agent-chat-log")).toContainText(
     "화면에서 바꾸신 주문을 유지",
   );
   await f.say("지금 주문 알려줘");
@@ -529,7 +527,7 @@ test("Order-type correction and agreement advance even if speech fails and no AC
   await expect(page.locator(".place-switch")).toHaveText("매장");
   await f.say("그래");
   await expect(page.locator(".payment-method")).toHaveCount(5);
-  await expect(page.getByRole("log", { name: "주문 대화" })).not.toContainText(
+  await expect(page.locator(".agent-chat-log")).not.toContainText(
     "주문 내용을 다시 확인해",
   );
   expect(f.requests.at(-1).cart.place).toBe("store");
@@ -539,7 +537,5 @@ test("Order-type correction and agreement advance even if speech fails and no AC
   await page.clock.runFor(1900);
   await page.clock.runFor(1100);
   await expect.poll(() => f.ended()).toBeGreaterThan(0);
-  await expect(page.getByRole("log", { name: "주문 대화" })).toContainText(
-    "안녕하세요",
-  );
+  await expect(page.locator(".agent-chat-log")).toContainText("안녕하세요");
 });

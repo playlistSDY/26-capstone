@@ -1,5 +1,11 @@
 import type { UsageReport } from "./agentUsage";
 import type { SpeechClip } from "./agentSpeech";
+import {
+  pcmLevel,
+  activityAt,
+  type AudioActivity,
+  type AudioFrame,
+} from "./audioActivity";
 
 let context: AudioContext | null = null;
 export function unlockAgentAudio() {
@@ -14,6 +20,7 @@ export function streamAgentAudio(
   body: unknown,
   signal: AbortSignal,
   onUsage?: (usage: UsageReport) => void,
+  onActivity?: (activity: AudioActivity) => void,
 ): SpeechClip {
   unlockAgentAudio();
   const ctx = context!;
@@ -27,9 +34,27 @@ export function streamAgentAudio(
   let resolve: (() => void) | null = null;
   let reject: ((error: Error) => void) | null = null;
 
+  const frames: AudioFrame[] = [];
+  let meter: ReturnType<typeof setInterval> | null = null;
+  function samplePlayback() {
+    while (frames.length && frames[0].end <= ctx.currentTime) frames.shift();
+    onActivity?.(activityAt(frames, ctx.currentTime));
+  }
+  function endMeter() {
+    const audibleClip = playing || meter !== null;
+    if (meter !== null) clearInterval(meter);
+    meter = null;
+    frames.length = 0;
+    if (audibleClip) onActivity?.({ active: false, level: 0 });
+  }
   function check() {
-    if (error) reject?.(error);
-    else if (finished && !pending.length && !sources.size) resolve?.();
+    if (error) {
+      endMeter();
+      reject?.(error);
+    } else if (finished && !pending.length && !sources.size) {
+      if (playing) endMeter();
+      resolve?.();
+    }
   }
   function drain() {
     if (!playing || canceled || error) return;
@@ -47,6 +72,17 @@ export function streamAgentAudio(
       };
       const when = Math.max(nextTime, ctx.currentTime + 0.04);
       source.start(when);
+      if (onActivity) {
+        const step = 960;
+        for (let offset = 0; offset < samples.length; offset += step) {
+          const end = Math.min(samples.length, offset + step);
+          frames.push({
+            start: when + offset / 24000,
+            end: when + end / 24000,
+            level: pcmLevel(samples.subarray(offset, end)),
+          });
+        }
+      }
       nextTime = when + buffer.duration;
     }
     check();
@@ -55,6 +91,7 @@ export function streamAgentAudio(
     canceled = true;
     pending.length = 0;
     error = new Error("Audio interrupted");
+    endMeter();
     for (const source of sources) {
       source.onended = null;
       try {
@@ -112,6 +149,14 @@ export function streamAgentAudio(
       if (!finished) throw new Error("Audio stream ended early");
     } catch (cause) {
       error = cause instanceof Error ? cause : new Error("Audio failed");
+      for (const source of sources) {
+        source.onended = null;
+        try {
+          source.stop();
+        } catch {}
+        source.disconnect();
+      }
+      sources.clear();
       check();
     }
   })();
@@ -123,6 +168,10 @@ export function streamAgentAudio(
         resolve = done;
         reject = failed;
         playing = true;
+        if (onActivity && !canceled && !error) {
+          meter = setInterval(samplePlayback, 40);
+          samplePlayback();
+        }
         drain();
         check();
       }),
