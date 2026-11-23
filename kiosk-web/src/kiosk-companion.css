@@ -308,6 +308,9 @@
   height: var(--agent-dialogue-space, 0px);
   flex-shrink: 0;
 }
+.agent-dialogue-space:has(+ .order-dock .dock-line) {
+  margin-bottom: min(14px, var(--agent-dialogue-space, 0px));
+}
 .kiosk:not(:has(> .overlay)) > .kiosk-companion[data-screen="menu"] {
   --companion-character-width: 238px;
 }

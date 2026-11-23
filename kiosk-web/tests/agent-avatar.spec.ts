@@ -277,6 +277,10 @@ test("The character lives inside the kiosk and follows screen changes without co
     .locator('[data-guide-option="temperature"][data-guide-value="hot"]')
     .click();
   await page.locator('[data-guide="editor.add"]').click();
+  await expect(page.locator(".agent-dialogue-space")).toHaveCSS(
+    "margin-bottom",
+    "14px",
+  );
   await page.getByRole("button", { name: "결제하기", exact: true }).click();
   await expect(companion).toHaveAttribute("data-screen", "cart");
   await expect.poll(() => companion.getAttribute("data-y")).not.toBe(initialY);
