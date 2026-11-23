@@ -64,6 +64,7 @@ export function KioskCompanion({
   const current = useRef(position);
   current.current = position;
   const size = useRef({ width: 540, height: 250 });
+  const isHome = screen === "home";
   const isWaiting = waitingState(state);
   useEffect(() => {
     setElapsed(0);
@@ -75,7 +76,7 @@ export function KioskCompanion({
     );
     return () => clearInterval(timer);
   }, [state, isWaiting]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const update = () => {
       if (document.hidden || !root.current) return;
       const bounds = kiosk.getBoundingClientRect();
@@ -104,20 +105,17 @@ export function KioskCompanion({
         screen === "menu" && !inModal ? `${size.current.height + 12}px` : "0px",
       );
       const modal = kiosk.querySelector<HTMLElement>(".overlay .modal");
-      const sceneReady =
-        screen === "menu"
-          ? !!kiosk.querySelector(".agent-dialogue-space")
-          : screen === "home"
-            ? !!kiosk.querySelector(".welcome-drinks")
-            : true;
+      const dialogue = kiosk.querySelector<HTMLElement>(
+        isHome ? ".welcome-companion-space" : ".agent-dialogue-space",
+      );
+      const sceneReady = (screen !== "menu" && !isHome) || !!dialogue;
       const context = `${screen}:${sceneReady}:${modal?.getAttribute("aria-label") ?? ""}:${kiosk.querySelector(".option-intro h2")?.textContent ?? ""}`;
       // The footer follows real menu/cart layout changes, never new text bubbles.
       const dialogueTop =
-        screen === "menu" && !inModal
-          ? (kiosk.querySelector<HTMLElement>(".agent-dialogue-space")
-              ?.offsetTop ?? 0)
+        isHome || (screen === "menu" && !inModal)
+          ? (dialogue?.offsetTop ?? 0)
           : 0;
-      const key = `${context}:${Math.round(bounds.width)}:${Math.round(size.current.width)}:${Math.round(size.current.height)}:${Math.round(dialogueTop)}`;
+      const key = `${context}:${Math.round(bounds.width)}:${Math.round(size.current.width)}:${Math.round(size.current.height)}:${dialogueTop}:${dialogue?.offsetHeight ?? 0}`;
       if (anchored.current === key) return;
       if (!anchored.current.startsWith(context + ":")) manual.current = false;
       anchored.current = key;
@@ -153,20 +151,15 @@ export function KioskCompanion({
             r.y < stage.height &&
             r.y + r.height > 0,
         );
-      const dialogue = !inModal
-        ? kiosk.querySelector<HTMLElement>(
-            screen === "home" ? ".welcome-drinks" : ".agent-dialogue-space",
-          )
-        : null;
-      const nook = dialogue ? local(dialogue) : null;
+      const nook = dialogue && (isHome || !inModal) ? local(dialogue) : null;
       const inNook =
         nook && nook.y >= 72 && nook.y < stage.height
           ? clampPosition(
               {
                 x: (stage.width - size.current.width) / 2,
                 y:
-                  screen === "home"
-                    ? nook.y + nook.height - size.current.height - 16
+                  isHome
+                    ? nook.y + (nook.height - size.current.height) / 2
                     : nook.y + 12,
               },
               size.current,
@@ -200,7 +193,7 @@ export function KioskCompanion({
       window.removeEventListener("resize", update);
       kiosk.removeEventListener("scroll", update, true);
     };
-  }, [kiosk, screen, collapsed]);
+  }, [kiosk, screen, isHome, collapsed]);
   const feedback = uiText(companionFeedback(state, elapsed));
   const receiving = state === "typing" || state === "hearing";
   const waitingCaption = receiving
@@ -225,8 +218,8 @@ export function KioskCompanion({
     // Use the native 800px kiosk coordinate system for all companion content.
     // The kiosk transform scales the avatar and bubbles together with the menu.
     "--companion-scale": 1,
-    width: `${collapsed ? Math.min(dialogueWidth, 180) : dialogueWidth}px`,
-    height: "250px",
+    width: `${collapsed && !isHome ? Math.min(dialogueWidth, 180) : dialogueWidth}px`,
+    height: isHome ? undefined : "250px",
   } as CSSProperties;
   const inputPending = receiving || state === "transcribing";
   const showWait =
@@ -330,6 +323,8 @@ export function KioskCompanion({
           {recent.map((message, index) => {
             const active =
               !inputPending && !showWait && index === recent.length - 1;
+            const isGreeting = isHome && message.id === "greeting";
+            const Text = isGreeting ? "h1" : "p";
             return (
               <div
                 key={
@@ -339,7 +334,7 @@ export function KioskCompanion({
                 className={
                   message.role === "user"
                     ? "companion-user-bubble"
-                    : "companion-speech"
+                    : `companion-speech${isGreeting ? " is-greeting" : ""}`
                 }
                 aria-label={
                   message.role === "user" &&
@@ -349,12 +344,12 @@ export function KioskCompanion({
                     : undefined
                 }
               >
-                <p
+                <Text
                   className={`companion-text${active ? " companion-caption" : ""}`}
-                  aria-label={active ? "현재 응답 자막" : undefined}
+                  aria-label={active && !isGreeting ? "현재 응답 자막" : undefined}
                 >
                   {message.text}
-                </p>
+                </Text>
                 {message.status === "interrupted" && (
                   <small className="companion-interrupted">
                     말씀 도중 멈췄어요

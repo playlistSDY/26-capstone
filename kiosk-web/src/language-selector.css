@@ -1,23 +1,27 @@
 .language-selector {
+  position: relative;
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
   flex-shrink: 0;
-  background: #f7f8fb;
-  border: 1px solid #dce3ee;
-  border-radius: 12px;
-  padding: 4px 8px;
-  color: #26364b;
-  font-size: 18px;
+  color: #6b7684;
 }
 .language-selector select {
-  font: inherit;
-  min-height: 42px;
-  max-width: 160px;
-  border: 0;
-  background: transparent;
-  color: inherit;
+  appearance: none;
+  min-height: 38px;
+  padding: 7px 27px 7px 30px;
+  background: #fff;
   cursor: pointer;
+}
+.language-selector svg {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  pointer-events: none;
+}
+.language-globe {
+  left: 10px;
+}
+.language-chevron {
+  right: 9px;
 }
 .welcome-header .language-selector {
   margin-left: auto;
@@ -26,21 +30,13 @@
   gap: 8px;
 }
 .kiosk-header .language-selector {
-  font-size: 17px;
-}
-
-.kiosk-header .language-selector {
   position: absolute;
   left: 76px;
-  top: 7px;
-  font-size: 20px;
+  top: 50%;
+  translate: 0 -50%;
 }
 
 /* The language selector must not consume the gap beside the welcome logo. */
 .welcome-header {
   gap: 24px;
-}
-.welcome-header > span {
-  flex-shrink: 0;
-  white-space: nowrap;
 }

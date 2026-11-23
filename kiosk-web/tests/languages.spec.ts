@@ -15,12 +15,14 @@ test("The basic order flow switches languages without changing prices or a saved
     exact: true,
   });
   await language.selectOption("en");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "How would you like",
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    words["안녕하세요. 무엇을 드릴까요?"].en,
   );
   await page
     .getByRole("button", { name: new RegExp(words["포장할게요"].en) })
     .click();
+  await expect(language).toHaveCSS("height", "38px");
+  await expect(page.locator(".kiosk-header .language-globe")).toBeVisible();
   await page
     .getByRole("button", { name: /Vanilla Latte.*4,500/, exact: false })
     .click();
@@ -136,7 +138,7 @@ test("The agent receives a selected language and a spoken preference changes the
   ).toHaveValue("en");
 });
 
-test("Welcome branding, store name and language selector never touch", async ({
+test("Welcome branding and the language selector stay separate", async ({
   page,
 }) => {
   await mockBackend(page);
@@ -145,27 +147,28 @@ test("Welcome branding, store name and language selector never touch", async ({
   );
   await page.setViewportSize({ width: 430, height: 960 });
   await page.goto("/?kiosk=1");
+  const header = page.locator(".welcome-header");
   for (const language of ["ko", "en", "zh", "ja"]) {
     await page
       .getByRole("combobox", { name: "Language / 언어", exact: true })
       .selectOption(language);
-    const geometry = await page
-      .locator(".welcome-header")
-      .evaluate((header) => {
-        const logo = header.querySelector(".brand")!.getBoundingClientRect(),
-          name = header.querySelector(":scope > span")!.getBoundingClientRect(),
-          selector = header
-            .querySelector(".language-selector")!
-            .getBoundingClientRect(),
-          kiosk = header.closest(".kiosk")!;
-        const scale =
-          kiosk.getBoundingClientRect().width /
-          (kiosk as HTMLElement).offsetWidth;
-        return {
-          gap: (name.left - logo.right) / scale,
-          fits: selector.right <= header.getBoundingClientRect().right,
-        };
-      });
+    await expect(
+      header.getByText(words["SWitch 커피"][language] ?? "SWitch 커피", {
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    const geometry = await header.evaluate((node) => {
+      const logo = node.querySelector(".brand")!.getBoundingClientRect();
+      const selector = node
+        .querySelector(".language-selector")!
+        .getBoundingClientRect();
+      const kiosk = node.closest<HTMLElement>(".kiosk")!;
+      const scale = kiosk.getBoundingClientRect().width / kiosk.offsetWidth;
+      return {
+        gap: (selector.left - logo.right) / scale,
+        fits: selector.right <= node.getBoundingClientRect().right,
+      };
+    });
     expect(geometry.gap).toBeGreaterThanOrEqual(23);
     expect(geometry.fits).toBe(true);
   }

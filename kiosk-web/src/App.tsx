@@ -1138,25 +1138,9 @@ export default function App() {
                   />
                   <header className="welcome-header">
                     <Brand large />
-                    <span>{uiText("SWitch 커피")}</span>
                     <LanguageSelector />
                   </header>
-                  <div className="welcome-copy">
-                    <span className="eyebrow">
-                      {uiText("반가워요, 오늘도 SWitch")}
-                    </span>
-                    <h1>
-                      {uiText("오늘은 어디서")}
-                      <br />
-                      {uiText("즐기실 건가요?")}
-                    </h1>
-                    <p>{uiText("취향에 맞는 한 잔을 준비해 드릴게요.")}</p>
-                  </div>
-                  <div className="welcome-drinks" aria-hidden="true">
-                    <ProductImage product={products[0]} />
-                    <ProductImage product={products[1]} />
-                    <ProductImage product={products[2]} />
-                  </div>
+                  <div className="welcome-companion-space" aria-hidden="true" />
                   <div className="place-cards">
                     <button data-guide="place" onClick={() => start("store")}>
                       <span className="place-icon">

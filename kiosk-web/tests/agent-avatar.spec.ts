@@ -210,11 +210,30 @@ test("The character lives inside the kiosk and follows screen changes without co
   const characterBounds = await page
     .locator(".companion-character")
     .boundingBox();
-  expect(characterBounds!.width / kioskBounds!.width).toBeCloseTo(180 / 800, 2);
-  const font = await page
-    .locator(".companion-caption")
-    .evaluate((node) => parseFloat(getComputedStyle(node).fontSize));
-  expect(font).toBe(24);
+  expect(characterBounds!.width / kioskBounds!.width).toBeCloseTo(460 / 800, 2);
+  expect(characterBounds!.x + characterBounds!.width / 2).toBeCloseTo(
+    kioskBounds!.x + kioskBounds!.width / 2,
+    0,
+  );
+  const greeting = page.getByRole("heading", {
+    name: "안녕하세요. 무엇을 드릴까요?",
+  });
+  const greetingBounds = await greeting.boundingBox();
+  expect(greetingBounds!.y).toBeGreaterThan(
+    characterBounds!.y + characterBounds!.height,
+  );
+  const choices = await page.locator(".place-cards").boundingBox();
+  const gap = choices!.y - (greetingBounds!.y + greetingBounds!.height);
+  expect(gap).toBeGreaterThan(0);
+  expect(gap / kioskBounds!.width).toBeLessThan(0.17);
+  for (const text of [
+    "SWitch 커피",
+    "반가워요, 오늘도 SWitch",
+    "오늘은 어디서",
+    "취향에 맞는 한 잔을 준비해 드릴게요.",
+  ]) {
+    await expect(page.getByText(text, { exact: true })).toHaveCount(0);
+  }
   expect(
     await page
       .locator(".kiosk")
@@ -224,6 +243,11 @@ test("The character lives inside the kiosk and follows screen changes without co
   await expect(page.locator(".agent-chat-dialog")).toHaveCount(0);
   const initialY = await companion.getAttribute("data-y");
   await page.getByRole("button", { name: /먹고 갈게요/ }).click();
+  await expect(companion).toHaveAttribute("data-screen", "menu");
+  await expect(companion.locator(".companion-caption")).toHaveCSS(
+    "font-size",
+    "24px",
+  );
   await page.getByRole("button", { name: "디카페인", exact: true }).click();
   await page
     .locator('[data-guide="product"][data-guide-product="latte"]')
@@ -354,7 +378,7 @@ test("The companion keeps the kiosk's proportions across test screens and native
         const dialogue = await page.locator(".kiosk-companion").boundingBox();
         if (stage!.x < -1 || stage!.x + stage!.width > width + 1) return 1;
         return (
-          Math.abs(character!.width / stage!.width - 180 / 800) +
+          Math.abs(character!.width / stage!.width - 460 / 800) +
           Math.abs(dialogue!.width / stage!.width - 640 / 800)
         );
       })
@@ -363,7 +387,7 @@ test("The companion keeps the kiosk's proportions across test screens and native
       .locator(".companion-text")
       .last()
       .evaluate((n) => getComputedStyle(n).fontSize);
-    expect(font).toBe("24px");
+    expect(font).toBe("46px");
   }
   await page.setViewportSize({ width: 1360, height: 1700 });
   await page.getByRole("button", { name: "실제 크기", exact: true }).click();
@@ -372,8 +396,8 @@ test("The companion keeps the kiosk's proportions across test screens and native
       async () =>
         (await page.locator(".companion-character").boundingBox())!.width,
     )
-    .toBeCloseTo(180, 0);
+    .toBeCloseTo(460, 0);
   expect(
     (await page.locator(".kiosk-companion").boundingBox())!.height,
-  ).toBeCloseTo(250, 0);
+  ).toBeCloseTo(600, 0);
 });

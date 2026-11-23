@@ -293,10 +293,6 @@
   }
 }
 
-/* Only the AI demo uses this gentler menu layout. The original kiosk is separate. */
-.agent-stage-layout .kiosk .welcome-drinks {
-  visibility: hidden;
-}
 .agent-stage-layout .kiosk .product-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 30px 22px;
@@ -446,4 +442,55 @@
 }
 .companion-bubbles > div {
   pointer-events: auto;
+}
+
+.kiosk-companion[data-screen="home"] {
+  z-index: 3;
+  height: 600px;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  transition: none;
+}
+.kiosk-companion[data-screen="home"] .companion-character {
+  flex: none;
+  align-self: center;
+  width: 460px;
+}
+.kiosk-companion[data-screen="home"] .avatar-halo {
+  inset: 5% 0 0;
+  background: radial-gradient(
+    ellipse,
+    #ffffffdc,
+    #dce6fb8c 50%,
+    transparent 72%
+  );
+}
+.kiosk-companion[data-screen="home"] .companion-bubbles {
+  align-self: stretch;
+  min-height: 0;
+  height: auto;
+  padding: 0 12px 4px;
+}
+.kiosk-companion[data-screen="home"] .companion-bubbles > :first-child {
+  margin-top: 0;
+}
+.kiosk-companion[data-screen="home"] .is-greeting {
+  align-self: center;
+  padding: 0 12px 10px;
+  color: #1d1d1f;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  text-align: center;
+}
+.kiosk-companion[data-screen="home"] .is-greeting::before {
+  content: none;
+}
+.kiosk-companion[data-screen="home"] .is-greeting .companion-text {
+  font-size: 46px;
+  font-weight: 680;
+  line-height: 1.18;
+  letter-spacing: -1.5px;
+  text-wrap: balance;
 }
