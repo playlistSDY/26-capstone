@@ -1499,7 +1499,7 @@ button:disabled:active {
 }
 .dock-line {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 110px 100px 25px;
+  grid-template-columns: minmax(0, 1fr) 110px minmax(100px, max-content) 25px;
   align-items: center;
   gap: 19px;
   min-height: 75px;
@@ -1673,7 +1673,7 @@ button:disabled:active {
 }
 .dock-body .dock-line {
   gap: 15px;
-  grid-template-columns: minmax(0, 1fr) 108px 92px 22px;
+  grid-template-columns: minmax(0, 1fr) 108px minmax(92px, max-content) 22px;
 }
 .back-button {
   display: flex;

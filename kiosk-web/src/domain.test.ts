@@ -109,7 +109,7 @@ test("hidden ice choices on HOT drinks do not prevent merging", () => {
 });
 test("line limits, duplicate IDs, sold out items, and total limit are enforced", () => {
   assert.throws(() => putLine([], line("bad", 0)));
-  assert.throws(() => putLine([line("one", 20)], line("two")));
+  assert.throws(() => putLine([line("one", 999)], line("two")));
   assert.throws(() => putLine([line()], line()));
   assert.throws(() =>
     putLine([], {
@@ -119,12 +119,12 @@ test("line limits, duplicate IDs, sold out items, and total limit are enforced",
     }),
   );
   const many = Array.from({ length: 5 }, (_, i) => ({
-    ...line(String(i), 20),
+    ...line(String(i), 250),
     options: { ...line().options, shots: i % 4, syrup: Math.floor(i / 4) },
   }));
   assert.throws(
     () => many.reduce((cart, l) => putLine(cart, l), [] as CartLine[]),
-    /99/,
+    /999/,
   );
 });
 test("invalid customizations cannot be saved", () => {
@@ -249,4 +249,23 @@ test("unsupported cream options are rejected and old drafts keep their default r
   assert.equal(cart.length, 1);
   assert.equal(cart[0].quantity, 2);
   assert.equal(cart[0].options.whippedCream, "normal");
+});
+
+
+test("999 drinks survive merging, draft restore and checkout while 1000 is rejected", () => {
+  const storage=new MemoryStorage();
+  const max=putLine([line('first',998)],line('last',1));
+  assert.equal(max.length,1);assert.equal(max[0].quantity,999);
+  assert.throws(()=>putLine(max,line('too-many',1)),/999/);
+  assert.throws(()=>putLine([],line('too-large',1000)),/999/);
+  writeDraft(storage,'takeout',max);
+  const restored=readDraft(storage)!;
+  assert.equal(restored.lines[0].quantity,999);
+  const order=completeOrder(storage,{id:'max-quantity',place:'takeout',method:'card',lines:restored.lines});
+  assert.equal(order.lines[0].quantity,999);
+  assert.equal(order.total,unitPrice(coffee,max[0].options)*999);
+  const first=line('one',500), second={...line('two',499),options:{...line().options,shots:1}};
+  const mixed=putLine([first],second);
+  assert.equal(mixed.reduce((n,l)=>n+l.quantity,0),999);
+  assert.throws(()=>putLine(mixed,{...line('three'),options:{...line().options,shots:2}}),/999/);
 });

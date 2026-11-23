@@ -1,5 +1,7 @@
 import { findProduct, assetBase, type Product } from "./catalog";
 
+export const MAX_ORDER_QUANTITY = 999;
+
 export type Place = "store" | "takeout";
 export type Options = {
   temperature: "ice" | "hot" | null;
@@ -167,9 +169,9 @@ export function putLine(
   if (
     !Number.isInteger(next.quantity) ||
     next.quantity < 1 ||
-    next.quantity > 20
+    next.quantity > MAX_ORDER_QUANTITY
   )
-    throw new Error("한 메뉴는 1~20개까지 담을 수 있어요.");
+    throw new Error("한 메뉴는 1~999개까지 담을 수 있어요.");
   const normalized = { ...next, options: normalizeOptions(next.options) };
   const base = lines.filter((l) => l.id !== replaceId);
   const same = base.find(
@@ -177,15 +179,15 @@ export function putLine(
       l.productId === normalized.productId &&
       JSON.stringify(l.options) === JSON.stringify(normalized.options),
   );
-  if (same && same.quantity + next.quantity > 20)
-    throw new Error("같은 옵션의 메뉴는 20개까지 담을 수 있어요.");
+  if (same && same.quantity + next.quantity > MAX_ORDER_QUANTITY)
+    throw new Error("같은 옵션의 메뉴는 999개까지 담을 수 있어요.");
   const updated = same
     ? base.map((l) =>
         l.id === same.id ? { ...l, quantity: l.quantity + next.quantity } : l,
       )
     : [...base, normalized];
-  if (updated.reduce((sum, l) => sum + l.quantity, 0) > 99)
-    throw new Error("한 번에 총 99개까지 주문할 수 있어요.");
+  if (updated.reduce((sum, l) => sum + l.quantity, 0) > MAX_ORDER_QUANTITY)
+    throw new Error("한 번에 총 999개까지 주문할 수 있어요.");
   return updated;
 }
 
@@ -204,7 +206,7 @@ export function readDraft(
       !data ||
       !["store", "takeout"].includes(data.place) ||
       !Array.isArray(data.lines) ||
-      data.lines.length > 99
+      data.lines.length > MAX_ORDER_QUANTITY
     )
       return null;
     let valid: CartLine[] = [];
