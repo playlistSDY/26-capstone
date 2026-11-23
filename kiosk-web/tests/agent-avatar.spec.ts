@@ -153,6 +153,12 @@ test("The mouth waits for actual PCM playback and closes immediately on interrup
   expect(inSpace.menu.bottom).toBeLessThanOrEqual(inSpace.space.y + 1);
   expect(inSpace.actor.y).toBeGreaterThanOrEqual(inSpace.space.y - 1);
   expect(inSpace.actor.bottom).toBeLessThanOrEqual(inSpace.space.bottom + 1);
+  const character = await f.avatar.boundingBox();
+  const bubbles = await page.locator(".companion-bubbles").boundingBox();
+  expect(
+    character!.height / (inSpace.actor.bottom - inSpace.actor.y),
+  ).toBeGreaterThan(0.9);
+  expect(character!.x + character!.width).toBeLessThanOrEqual(bubbles!.x);
   await page.screenshot({ path: "/tmp/switch-avatar-speaking.png" });
   await page.getByRole("button", { name: "말 끊기", exact: true }).click();
   await expect(f.avatar).toHaveAttribute("data-mouth", "closed");

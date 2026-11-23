@@ -225,7 +225,10 @@ export function KioskCompanion({
     // Use the native 800px kiosk coordinate system for all companion content.
     // The kiosk transform scales the avatar and bubbles together with the menu.
     "--companion-scale": 1,
-    width: `${collapsed && !isHome ? Math.min(dialogueWidth, 180) : dialogueWidth}px`,
+    width:
+      collapsed && !isHome
+        ? `min(${dialogueWidth}px, var(--companion-character-width))`
+        : `${dialogueWidth}px`,
     height: isHome ? undefined : "250px",
   } as CSSProperties;
   const inputPending = receiving || state === "transcribing";

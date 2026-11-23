@@ -26,6 +26,7 @@
   bottom: 0;
 }
 .kiosk-companion {
+  --companion-character-width: 180px;
   position: absolute;
   top: 0;
   left: 0;
@@ -39,8 +40,8 @@
 .companion-character {
   position: relative;
   display: block;
-  flex: 0 0 calc(180px / var(--companion-scale));
-  width: calc(180px / var(--companion-scale));
+  flex: 0 0 calc(var(--companion-character-width) / var(--companion-scale));
+  width: calc(var(--companion-character-width) / var(--companion-scale));
   align-self: flex-end;
   padding: 0;
   pointer-events: auto;
@@ -304,6 +305,14 @@
 .agent-dialogue-space {
   height: var(--agent-dialogue-space, 0px);
   flex-shrink: 0;
+}
+.kiosk:not(:has(> .overlay)) > .kiosk-companion[data-screen="menu"] {
+  --companion-character-width: 238px;
+}
+.kiosk:not(:has(> .overlay))
+  > .kiosk-companion[data-screen="menu"]
+  .companion-character {
+  align-self: center;
 }
 
 .agent-stage-layout .order-dock:has(.dock-empty) {
