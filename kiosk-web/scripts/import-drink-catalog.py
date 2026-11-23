@@ -30,8 +30,10 @@ LEGACY={
 '감귤 레몬 에이드':('lemon','감귤 레몬 에이드',4500),'플레인 요거트 플랫치노':('yogurt','플레인 요거트 플랫치노',4900),
 '캐모마일':('chamomile','캐모마일 티',3500),'얼그레이':('earlgrey','얼그레이 티',3500),
 }
-RECOMMENDED=['카페 아메리카노','카페 라떼','바닐라 라떼','연유 카페 라떼','카라멜 마끼아또','카페 모카','화이트 초콜릿 모카','민트 모카','콜드브루','콜드브루 라떼','흑당 콜드브루','말차라떼']
-DECAF={'카페 아메리카노','카페 라떼','바닐라 라떼','카페 모카','화이트 초콜릿 모카','민트 모카','카푸치노','헤이즐넛 아메리카노','꿀화이트 아메리카노','시그니처 라떼','에스프레소'}
+POLICY=json.loads((Path(__file__).with_name('drink-photo-policy.json')).read_text(encoding='utf-8'))
+RECOMMENDED=POLICY['recommended']
+DECAF_PHOTOS=set(POLICY['decafPhotos'])
+WHIPPED_CREAM=set(POLICY['whippedCreamMenus'])
 MILKLESS_COFFEE={'카페 아메리카노','에스프레소','헤이즐넛 아메리카노','꿀화이트 아메리카노','콜드브루'}
 DESCRIPTIONS={
 '커피':'커피의 풍미를 즐기는 한 잔','논커피':'커피 없이 즐기는 부드럽고 달콤한 한 잔',
@@ -47,31 +49,37 @@ def main():
     for file in sorted(args.folder.glob('*.png')):
         name=unicodedata.normalize('NFC',file.stem);match=re.match(r'^(HOT|ICED)\s+(.+)$',name)
         base=match[2] if match else name;temperature='hot' if match and match[1]=='HOT' else 'ice'
-        if temperature in groups[base]:raise ValueError('Duplicate temperature: '+base)
+        group=(base,name+'.png' in DECAF_PHOTOS)
+        if temperature in groups[group]:raise ValueError('Duplicate temperature: '+base)
         data=file.read_bytes();sha=hashlib.sha256(data).hexdigest();extension='.jpg' if data.startswith(b'\xff\xd8') else '.png';filename='drink-'+sha[:20]+extension
         shutil.copyfile(file,destination/filename)
-        groups[base][temperature]={'path':'assets/drinks/'+filename,'source':unicodedata.normalize('NFC',file.name),'sha256':sha}
+        groups[group][temperature]={'path':'assets/drinks/'+filename,'source':unicodedata.normalize('NFC',file.name),'sha256':sha}
         source_names.append(name)
     category_by_name={}
     for category,names in GROUPS.items():
         for name in names.split('|'):
             if name in category_by_name:raise ValueError('Duplicate category: '+name)
             category_by_name[name]=category
-    assert set(category_by_name)==set(groups), {'unclassified':sorted(set(groups)-set(category_by_name)),'missing':sorted(set(category_by_name)-set(groups))}
-    order=RECOMMENDED+sorted(set(groups)-set(RECOMMENDED))
+    assert set(category_by_name)=={base for base,_ in groups}, 'Photo policy contains unknown/missing menu names'
+    assert DECAF_PHOTOS <= {unicodedata.normalize('NFC',p.name) for p in args.folder.glob('*.png')}, 'Missing reviewed decaf photo'
+    assert set(RECOMMENDED) <= set(category_by_name)
+    order=sorted(groups,key=lambda key:(RECOMMENDED.index(key[0]) if key[0] in RECOMMENDED and not key[1] else len(RECOMMENDED),key))
     result=[]
-    for base in order:
-        category=category_by_name[base];photos=groups[base]
+    for base,is_decaf in order:
+        category=category_by_name[base];photos=groups[(base,is_decaf)]
         id,name,price=LEGACY.get(base,('drink-'+hashlib.sha256(base.encode()).hexdigest()[:12],base,{'커피':4200,'논커피':4500,'티':3500,'에이드':4500,'블렌디드':5500,'과일 주스':4800,'병음료':2800}[category]))
         packaged=category=='병음료'
         if base=='이디야 워터':price=1500
-        categories=(["추천 메뉴"] if base in RECOMMENDED else [])+[category]
-        if base in DECAF:categories.append('디카페인')
+        if is_decaf:
+            if (base,False) in groups:id+='-decaf'
+            name='디카페인 '+name
+            price+=500  # Preserve the former decaf surcharge in the displayed base price.
+        categories=(["추천 메뉴"] if base in RECOMMENDED and not is_decaf else [])+['디카페인' if is_decaf else category]
         coffee=category=='커피' or base in {'아샷추 복숭아','제로슈가 아샷추 복숭아'}
         milk=(category=='논커피' and base not in {'살얼음 식혜','생수박 과일 화채'}) or (category=='블렌디드' and '요거트' in base) or ('쉐이크' in base) or (coffee and base not in MILKLESS_COFFEE and '아샷추' not in base) or base in {'로열 밀크티','말차폼 자스민티'}
         row={'id':id,'name':name,'sourceName':base,'price':price,'priceSource':'prototype','description':DESCRIPTIONS[category],'categories':categories,
              'temperatures':[t for t in ['ice','hot'] if t in photos],'temperatureImages':{t:v['path'] for t,v in photos.items()},
-             'sourcePhotos':list(photos.values()),'coffee':coffee,'milk':milk,'decaf':base in DECAF,
+             'sourcePhotos':list(photos.values()),'coffee':coffee,'milk':milk,'decaf':is_decaf,'decafOnly':is_decaf,'whippedCream':base in WHIPPED_CREAM,
              'packaged':packaged,'fixedOptions':packaged or base=='아포가토 오리지널','fixedSize':packaged or base in {'아포가토 오리지널','에스프레소'},
              'iceAdjustable':not packaged and base not in {'에스프레소','아포가토 오리지널','에스프레소 쉐이크'}}
         if base=='얼그레이':row['soldOut']=True
@@ -81,7 +89,7 @@ def main():
     for file in destination.glob('drink-*'):
         if file.is_file() and file.name not in used:file.unlink()
     (ROOT/'src/drink-catalog.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    report={'sourceFiles':len(source_names),'products':len(result),'temperaturePairs':sum(len(p['temperatures'])==2 for p in result),'hotOnly':sum(p['temperatures']==['hot'] for p in result),'iceOnly':sum(p['temperatures']==['ice'] for p in result),'primaryCategories':dict(Counter(category_by_name.values())),'imagePixelsModified':False}
+    report={'sourceFiles':len(source_names),'products':len(result),'decafItems':sum(p['decafOnly'] for p in result),'whippedCreamItems':sum(p['whippedCream'] for p in result),'temperaturePairs':sum(len(p['temperatures'])==2 for p in result),'hotOnly':sum(p['temperatures']==['hot'] for p in result),'iceOnly':sum(p['temperatures']==['ice'] for p in result),'primaryCategories':dict(Counter(p['categories'][-1] for p in result)),'imagePixelsModified':False}
     (ROOT/'qa').mkdir(exist_ok=True)
     (ROOT/'qa/drink-import.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print(json.dumps(report,ensure_ascii=False,indent=2))

@@ -76,7 +76,7 @@ export function sampleReceiptOrder(): Order {
       id: "sample-americano",
       product: americano,
       quantity: 2,
-      options: { ...defaults(americano), temperature: "ice" as const },
+      options: { ...defaults(americano), temperature: "hot" as const },
     },
     {
       id: "sample-latte",

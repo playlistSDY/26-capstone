@@ -1023,7 +1023,7 @@ export default function App() {
                               key={product.id}
                               className={`product-card ${product.soldOut ? "sold-out" : ""}`}
                               disabled={product.soldOut}
-                              aria-label={`${product.name} ${money(product.price + (category === "디카페인" ? 500 : 0))}${product.soldOut ? " 품절" : ""}`}
+                              aria-label={`${product.name} ${money(product.price + (category === "디카페인" && !product.decafOnly ? 500 : 0))}${product.soldOut ? " 품절" : ""}`}
                               onClick={() => configure(product)}
                             >
                               <div className="product-picture">
@@ -1041,7 +1041,10 @@ export default function App() {
                               <span>
                                 {money(
                                   product.price +
-                                    (category === "디카페인" ? 500 : 0),
+                                    (category === "디카페인" &&
+                                    !product.decafOnly
+                                      ? 500
+                                      : 0),
                                 )}
                               </span>
                             </button>
@@ -1646,7 +1649,7 @@ export default function App() {
                       주세요.
                     </p>
                   )}
-                  {editor.product.decaf && (
+                  {editor.product.decaf && !editor.product.decafOnly && (
                     <div className="option-group">
                       <h3>원두</h3>
                       {optionButtons("decaf", [
@@ -1670,6 +1673,7 @@ export default function App() {
                         <h3>얼음</h3>
                         {optionButtons("ice", [
                           { value: "normal", label: "기본" },
+                          { value: "more", label: "많이" },
                           { value: "less", label: "적게" },
                           { value: "none", label: "없이" },
                         ])}
@@ -1685,6 +1689,17 @@ export default function App() {
                       ])}
                     </div>
                   )}
+                  {editor.product.whippedCream &&
+                    !editor.product.fixedOptions && (
+                      <div className="option-group">
+                        <h3>휘핑크림</h3>
+                        {optionButtons("whippedCream", [
+                          { value: "normal", label: "기본" },
+                          { value: "extra", label: "휘핑 추가" },
+                          { value: "none", label: "휘핑 제거" },
+                        ])}
+                      </div>
+                    )}
                   {editor.product.coffee && !editor.product.fixedOptions && (
                     <div className="option-group option-counter">
                       <div>
@@ -1703,7 +1718,7 @@ export default function App() {
                   {!editor.product.fixedOptions && (
                     <div className="option-group option-counter">
                       <div>
-                        <h3>바닐라 시럽 추가</h3>
+                        <h3>시럽 추가</h3>
                         <p>1회당 +300원</p>
                       </div>
                       <Counter

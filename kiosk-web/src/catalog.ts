@@ -28,6 +28,8 @@ export type Product = {
   coffee: boolean;
   milk: boolean;
   decaf: boolean;
+  decafOnly?: boolean;
+  whippedCream?: boolean;
   packaged: boolean;
   fixedOptions: boolean;
   fixedSize: boolean;

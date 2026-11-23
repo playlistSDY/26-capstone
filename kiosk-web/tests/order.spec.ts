@@ -8,10 +8,10 @@ test.beforeEach(async ({ page }) => {
 async function addCoffee(page: Page) {
   await page.getByRole("button", { name: /포장할게요/ }).click();
   await page
-    .getByRole("button", { name: "아메리카노 3,200원", exact: true })
+    .getByRole("button", { name: "바닐라라떼 4,500원", exact: true })
     .click();
   await page.getByRole("button", { name: /차갑게/ }).click();
-  await page.getByRole("button", { name: /3,200원 담기/ }).click();
+  await page.getByRole("button", { name: /4,500원 담기/ }).click();
 }
 async function checkout(page: Page) {
   await page.getByRole("button", { name: "결제하기", exact: true }).click();
@@ -28,9 +28,9 @@ test("complete takeaway order with required options, editing, surcharges and rec
   await page.goto("/");
   await page.getByRole("button", { name: /포장할게요/ }).click();
   await page
-    .getByRole("button", { name: "아메리카노 3,200원", exact: true })
+    .getByRole("button", { name: "바닐라라떼 4,500원", exact: true })
     .click();
-  await page.getByRole("button", { name: /3,200원 담기/ }).click();
+  await page.getByRole("button", { name: /4,500원 담기/ }).click();
   await expect(page.getByRole("alert")).toContainText("차갑게");
   await page.getByRole("button", { name: /차갑게/ }).click();
   await page.getByRole("button", { name: /라지/ }).click();
@@ -43,14 +43,14 @@ test("complete takeaway order with required options, editing, surcharges and rec
   await page
     .getByRole("button", { name: "메뉴 수량 늘리기", exact: true })
     .click();
-  await page.getByRole("button", { name: /9,000원 담기/ }).click();
+  await page.getByRole("button", { name: /11,600원 담기/ }).click();
   await page.getByRole("button", { name: "결제하기", exact: true }).click();
   await expect(
     page.getByText("ICE · 라지 · 샷 1 추가 · 시럽 1 추가"),
   ).toBeVisible();
-  await page.getByRole("button", { name: "아메리카노 옵션 변경" }).click();
+  await page.getByRole("button", { name: "바닐라라떼 옵션 변경" }).click();
   await page.getByRole("button", { name: /따뜻하게/ }).click();
-  await page.getByRole("button", { name: /9,000원 수정하기/ }).click();
+  await page.getByRole("button", { name: /11,600원 수정하기/ }).click();
   await expect(
     page.getByText("HOT · 라지 · 샷 1 추가 · 시럽 1 추가"),
   ).toBeVisible();
@@ -65,7 +65,7 @@ test("complete takeaway order with required options, editing, surcharges and rec
   await expect(page.locator(".order-number>strong")).toHaveText("001");
   await page.keyboard.press("Control+Alt+h");
   await page.getByRole("button", { name: /주문 001/ }).click();
-  await expect(page.getByRole("dialog")).toContainText("9,000원");
+  await expect(page.getByRole("dialog")).toContainText("11,600원");
   await page.getByRole("button", { name: "확인", exact: true }).click();
   await page
     .getByRole("button", { name: "처음으로 돌아가기", exact: true })
@@ -143,7 +143,7 @@ test("refresh restores cart, removing last item blocks payment", async ({
   await page.reload();
   await page.getByRole("button", { name: "결제하기", exact: true }).click();
   await expect(page.getByText("ICE · 레귤러", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "아메리카노 삭제" }).click();
+  await page.getByRole("button", { name: "바닐라라떼 삭제" }).click();
   await expect(
     page.getByRole("button", { name: "확인하고 결제하기", exact: true }),
   ).toBeDisabled();
@@ -227,14 +227,14 @@ test("order dock supports editing, review before payment, and clearing", async (
   await page.goto("/");
   await addCoffee(page);
   const dock = page.getByRole("region", { name: "현재 주문 내역" });
-  await expect(dock).toContainText("아메리카노");
+  await expect(dock).toContainText("바닐라라떼");
   await dock
-    .getByRole("button", { name: "아메리카노 주문 수량 늘리기" })
+    .getByRole("button", { name: "바닐라라떼 주문 수량 늘리기" })
     .click();
-  await expect(dock.locator(".cart-tally strong")).toHaveText("6,400원");
-  await dock.getByRole("button", { name: "아메리카노 옵션 변경" }).click();
+  await expect(dock.locator(".cart-tally strong")).toHaveText("9,000원");
+  await dock.getByRole("button", { name: "바닐라라떼 옵션 변경" }).click();
   await page.getByRole("button", { name: /따뜻하게/ }).click();
-  await page.getByRole("button", { name: "6,400원 수정하기" }).click();
+  await page.getByRole("button", { name: "9,000원 수정하기" }).click();
   await expect(dock).toContainText("HOT · 레귤러");
   await dock.getByRole("button", { name: "결제하기", exact: true }).click();
   await expect(page.getByRole("heading", { name: /주문 내역/ })).toBeVisible();
@@ -298,7 +298,7 @@ test("inactivity warning preserves the cart until its countdown expires", async 
   await page.getByRole("button", { name: "계속 주문할게요" }).click();
   await expect(
     page.getByRole("region", { name: "현재 주문 내역" }),
-  ).toContainText("아메리카노");
+  ).toContainText("바닐라라떼");
   await page.clock.runFor(121000);
   await expect(
     page.getByRole("dialog", { name: "주문을 계속할까요?" }),
@@ -316,10 +316,10 @@ test("order list scrolls independently with both wheel and up/down buttons", asy
   await page.goto("/");
   await page.getByRole("button", { name: /포장할게요/ }).click();
   for (const [name, price] of [
-    ["아메리카노", "3,200"],
-    ["카페라떼", "4,200"],
     ["바닐라라떼", "4,500"],
     ["연유라떼", "4,500"],
+    ["복숭아 아이스티", "3,500"],
+    ["감귤 레몬 에이드", "4,500"],
   ]) {
     await page
       .getByRole("button", { name: `${name} ${price}원`, exact: true })

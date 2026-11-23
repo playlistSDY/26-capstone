@@ -14,11 +14,11 @@ import {
   type CartLine,
 } from "./domain";
 
-const coffee = findProduct("americano")!,
+const coffee = findProduct("vanilla")!,
   latte = findProduct("latte")!;
 const line = (id = "one", quantity = 1): CartLine => ({
   id,
-  productId: "americano",
+  productId: "vanilla",
   quantity,
   options: { ...defaults(coffee), temperature: "ice" },
 });
@@ -129,7 +129,10 @@ test("line limits, duplicate IDs, sold out items, and total limit are enforced",
 });
 test("invalid customizations cannot be saved", () => {
   assert.match(
-    validateOptions(coffee, { ...line().options, milk: "oat" })!,
+    validateOptions(findProduct("americano")!, {
+      ...defaults(findProduct("americano")!),
+      milk: "oat",
+    })!,
     /없는 옵션/,
   );
   assert.match(
@@ -142,7 +145,7 @@ test("draft roundtrip and corrupted draft recovery", () => {
   const storage = new MemoryStorage();
   writeDraft(storage, "takeout", [line()]);
   assert.equal(readDraft(storage)?.place, "takeout");
-  assert.equal(readDraft(storage)?.lines[0].productId, "americano");
+  assert.equal(readDraft(storage)?.lines[0].productId, "vanilla");
   storage.setItem("switch.kiosk.draft.v1", "{bad json");
   assert.equal(readDraft(storage), null);
   storage.setItem(
@@ -195,4 +198,55 @@ test("failed persistence never silently clears a draft", () => {
     }),
   );
   assert.equal(readDraft(storage)?.lines.length, 1);
+});
+
+test("whipped cream and extra ice survive draft restore, distinguish cart lines and reach the receipt", () => {
+  const product = findProduct("mocha")!,
+    storage = new MemoryStorage();
+  const options = {
+    ...defaults(product),
+    temperature: "ice" as const,
+    ice: "more" as const,
+    whippedCream: "none" as const,
+  };
+  const first: CartLine = {
+    id: "cream-off",
+    productId: product.id,
+    quantity: 1,
+    options,
+  };
+  let cart = putLine([], first);
+  cart = putLine(cart, {
+    ...first,
+    id: "cream-extra",
+    options: { ...options, whippedCream: "extra" },
+  });
+  assert.equal(cart.length, 2);
+  assert.equal(unitPrice(product, options), product.price);
+  writeDraft(storage, "takeout", cart);
+  const restored = readDraft(storage)!.lines;
+  assert.deepEqual(restored, cart);
+  const order = completeOrder(storage, {
+    id: "cream-options",
+    place: "takeout",
+    method: "card",
+    lines: restored,
+  });
+  assert.match(order.lines[0].snapshot!.optionsLabel, /얼음 많이/);
+  assert.match(order.lines[0].snapshot!.optionsLabel, /휘핑 제거/);
+  assert.match(order.lines[1].snapshot!.optionsLabel, /휘핑 추가/);
+  assert.equal(order.total, product.price * 2);
+});
+
+test("unsupported cream options are rejected and old drafts keep their default recipe", () => {
+  const coffee = findProduct("americano")!;
+  assert.ok(
+    validateOptions(coffee, { ...defaults(coffee), whippedCream: "extra" }),
+  );
+  // Existing drafts did not have a whippedCream field; normalize before merging.
+  const { whippedCream: _, ...legacy } = line().options;
+  const cart = putLine([line()], { ...line("legacy"), options: legacy });
+  assert.equal(cart.length, 1);
+  assert.equal(cart[0].quantity, 2);
+  assert.equal(cart[0].options.whippedCream, "normal");
 });

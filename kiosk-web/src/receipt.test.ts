@@ -55,7 +55,7 @@ test("completed orders keep names and prices when the menu changes", () => {
         id: "line",
         productId: p.id,
         quantity: 2,
-        options: { ...defaults(p), temperature: "ice" },
+        options: { ...defaults(p), temperature: "hot" },
       },
     ],
   });
