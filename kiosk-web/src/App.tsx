@@ -1,3 +1,6 @@
+import { LanguageSelector } from "./LanguageSelector";
+import { useLocale } from "./i18n";
+import { uiText } from "./i18n";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
@@ -124,7 +127,7 @@ function ProductImage({
     <img
       className={className}
       src={productImage(product, temperature)}
-      alt={product.name}
+      alt={uiText(product.name)}
       data-temperature={temperature ?? product.temperatures[0]}
       draggable={false}
       decoding="async"
@@ -147,15 +150,15 @@ function Counter({
   return (
     <div className="counter">
       <button
-        aria-label={`${label} 줄이기`}
+        aria-label={uiText(`${label} 줄이기`)}
         disabled={value <= min}
         onClick={() => onChange(value - 1)}
       >
         <Minus size={19} />
       </button>
-      <strong aria-label={label}>{value}</strong>
+      <strong aria-label={uiText(label)}>{uiText(value)}</strong>
       <button
-        aria-label={`${label} 늘리기`}
+        aria-label={uiText(`${label} 늘리기`)}
         disabled={value >= max}
         onClick={() => onChange(value + 1)}
       >
@@ -199,7 +202,7 @@ function Modal({
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-label={uiText(title)}
         className={`modal ${className}`}
         onKeyDown={(e) => {
           if (e.key === "Escape" && !closeDisabled) {
@@ -238,17 +241,17 @@ function Modal({
         }}
       >
         <div className="modal-top">
-          <span>{title}</span>
+          <span>{uiText(title)}</span>
           <button
             className="icon-button"
-            aria-label="닫기"
+            aria-label={uiText("닫기")}
             disabled={closeDisabled}
             onClick={onClose}
           >
             <X />
           </button>
         </div>
-        {children}
+        {uiText(children)}
       </div>
     </div>
   );
@@ -269,7 +272,7 @@ function PaymentPanel({
 }) {
   return (
     <Modal
-      title={methodName(payment.method)}
+      title={uiText(methodName(payment.method))}
       dismissOnBackdrop={false}
       onClose={onCancel}
       closeDisabled={payment.status === "approved"}
@@ -287,6 +290,7 @@ function PaymentPanel({
 }
 
 export default function App() {
+  useLocale();
   const [initial] = useState(() => readDraft(localStorage));
   const [screen, setScreen] = useState<Screen>(initial ? "menu" : "home");
   const [place, setPlace] = useState<Place>(initial?.place ?? "store");
@@ -694,83 +698,90 @@ export default function App() {
     items: { value: Options[K]; label: string; extra?: string }[],
   ) => (
     <div className="choice-row">
-      {items.map((item) => (
-        <button
-          key={String(item.value)}
-          className={`choice ${editor?.options[key] === item.value ? "selected" : ""}`}
-          aria-pressed={editor?.options[key] === item.value}
-          onClick={() => editOption(key, item.value)}
-        >
-          <span>{item.label}</span>
-          {item.extra && <small>{item.extra}</small>}
-          {editor?.options[key] === item.value && <Check size={19} />}
-        </button>
-      ))}
+      {uiText(
+        items.map((item) => (
+          <button
+            key={String(item.value)}
+            className={`choice ${editor?.options[key] === item.value ? "selected" : ""}`}
+            aria-pressed={editor?.options[key] === item.value}
+            onClick={() => editOption(key, item.value)}
+          >
+            <span>{uiText(item.label)}</span>
+            {uiText(item.extra && <small>{uiText(item.extra)}</small>)}
+            {uiText(editor?.options[key] === item.value && <Check size={19} />)}
+          </button>
+        )),
+      )}
     </div>
   );
   return (
     <div className={`studio ${standalone ? "standalone" : ""}`}>
-      {!standalone && (
-        <div className="studio-bar">
-          <div className="studio-title">
-            <span className="live-dot" />
-            SWitch <span>키오스크 미리보기</span>
-          </div>
-          <div className="studio-actions">
-            <label>
-              결제 테스트{" "}
-              <select
-                aria-label="결제 테스트 결과"
-                value={outcome}
-                disabled={
-                  !!payment &&
-                  ["reading", "processing", "approved"].includes(payment.status)
-                }
-                onChange={(e) => setOutcome(e.target.value as Outcome)}
+      {uiText(
+        !standalone && (
+          <div className="studio-bar">
+            <div className="studio-title">
+              <span className="live-dot" />
+              SWitch <span>{uiText("키오스크 미리보기")}</span>
+            </div>
+            <div className="studio-actions">
+              <label>
+                {uiText("결제 테스트")}
+                {uiText(" ")}
+                <select
+                  aria-label={uiText("결제 테스트 결과")}
+                  value={outcome}
+                  disabled={
+                    !!payment &&
+                    ["reading", "processing", "approved"].includes(
+                      payment.status,
+                    )
+                  }
+                  onChange={(e) => setOutcome(e.target.value as Outcome)}
+                >
+                  <option value="success">{uiText("승인 성공")}</option>
+                  <option value="failure">{uiText("승인 실패")}</option>
+                  <option value="timeout">{uiText("응답 없음")}</option>
+                </select>
+              </label>
+              <button
+                onClick={() => {
+                  setReceiptOrder(sampleReceiptOrder());
+                  setReceiptSample(true);
+                  setOverlay("receipt");
+                }}
               >
-                <option value="success">승인 성공</option>
-                <option value="failure">승인 실패</option>
-                <option value="timeout">응답 없음</option>
-              </select>
-            </label>
-            <button
-              onClick={() => {
-                setReceiptOrder(sampleReceiptOrder());
-                setReceiptSample(true);
-                setOverlay("receipt");
-              }}
-            >
-              <Printer size={15} />
-              영수증 시안
-            </button>
-            <button onClick={showHistory}>
-              <ReceiptText size={15} />
-              주문 이력
-            </button>
-            <button onClick={() => setOverlay("printer")}>
-              <Settings2 size={15} />
-              프린터 설정
-            </button>
-            <button onClick={() => setFit(!fit)}>
-              {fit ? "실제 크기" : "화면 맞춤"}
-            </button>
-            <button
-              aria-label="전체화면"
-              onClick={() => {
-                if (document.fullscreenElement)
-                  document.exitFullscreen().catch(() => {});
-                else
-                  surface.current
-                    ?.requestFullscreen()
-                    .catch(() =>
-                      setToast("브라우저에서 전체화면을 지원하지 않아요."),
-                    );
-              }}
-            >
-              <Expand size={17} />
-            </button>
+                <Printer size={15} />
+                {uiText("영수증 시안")}
+              </button>
+              <button onClick={showHistory}>
+                <ReceiptText size={15} />
+                {uiText("주문 이력")}
+              </button>
+              <button onClick={() => setOverlay("printer")}>
+                <Settings2 size={15} />
+                {uiText("프린터 설정")}
+              </button>
+              <button onClick={() => setFit(!fit)}>
+                {uiText(fit ? "실제 크기" : "화면 맞춤")}
+              </button>
+              <button
+                aria-label={uiText("전체화면")}
+                onClick={() => {
+                  if (document.fullscreenElement)
+                    document.exitFullscreen().catch(() => {});
+                  else
+                    surface.current
+                      ?.requestFullscreen()
+                      .catch(() =>
+                        setToast("브라우저에서 전체화면을 지원하지 않아요."),
+                      );
+                }}
+              >
+                <Expand size={17} />
+              </button>
+            </div>
           </div>
-        </div>
+        ),
       )}
       <div
         className={`preview-surface ${fit ? "fit" : "actual"}`}
@@ -786,1018 +797,1252 @@ export default function App() {
           <main
             className="kiosk"
             style={{ transform: `scale(${fit ? scale : 1})` }}
-            aria-label="SWitch 주문 키오스크"
+            aria-label={uiText("SWitch 주문 키오스크")}
           >
-            {screen === "home" ? (
-              <section className="home-screen">
-                <button
-                  className="exit-hotspot"
-                  aria-label="키오스크 종료 메뉴"
-                  onClick={tapExitCorner}
-                />
-                <header className="welcome-header">
-                  <Brand large />
-                  <span>SWitch 커피</span>
-                </header>
-                <div className="welcome-copy">
-                  <span className="eyebrow">반가워요, 오늘도 SWitch</span>
-                  <h1>
-                    오늘은 어디서
-                    <br />
-                    즐기실 건가요?
-                  </h1>
-                  <p>취향에 맞는 한 잔을 준비해 드릴게요.</p>
-                </div>
-                <div className="welcome-drinks" aria-hidden="true">
-                  <ProductImage product={products[0]} />
-                  <ProductImage product={products[1]} />
-                  <ProductImage product={products[2]} />
-                </div>
-                <div className="place-cards">
-                  <button onClick={() => start("store")}>
-                    <span className="place-icon">
-                      <Store size={47} strokeWidth={1.6} />
-                    </span>
-                    <strong>먹고 갈게요</strong>
-                    <span>
-                      매장에서 편안하게
-                      <ArrowRight size={21} />
-                    </span>
-                  </button>
-                  <button onClick={() => start("takeout")}>
-                    <span className="place-icon">
-                      <ShoppingBag size={47} strokeWidth={1.6} />
-                    </span>
-                    <strong>포장할게요</strong>
-                    <span>
-                      어디서나 가볍게
-                      <ArrowRight size={21} />
-                    </span>
-                  </button>
-                </div>
-                <div className="home-bottom">
-                  <span>좋은 하루의 시작, 좋은 커피 한 잔.</span>
-                  <button onClick={() => setOverlay("help")}>
-                    <CircleHelp size={18} />
-                    도움이 필요해요
-                  </button>
-                </div>
-              </section>
-            ) : screen === "finalizing" && order ? (
-              <section className="order-finalizing-screen" aria-busy="true">
-                <header className="completion-header">
-                  <Brand />
-                  <span>
-                    <CheckCircle2 size={17} /> 결제 완료
-                  </span>
-                </header>
-                <div
-                  className="order-finalizing-content"
-                  role="status"
-                  aria-live="polite"
-                >
-                  <div className="finalizing-orbit" aria-hidden="true">
-                    <span />
-                    <ShoppingBag size={44} strokeWidth={1.5} />
-                  </div>
-                  <h1>주문을 완료하고 있어요</h1>
-                  <p>잠시만 기다려 주세요.</p>
-                  <div className="finalizing-dots" aria-hidden="true">
-                    <i />
-                    <i />
-                    <i />
-                  </div>
-                </div>
-              </section>
-            ) : screen === "completed" && order ? (
-              <section className="completed-screen">
-                <header className="completion-header">
-                  <Brand />
-                  <span>
-                    <CheckCircle2 size={17} /> 결제 완료
-                  </span>
-                </header>
-                <div className="completion-heading">
-                  <span className="completion-mark">
-                    <Check size={29} strokeWidth={2.6} />
-                  </span>
-                  <h1>주문이 완료됐어요</h1>
-                  <p>주문번호를 확인해 주세요.</p>
-                </div>
-                <div className="order-number pickup-ticket">
-                  <div className="ticket-heading">
-                    <span>나의 주문번호</span>
-                    <span className="ticket-place">
-                      {order.place === "takeout" ? (
-                        <ShoppingBag size={18} />
-                      ) : (
-                        <Store size={18} />
-                      )}
-                      {placeName(order.place)}
-                    </span>
-                  </div>
-                  <strong>{order.number}</strong>
-                  <p>{order.number}번으로 알려드릴게요.</p>
-                  <div className="ticket-perforation" aria-hidden="true" />
-                  <div className="ticket-summary">
-                    <span>
-                      {order.lines.reduce((n, l) => n + l.quantity, 0)}개 ·{" "}
-                      {methodName(order.method)}
-                    </span>
-                    <b>{money(order.total)}</b>
-                  </div>
-                </div>
-                <div
-                  className={`receipt-output-card ${autoPrint && ["submitting", "queued", "file-saved"].includes(autoPrint.state) ? "is-printing" : "is-preparing"}`}
-                >
-                  <div className="receipt-status-icon" aria-hidden="true">
-                    <Printer size={32} strokeWidth={1.6} />
-                  </div>
-                  <div className="receipt-output-copy">
-                    <div
-                      className="completion-receipt-message"
-                      role="status"
-                      aria-live="polite"
-                    >
-                      {autoPrint?.state === "error"
-                        ? "영수증 출력 확인이 필요해요."
-                        : autoPrint?.state === "disabled"
-                          ? "주문번호로 받아 주세요."
-                          : autoPrint &&
-                              ["submitting", "queued", "file-saved"].includes(
-                                autoPrint.state,
-                              )
-                            ? "영수증 출력중이에요."
-                            : "영수증 출력 준비중이에요."}
-                    </div>
-                    <p>
-                      {autoPrint?.state === "error"
-                        ? "직원에게 주문번호를 보여 주세요."
-                        : autoPrint?.state === "disabled"
-                          ? "영수증이 필요하면 직원에게 말씀해 주세요."
-                          : "아래에서 영수증을 받아 주세요."}
-                    </p>
-                  </div>
-                  <ChevronDown
-                    size={23}
-                    className="receipt-output-arrow"
-                    aria-hidden="true"
-                  />
-                </div>
-                <div className="completion-farewell">
-                  <Coffee size={25} strokeWidth={1.6} />
-                  <p>맛있게 드세요!</p>
-                </div>
-                <footer className="completion-footer">
-                  <button className="primary full" onClick={reset}>
-                    처음으로 돌아가기
-                    <ArrowRight size={22} />
-                  </button>
-                  <div className="completion-countdown">
-                    <span className="countdown-track" aria-hidden="true">
-                      <i
-                        style={{ width: `${Math.max(0, finishSeconds) * 20}%` }}
-                      />
-                    </span>
-                    <small>{finishSeconds}초 후 처음 화면으로 돌아가요.</small>
-                  </div>
-                </footer>
-              </section>
-            ) : (
-              <>
-                <header className="kiosk-header">
-                  {screen !== "cart" ? (
-                    <button
-                      className="icon-button"
-                      aria-label={screen === "menu" ? "처음으로" : "이전 화면"}
-                      onClick={() => {
-                        if (screen === "menu") {
-                          if (cart.length) setOverlay("cancel");
-                          else reset();
-                        } else {
-                          setScreen(screen === "payment" ? "cart" : "menu");
-                          cancelPayment();
-                        }
-                      }}
-                    >
-                      {screen === "menu" ? (
-                        <Home size={23} />
-                      ) : (
-                        <ArrowLeft size={25} />
-                      )}{" "}
-                    </button>
-                  ) : (
-                    <span className="header-back-spacer" />
-                  )}
-                  <Brand />
+            {uiText(
+              screen === "home" ? (
+                <section className="home-screen">
                   <button
-                    className="place-switch"
-                    onClick={() => {
-                      if (payment?.status === "processing") return;
-                      setOverlay("place");
-                    }}
+                    className="exit-hotspot"
+                    aria-label={uiText("키오스크 종료 메뉴")}
+                    onClick={tapExitCorner}
+                  />
+                  <header className="welcome-header">
+                    <Brand large />
+                    <span>{uiText("SWitch 커피")}</span>
+                    <LanguageSelector />
+                  </header>
+                  <div className="welcome-copy">
+                    <span className="eyebrow">
+                      {uiText("반가워요, 오늘도 SWitch")}
+                    </span>
+                    <h1>
+                      {uiText("오늘은 어디서")}
+                      <br />
+                      {uiText("즐기실 건가요?")}
+                    </h1>
+                    <p>{uiText("취향에 맞는 한 잔을 준비해 드릴게요.")}</p>
+                  </div>
+                  <div className="welcome-drinks" aria-hidden="true">
+                    <ProductImage product={products[0]} />
+                    <ProductImage product={products[1]} />
+                    <ProductImage product={products[2]} />
+                  </div>
+                  <div className="place-cards">
+                    <button onClick={() => start("store")}>
+                      <span className="place-icon">
+                        <Store size={47} strokeWidth={1.6} />
+                      </span>
+                      <strong>{uiText("먹고 갈게요")}</strong>
+                      <span>
+                        {uiText("매장에서 편안하게")}
+                        <ArrowRight size={21} />
+                      </span>
+                    </button>
+                    <button onClick={() => start("takeout")}>
+                      <span className="place-icon">
+                        <ShoppingBag size={47} strokeWidth={1.6} />
+                      </span>
+                      <strong>{uiText("포장할게요")}</strong>
+                      <span>
+                        {uiText("어디서나 가볍게")}
+                        <ArrowRight size={21} />
+                      </span>
+                    </button>
+                  </div>
+                  <div className="home-bottom">
+                    <span>{uiText("좋은 하루의 시작, 좋은 커피 한 잔.")}</span>
+                    <button onClick={() => setOverlay("help")}>
+                      <CircleHelp size={18} />
+                      {uiText("도움이 필요해요")}
+                    </button>
+                  </div>
+                </section>
+              ) : screen === "finalizing" && order ? (
+                <section className="order-finalizing-screen" aria-busy="true">
+                  <header className="completion-header">
+                    <Brand />
+                    <span>
+                      <CheckCircle2 size={17} />
+                      {uiText(" 결제 완료")}
+                    </span>
+                  </header>
+                  <div
+                    className="order-finalizing-content"
+                    role="status"
+                    aria-live="polite"
                   >
-                    {placeName(place)}
-                    <ChevronDown size={15} />
-                  </button>
-                </header>
-                {screen === "menu" ? (
-                  <>
-                    <nav className="categories" aria-label="메뉴 카테고리">
-                      {categories.map((cat) => (
-                        <button
-                          key={cat}
-                          className={category === cat ? "active" : ""}
-                          aria-current={category === cat ? "page" : undefined}
-                          onClick={() => setCategory(cat)}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </nav>
-                    <div className="catalog-scroll" ref={catalogScroll}>
-                      <div className="product-grid">
-                        {products
-                          .filter((p) => p.categories.includes(category))
-                          .map((product) => (
-                            <button
-                              key={product.id}
-                              className={`product-card ${product.soldOut ? "sold-out" : ""}`}
-                              disabled={product.soldOut}
-                              aria-label={`${product.name} ${money(product.price + (category === "디카페인" && !product.decafOnly ? 500 : 0))}${product.soldOut ? " 품절" : ""}`}
-                              onClick={() => configure(product)}
-                            >
-                              <div className="product-picture">
-                                <ProductImage product={product} />
-                                <span
-                                  className={`temperature-badge ${product.temperatures.length === 1 ? product.temperatures[0] : "both"}`}
-                                >
-                                  {temperatureBadge(product)}
-                                </span>
-                                {product.soldOut && (
-                                  <span className="sold-out-label">품절</span>
-                                )}
-                              </div>
-                              <strong>{product.name}</strong>
-                              <span>
-                                {money(
-                                  product.price +
-                                    (category === "디카페인" &&
-                                    !product.decafOnly
-                                      ? 500
-                                      : 0),
-                                )}
-                              </span>
-                            </button>
-                          ))}
+                    <div className="finalizing-orbit" aria-hidden="true">
+                      <span />
+                      <ShoppingBag size={44} strokeWidth={1.5} />
+                    </div>
+                    <h1>{uiText("주문을 완료하고 있어요")}</h1>
+                    <p>{uiText("잠시만 기다려 주세요.")}</p>
+                    <div className="finalizing-dots" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </div>
+                  </div>
+                </section>
+              ) : screen === "completed" && order ? (
+                <section className="completed-screen">
+                  <header className="completion-header">
+                    <Brand />
+                    <span>
+                      <CheckCircle2 size={17} />
+                      {uiText(" 결제 완료")}
+                    </span>
+                  </header>
+                  <div className="completion-heading">
+                    <span className="completion-mark">
+                      <Check size={29} strokeWidth={2.6} />
+                    </span>
+                    <h1>{uiText("주문이 완료됐어요")}</h1>
+                    <p>{uiText("주문번호를 확인해 주세요.")}</p>
+                  </div>
+                  <div className="order-number pickup-ticket">
+                    <div className="ticket-heading">
+                      <span>{uiText("나의 주문번호")}</span>
+                      <span className="ticket-place">
+                        {uiText(
+                          order.place === "takeout" ? (
+                            <ShoppingBag size={18} />
+                          ) : (
+                            <Store size={18} />
+                          ),
+                        )}
+                        {uiText(placeName(order.place))}
+                      </span>
+                    </div>
+                    <strong>{uiText(order.number)}</strong>
+                    <p>
+                      {uiText(order.number)}
+                      {uiText("번으로 알려드릴게요.")}
+                    </p>
+                    <div className="ticket-perforation" aria-hidden="true" />
+                    <div className="ticket-summary">
+                      <span>
+                        {uiText(
+                          order.lines.reduce((n, l) => n + l.quantity, 0),
+                        )}
+                        {uiText("개 ·")}
+                        {uiText(" ")}
+                        {uiText(methodName(order.method))}
+                      </span>
+                      <b>{uiText(money(order.total))}</b>
+                    </div>
+                  </div>
+                  <div
+                    className={`receipt-output-card ${autoPrint && ["submitting", "queued", "file-saved"].includes(autoPrint.state) ? "is-printing" : "is-preparing"}`}
+                  >
+                    <div className="receipt-status-icon" aria-hidden="true">
+                      <Printer size={32} strokeWidth={1.6} />
+                    </div>
+                    <div className="receipt-output-copy">
+                      <div
+                        className="completion-receipt-message"
+                        role="status"
+                        aria-live="polite"
+                      >
+                        {uiText(
+                          autoPrint?.state === "error"
+                            ? "영수증 출력 확인이 필요해요."
+                            : autoPrint?.state === "disabled"
+                              ? "주문번호로 받아 주세요."
+                              : autoPrint &&
+                                  [
+                                    "submitting",
+                                    "queued",
+                                    "file-saved",
+                                  ].includes(autoPrint.state)
+                                ? "영수증 출력중이에요."
+                                : "영수증 출력 준비중이에요.",
+                        )}
                       </div>
-                      <p className="catalog-end">
-                        원하는 메뉴를 선택해 주세요.
+                      <p>
+                        {uiText(
+                          autoPrint?.state === "error"
+                            ? "직원에게 주문번호를 보여 주세요."
+                            : autoPrint?.state === "disabled"
+                              ? "영수증이 필요하면 직원에게 말씀해 주세요."
+                              : "아래에서 영수증을 받아 주세요.",
+                        )}
                       </p>
                     </div>
-                    <section className="order-dock" aria-label="현재 주문 내역">
-                      <div className="dock-heading">
-                        <h2>
-                          주문 내역 <em>{count}</em>
-                        </h2>
-                        <div>
-                          <button
-                            disabled={!cart.length}
-                            onClick={() => setOverlay("clear")}
-                          >
-                            전체 삭제
-                          </button>
-                        </div>
-                      </div>
-                      <div className="dock-body">
-                        <div
-                          className="dock-lines"
-                          ref={dockScroll}
-                          tabIndex={0}
-                          aria-label="주문한 메뉴 목록"
-                        >
-                          {cart.length ? (
-                            cart.map((line) => {
-                              const product = findProduct(line.productId)!;
-                              return (
-                                <div className="dock-line" key={line.id}>
-                                  <button
-                                    className="dock-item"
-                                    aria-label={`${product.name} 옵션 변경`}
-                                    onClick={() => configure(product, line)}
-                                  >
-                                    <strong>{product.name}</strong>
-                                    <span>{summary(line.options)}</span>
-                                  </button>
-                                  <Counter
-                                    label={`${product.name} 주문 수량`}
-                                    value={line.quantity}
-                                    onChange={(n) => changeQuantity(line, n)}
-                                  />
-                                  <b>
-                                    {money(
-                                      unitPrice(product, line.options) *
-                                        line.quantity,
-                                    )}
-                                  </b>
-                                  <button
-                                    className="dock-delete"
-                                    aria-label={`${product.name} 주문에서 삭제`}
-                                    onClick={() =>
-                                      setCart(
-                                        cart.filter((l) => l.id !== line.id),
-                                      )
-                                    }
-                                  >
-                                    <X size={19} />
-                                  </button>
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <div className="dock-empty">
-                              메뉴를 담으면 여기에 주문 내역이 보여요.
-                            </div>
-                          )}
-                        </div>
-                        <div className="dock-scroll-buttons">
-                          <button
-                            aria-label="주문 내역 위로"
-                            disabled={!dockPosition.up}
-                            onClick={() =>
-                              dockScroll.current?.scrollBy({
-                                top: -160,
-                                behavior: "smooth",
-                              })
-                            }
-                          >
-                            <ChevronUp size={26} />
-                          </button>
-                          <button
-                            aria-label="주문 내역 아래로"
-                            disabled={!dockPosition.down}
-                            onClick={() =>
-                              dockScroll.current?.scrollBy({
-                                top: 160,
-                                behavior: "smooth",
-                              })
-                            }
-                          >
-                            <ChevronDown size={26} />
-                          </button>
-                        </div>
-                      </div>
-                      <footer className="cart-bar">
-                        <button
-                          className="text-button"
-                          onClick={() =>
-                            cart.length ? setOverlay("cancel") : reset()
-                          }
-                        >
-                          주문 취소
-                        </button>
-                        <div className="cart-tally">
-                          <span>총 {count}개</span>
-                          <strong>{money(total)}</strong>
-                        </div>
-                        <button
-                          className="primary"
-                          disabled={!cart.length}
-                          onClick={() => setScreen("cart")}
-                        >
-                          결제하기
-                          <ArrowRight size={21} />
-                        </button>
-                      </footer>
-                    </section>
-                  </>
-                ) : screen === "cart" ? (
-                  <section className="cart-screen">
-                    <div className="screen-heading">
-                      <span className="eyebrow">
-                        선택한 메뉴를 확인해 주세요
-                      </span>
-                      <h1>
-                        주문 내역 <em>{count}</em>
-                      </h1>
-                    </div>
-                    <div className="review-list-body">
-                      <div
-                        className="cart-lines"
-                        ref={reviewScroll}
-                        tabIndex={0}
-                        aria-label="확인할 주문 목록"
-                      >
-                        {cart.map((line) => {
-                          const product = findProduct(line.productId)!;
-                          return (
-                            <article className="cart-line" key={line.id}>
-                              <div className="cart-photo">
-                                <ProductImage
-                                  product={product}
-                                  temperature={line.options.temperature}
-                                />
-                              </div>
-                              <div className="cart-detail">
-                                <h2>{product.name}</h2>
-                                <p>{summary(line.options)}</p>
-                                <button
-                                  className="option-edit"
-                                  aria-label={`${product.name} 옵션 변경`}
-                                  onClick={() => configure(product, line)}
-                                >
-                                  옵션 변경
-                                </button>
-                                <div className="cart-line-bottom">
-                                  <Counter
-                                    value={line.quantity}
-                                    label={`${product.name} 수량`}
-                                    onChange={(n) => changeQuantity(line, n)}
-                                  />
-                                  <strong>
-                                    {money(
-                                      unitPrice(product, line.options) *
-                                        line.quantity,
-                                    )}
-                                  </strong>
-                                </div>
-                              </div>
-                              <button
-                                className="remove-button"
-                                aria-label={`${product.name} 삭제`}
-                                onClick={() =>
-                                  setCart(cart.filter((l) => l.id !== line.id))
-                                }
-                              >
-                                <X size={21} />
-                              </button>
-                            </article>
-                          );
-                        })}
-                        {!cart.length && (
-                          <div className="empty-cart">
-                            <ShoppingBasket size={62} />
-                            <h2>아직 담은 메뉴가 없어요</h2>
-                            <p>마음에 드는 메뉴를 골라 보세요.</p>
-                          </div>
-                        )}
-                        <button
-                          className="add-more"
-                          onClick={() => setScreen("menu")}
-                        >
-                          <Plus size={21} />
-                          메뉴 더 담기
-                        </button>
-                      </div>
-                      <div className="dock-scroll-buttons review-scroll-buttons">
-                        <button
-                          aria-label="주문 확인 목록 위로"
-                          disabled={!reviewPosition.up}
-                          onClick={() =>
-                            reviewScroll.current?.scrollBy({
-                              top: -250,
-                              behavior: "smooth",
-                            })
-                          }
-                        >
-                          <ChevronUp size={26} />
-                        </button>
-                        <button
-                          aria-label="주문 확인 목록 아래로"
-                          disabled={!reviewPosition.down}
-                          onClick={() =>
-                            reviewScroll.current?.scrollBy({
-                              top: 250,
-                              behavior: "smooth",
-                            })
-                          }
-                        >
-                          <ChevronDown size={26} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="cart-checkout">
-                      <div>
-                        <span>총 {count}개</span>
-                        <strong>{money(total)}</strong>
-                      </div>
-                      <p>선택하신 메뉴와 옵션이 맞는지 확인해 주세요.</p>
-                      <div className="review-actions">
-                        <button
-                          className="secondary"
-                          onClick={() => setScreen("menu")}
-                        >
-                          <ArrowLeft size={23} />
-                          이전으로
-                        </button>
-                        <button
-                          className="primary"
-                          disabled={!cart.length}
-                          onClick={() => setScreen("payment")}
-                        >
-                          확인하고 결제하기
-                          <ArrowRight size={23} />
-                        </button>
-                      </div>
-                    </div>
-                  </section>
-                ) : (
-                  <section className="payment-screen">
-                    <div className="screen-heading">
-                      <span className="eyebrow">주문이 거의 끝났어요</span>
-                      <h1>
-                        결제수단을
-                        <br />
-                        선택해 주세요
-                      </h1>
-                    </div>
-                    <div className="payment-total">
-                      <span>결제할 금액</span>
-                      <strong>{money(total)}</strong>
-                      <span>
-                        {placeName(place)} · 메뉴 {count}개
-                      </span>
-                    </div>
-                    <div className="payment-methods">
-                      {paymentMethods.map(({ method, description, mark }) => (
-                        <button
-                          key={method}
-                          className={`payment-method ${method}`}
-                          aria-label={methodName(method)}
-                          onClick={() => {
-                            setToast("");
-                            processing.current = false;
-                            setPayment({
-                              method,
-                              status: "waiting",
-                              attempt: crypto.randomUUID(),
-                            });
-                          }}
-                        >
-                          <span className="method-symbol">
-                            {method === "card" ? (
-                              <CreditCard size={32} />
-                            ) : (
-                              mark
-                            )}
-                          </span>
-                          <span className="method-copy">
-                            <strong>{methodName(method)}</strong>
-                            <small>{description}</small>
-                          </span>
-                          {method === "card" && <ArrowRight size={24} />}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="payment-guidance">
-                      결제수단을 선택한 뒤, 리더기 안내에 따라 주세요.
-                    </p>
-                    <button
-                      className="secondary full"
-                      onClick={() => setScreen("cart")}
-                    >
-                      <ArrowLeft size={21} />
-                      주문 내역 다시 보기
+                    <ChevronDown
+                      size={23}
+                      className="receipt-output-arrow"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <div className="completion-farewell">
+                    <Coffee size={25} strokeWidth={1.6} />
+                    <p>{uiText("맛있게 드세요!")}</p>
+                  </div>
+                  <footer className="completion-footer">
+                    <button className="primary full" onClick={reset}>
+                      {uiText("처음으로 돌아가기")}
+                      <ArrowRight size={22} />
                     </button>
-                  </section>
-                )}
-              </>
-            )}
-
-            {toast && (
-              <div className="toast" role="status">
-                <CheckCircle2 size={20} />
-                {toast}
-              </div>
-            )}
-            {storageError && (
-              <div className="storage-warning" role="alert">
-                주문 임시 저장을 사용할 수 없어요. 브라우저 저장 공간을 확인해
-                주세요.
-              </div>
-            )}
-
-            {overlay ? (
-              <Modal
-                title={
-                  overlay === "shutdown"
-                    ? "키오스크 종료"
-                    : overlay === "receipt"
-                      ? "영수증"
-                      : overlay === "printer"
-                        ? "프린터 설정"
-                        : overlay === "history"
-                          ? "이 기기의 주문 이력"
-                          : overlay === "place"
-                            ? "이용 방법 변경"
-                            : overlay === "help"
-                              ? "직원 도움 요청"
-                              : overlay === "idle"
-                                ? "주문을 계속할까요?"
-                                : overlay === "clear"
-                                  ? "주문 내역을 비울까요?"
-                                  : "주문을 취소할까요?"
-                }
-                onClose={closeOverlay}
-                closeDisabled={overlay === "shutdown" && exitPending}
-                dismissOnBackdrop={overlay !== "shutdown"}
-                className={
-                  overlay === "history"
-                    ? "history-modal"
-                    : overlay === "receipt"
-                      ? "receipt-modal"
-                      : overlay === "printer"
-                        ? "printer-settings-modal"
-                        : ""
-                }
-              >
-                {overlay === "shutdown" ? (
-                  <div className="message-body exit-dialog-body">
-                    <div className="message-icon">
-                      <Power size={33} />
+                    <div className="completion-countdown">
+                      <span className="countdown-track" aria-hidden="true">
+                        <i
+                          style={{
+                            width: `${Math.max(0, finishSeconds) * 20}%`,
+                          }}
+                        />
+                      </span>
+                      <small>
+                        {uiText(finishSeconds)}
+                        {uiText("초 후 처음 화면으로 돌아가요.")}
+                      </small>
                     </div>
-                    <h2>
-                      {exitPending
-                        ? "키오스크를 종료하고 있어요"
-                        : "종료하시겠습니까?"}
-                    </h2>
-                    <p>
-                      {exitPending
-                        ? "진행 중인 출력과 연결된 프로그램을 정리하고 있어요.\n잠시만 기다려 주세요."
-                        : "키오스크 화면과 연결된 프로그램을 정리한 뒤 종료해요."}
-                    </p>
-                    {exitError && (
-                      <div className="exit-error" role="alert">
-                        {exitError}
-                      </div>
-                    )}
-                    <div className="button-pair">
-                      <button
-                        className="secondary"
-                        disabled={exitPending}
-                        onClick={closeOverlay}
-                      >
-                        아니요
-                      </button>
-                      <button
-                        className="primary"
-                        disabled={exitPending}
-                        onClick={() => void confirmExit()}
-                      >
-                        {exitPending ? "종료 중" : "예"}
-                      </button>
-                    </div>
-                  </div>
-                ) : overlay === "cancel" || overlay === "clear" ? (
-                  <div className="message-body">
-                    <div className="message-icon">
-                      <ShoppingBag />
-                    </div>
-                    <h2>담아 둔 메뉴가 모두 지워져요.</h2>
-                    <p>
-                      {overlay === "clear"
-                        ? "선택한 메뉴를 모두 삭제할까요?"
-                        : "주문을 취소하고 처음 화면으로 돌아갈까요?"}
-                    </p>
-                    <div className="button-pair">
-                      <button className="secondary" onClick={closeOverlay}>
-                        계속 주문하기
-                      </button>
-                      <button
-                        className="primary"
-                        onClick={() => {
-                          if (overlay === "clear") {
-                            setCart([]);
-                            closeOverlay();
-                          } else reset();
-                        }}
-                      >
-                        {overlay === "clear"
-                          ? "전체 삭제하기"
-                          : "주문 취소하기"}
-                      </button>
-                    </div>
-                  </div>
-                ) : overlay === "place" ? (
-                  <div className="message-body">
-                    <h2>어디서 즐기실 건가요?</h2>
-                    <p>담아 둔 메뉴와 옵션은 그대로 유지돼요.</p>
-                    <div className="button-pair">
-                      {(["store", "takeout"] as const).map((p) => (
+                  </footer>
+                </section>
+              ) : (
+                <>
+                  <header className="kiosk-header">
+                    <LanguageSelector />
+                    {uiText(
+                      screen !== "cart" ? (
                         <button
-                          key={p}
-                          className={place === p ? "primary" : "secondary"}
+                          className="icon-button"
+                          aria-label={uiText(
+                            screen === "menu" ? "처음으로" : "이전 화면",
+                          )}
                           onClick={() => {
-                            setPlace(p);
-                            closeOverlay();
+                            if (screen === "menu") {
+                              if (cart.length) setOverlay("cancel");
+                              else reset();
+                            } else {
+                              setScreen(screen === "payment" ? "cart" : "menu");
+                              cancelPayment();
+                            }
                           }}
                         >
-                          {p === "store" ? <Store /> : <ShoppingBag />}
-                          {placeName(p)}
+                          {uiText(
+                            screen === "menu" ? (
+                              <Home size={23} />
+                            ) : (
+                              <ArrowLeft size={25} />
+                            ),
+                          )}
+                          {uiText(" ")}
                         </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : overlay === "help" ? (
-                  <div className="message-body">
-                    <div className="message-icon">
-                      <CircleHelp />
-                    </div>
-                    <h2>
-                      {helpRequested
-                        ? "도움 요청을 표시했어요"
-                        : "천천히 주문하셔도 괜찮아요."}
-                    </h2>
-                    <p>
-                      {helpRequested
-                        ? "이 시제품에서는 직원 단말기로 전송되지 않아요.\n필요하면 가까운 직원에게 말씀해 주세요."
-                        : "도움이 필요하시면 직원을 불러 주세요.\n담아 둔 메뉴는 그대로 유지돼요."}
-                    </p>
+                      ) : (
+                        <span className="header-back-spacer" />
+                      ),
+                    )}
+                    <Brand />
                     <button
-                      className="primary full"
+                      className="place-switch"
                       onClick={() => {
-                        if (helpRequested) closeOverlay();
-                        else setHelpRequested(true);
+                        if (payment?.status === "processing") return;
+                        setOverlay("place");
                       }}
                     >
-                      {helpRequested ? "확인했어요" : "직원 도움 요청하기"}
+                      {uiText(placeName(place))}
+                      <ChevronDown size={15} />
                     </button>
-                  </div>
-                ) : overlay === "idle" ? (
-                  <div className="message-body">
-                    <div className="message-icon">
-                      <Clock3 />
-                    </div>
-                    <h2>주문을 계속할까요?</h2>
-                    <p>
-                      {idleSeconds}초 후에는 담은 메뉴가 지워지고
-                      <br />
-                      처음 화면으로 돌아가요.
-                    </p>
-                    <div className="button-pair">
-                      <button className="secondary" onClick={reset}>
-                        주문 마치기
-                      </button>
-                      <button className="primary" onClick={closeOverlay}>
-                        계속 주문할게요
-                      </button>
-                    </div>
-                  </div>
-                ) : overlay === "history" ? (
-                  <div className="history-list">
-                    {!history.length ? (
-                      <div className="empty-cart">
-                        <ReceiptText size={40} />
-                        <h2>아직 완료한 주문이 없어요.</h2>
-                      </div>
+                  </header>
+                  {uiText(
+                    screen === "menu" ? (
+                      <>
+                        <nav
+                          className="categories"
+                          aria-label={uiText("메뉴 카테고리")}
+                        >
+                          {uiText(
+                            categories.map((cat) => (
+                              <button
+                                key={cat}
+                                className={category === cat ? "active" : ""}
+                                aria-current={
+                                  category === cat ? "page" : undefined
+                                }
+                                onClick={() => setCategory(cat)}
+                              >
+                                {uiText(cat)}
+                              </button>
+                            )),
+                          )}
+                        </nav>
+                        <div className="catalog-scroll" ref={catalogScroll}>
+                          <div className="product-grid">
+                            {uiText(
+                              products
+                                .filter((p) => p.categories.includes(category))
+                                .map((product) => (
+                                  <button
+                                    key={product.id}
+                                    className={`product-card ${product.soldOut ? "sold-out" : ""}`}
+                                    disabled={product.soldOut}
+                                    aria-label={uiText(
+                                      `${product.name} ${money(product.price + (category === "디카페인" && !product.decafOnly ? 500 : 0))}${product.soldOut ? " 품절" : ""}`,
+                                    )}
+                                    onClick={() => configure(product)}
+                                  >
+                                    <div className="product-picture">
+                                      <ProductImage product={product} />
+                                      <span
+                                        className={`temperature-badge ${product.temperatures.length === 1 ? product.temperatures[0] : "both"}`}
+                                      >
+                                        {uiText(temperatureBadge(product))}
+                                      </span>
+                                      {uiText(
+                                        product.soldOut && (
+                                          <span className="sold-out-label">
+                                            {uiText("품절")}
+                                          </span>
+                                        ),
+                                      )}
+                                    </div>
+                                    <strong>{uiText(product.name)}</strong>
+                                    <span>
+                                      {uiText(
+                                        money(
+                                          product.price +
+                                            (category === "디카페인" &&
+                                            !product.decafOnly
+                                              ? 500
+                                              : 0),
+                                        ),
+                                      )}
+                                    </span>
+                                  </button>
+                                )),
+                            )}
+                          </div>
+                          <p className="catalog-end">
+                            {uiText("원하는 메뉴를 선택해 주세요.")}
+                          </p>
+                        </div>
+                        <section
+                          className="order-dock"
+                          aria-label={uiText("현재 주문 내역")}
+                        >
+                          <div className="dock-heading">
+                            <h2>
+                              {uiText("주문 내역 ")}
+                              <em>{uiText(count)}</em>
+                            </h2>
+                            <div>
+                              <button
+                                disabled={!cart.length}
+                                onClick={() => setOverlay("clear")}
+                              >
+                                {uiText("전체 삭제")}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="dock-body">
+                            <div
+                              className="dock-lines"
+                              ref={dockScroll}
+                              tabIndex={0}
+                              aria-label={uiText("주문한 메뉴 목록")}
+                            >
+                              {uiText(
+                                cart.length ? (
+                                  cart.map((line) => {
+                                    const product = findProduct(
+                                      line.productId,
+                                    )!;
+                                    return (
+                                      <div className="dock-line" key={line.id}>
+                                        <button
+                                          className="dock-item"
+                                          aria-label={uiText(
+                                            `${product.name} 옵션 변경`,
+                                          )}
+                                          onClick={() =>
+                                            configure(product, line)
+                                          }
+                                        >
+                                          <strong>
+                                            {uiText(product.name)}
+                                          </strong>
+                                          <span>
+                                            {uiText(summary(line.options))}
+                                          </span>
+                                        </button>
+                                        <Counter
+                                          label={`${product.name} 주문 수량`}
+                                          value={line.quantity}
+                                          onChange={(n) =>
+                                            changeQuantity(line, n)
+                                          }
+                                        />
+                                        <b>
+                                          {uiText(
+                                            money(
+                                              unitPrice(product, line.options) *
+                                                line.quantity,
+                                            ),
+                                          )}
+                                        </b>
+                                        <button
+                                          className="dock-delete"
+                                          aria-label={uiText(
+                                            `${product.name} 주문에서 삭제`,
+                                          )}
+                                          onClick={() =>
+                                            setCart(
+                                              cart.filter(
+                                                (l) => l.id !== line.id,
+                                              ),
+                                            )
+                                          }
+                                        >
+                                          <X size={19} />
+                                        </button>
+                                      </div>
+                                    );
+                                  })
+                                ) : (
+                                  <div className="dock-empty">
+                                    {uiText(
+                                      "메뉴를 담으면 여기에 주문 내역이 보여요.",
+                                    )}
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                            <div className="dock-scroll-buttons">
+                              <button
+                                aria-label={uiText("주문 내역 위로")}
+                                disabled={!dockPosition.up}
+                                onClick={() =>
+                                  dockScroll.current?.scrollBy({
+                                    top: -160,
+                                    behavior: "smooth",
+                                  })
+                                }
+                              >
+                                <ChevronUp size={26} />
+                              </button>
+                              <button
+                                aria-label={uiText("주문 내역 아래로")}
+                                disabled={!dockPosition.down}
+                                onClick={() =>
+                                  dockScroll.current?.scrollBy({
+                                    top: 160,
+                                    behavior: "smooth",
+                                  })
+                                }
+                              >
+                                <ChevronDown size={26} />
+                              </button>
+                            </div>
+                          </div>
+                          <footer className="cart-bar">
+                            <button
+                              className="text-button"
+                              onClick={() =>
+                                cart.length ? setOverlay("cancel") : reset()
+                              }
+                            >
+                              {uiText("주문 취소")}
+                            </button>
+                            <div className="cart-tally">
+                              <span>
+                                {uiText("총 ")}
+                                {uiText(count)}
+                                {uiText("개")}
+                              </span>
+                              <strong>{uiText(money(total))}</strong>
+                            </div>
+                            <button
+                              className="primary"
+                              disabled={!cart.length}
+                              onClick={() => setScreen("cart")}
+                            >
+                              {uiText("결제하기")}
+                              <ArrowRight size={21} />
+                            </button>
+                          </footer>
+                        </section>
+                      </>
+                    ) : screen === "cart" ? (
+                      <section className="cart-screen">
+                        <div className="screen-heading">
+                          <span className="eyebrow">
+                            {uiText("선택한 메뉴를 확인해 주세요")}
+                          </span>
+                          <h1>
+                            {uiText("주문 내역 ")}
+                            <em>{uiText(count)}</em>
+                          </h1>
+                        </div>
+                        <div className="review-list-body">
+                          <div
+                            className="cart-lines"
+                            ref={reviewScroll}
+                            tabIndex={0}
+                            aria-label={uiText("확인할 주문 목록")}
+                          >
+                            {uiText(
+                              cart.map((line) => {
+                                const product = findProduct(line.productId)!;
+                                return (
+                                  <article className="cart-line" key={line.id}>
+                                    <div className="cart-photo">
+                                      <ProductImage
+                                        product={product}
+                                        temperature={line.options.temperature}
+                                      />
+                                    </div>
+                                    <div className="cart-detail">
+                                      <h2>{uiText(product.name)}</h2>
+                                      <p>{uiText(summary(line.options))}</p>
+                                      <button
+                                        className="option-edit"
+                                        aria-label={uiText(
+                                          `${product.name} 옵션 변경`,
+                                        )}
+                                        onClick={() => configure(product, line)}
+                                      >
+                                        {uiText("옵션 변경")}
+                                      </button>
+                                      <div className="cart-line-bottom">
+                                        <Counter
+                                          value={line.quantity}
+                                          label={`${product.name} 수량`}
+                                          onChange={(n) =>
+                                            changeQuantity(line, n)
+                                          }
+                                        />
+                                        <strong>
+                                          {uiText(
+                                            money(
+                                              unitPrice(product, line.options) *
+                                                line.quantity,
+                                            ),
+                                          )}
+                                        </strong>
+                                      </div>
+                                    </div>
+                                    <button
+                                      className="remove-button"
+                                      aria-label={uiText(
+                                        `${product.name} 삭제`,
+                                      )}
+                                      onClick={() =>
+                                        setCart(
+                                          cart.filter((l) => l.id !== line.id),
+                                        )
+                                      }
+                                    >
+                                      <X size={21} />
+                                    </button>
+                                  </article>
+                                );
+                              }),
+                            )}
+                            {uiText(
+                              !cart.length && (
+                                <div className="empty-cart">
+                                  <ShoppingBasket size={62} />
+                                  <h2>{uiText("아직 담은 메뉴가 없어요")}</h2>
+                                  <p>
+                                    {uiText("마음에 드는 메뉴를 골라 보세요.")}
+                                  </p>
+                                </div>
+                              ),
+                            )}
+                            <button
+                              className="add-more"
+                              onClick={() => setScreen("menu")}
+                            >
+                              <Plus size={21} />
+                              {uiText("메뉴 더 담기")}
+                            </button>
+                          </div>
+                          <div className="dock-scroll-buttons review-scroll-buttons">
+                            <button
+                              aria-label={uiText("주문 확인 목록 위로")}
+                              disabled={!reviewPosition.up}
+                              onClick={() =>
+                                reviewScroll.current?.scrollBy({
+                                  top: -250,
+                                  behavior: "smooth",
+                                })
+                              }
+                            >
+                              <ChevronUp size={26} />
+                            </button>
+                            <button
+                              aria-label={uiText("주문 확인 목록 아래로")}
+                              disabled={!reviewPosition.down}
+                              onClick={() =>
+                                reviewScroll.current?.scrollBy({
+                                  top: 250,
+                                  behavior: "smooth",
+                                })
+                              }
+                            >
+                              <ChevronDown size={26} />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="cart-checkout">
+                          <div>
+                            <span>
+                              {uiText("총 ")}
+                              {uiText(count)}
+                              {uiText("개")}
+                            </span>
+                            <strong>{uiText(money(total))}</strong>
+                          </div>
+                          <p>
+                            {uiText(
+                              "선택하신 메뉴와 옵션이 맞는지 확인해 주세요.",
+                            )}
+                          </p>
+                          <div className="review-actions">
+                            <button
+                              className="secondary"
+                              onClick={() => setScreen("menu")}
+                            >
+                              <ArrowLeft size={23} />
+                              {uiText("이전으로")}
+                            </button>
+                            <button
+                              className="primary"
+                              disabled={!cart.length}
+                              onClick={() => setScreen("payment")}
+                            >
+                              {uiText("확인하고 결제하기")}
+                              <ArrowRight size={23} />
+                            </button>
+                          </div>
+                        </div>
+                      </section>
                     ) : (
-                      history.map((o) => (
+                      <section className="payment-screen">
+                        <div className="screen-heading">
+                          <span className="eyebrow">
+                            {uiText("주문이 거의 끝났어요")}
+                          </span>
+                          <h1>
+                            {uiText("결제수단을")}
+                            <br />
+                            {uiText("선택해 주세요")}
+                          </h1>
+                        </div>
+                        <div className="payment-total">
+                          <span>{uiText("결제할 금액")}</span>
+                          <strong>{uiText(money(total))}</strong>
+                          <span>
+                            {uiText(placeName(place))}
+                            {uiText(" · 메뉴 ")}
+                            {uiText(count)}
+                            {uiText("개")}
+                          </span>
+                        </div>
+                        <div className="payment-methods">
+                          {uiText(
+                            paymentMethods.map(
+                              ({ method, description, mark }) => (
+                                <button
+                                  key={method}
+                                  className={`payment-method ${method}`}
+                                  aria-label={uiText(methodName(method))}
+                                  onClick={() => {
+                                    setToast("");
+                                    processing.current = false;
+                                    setPayment({
+                                      method,
+                                      status: "waiting",
+                                      attempt: crypto.randomUUID(),
+                                    });
+                                  }}
+                                >
+                                  <span className="method-symbol">
+                                    {uiText(
+                                      method === "card" ? (
+                                        <CreditCard size={32} />
+                                      ) : (
+                                        mark
+                                      ),
+                                    )}
+                                  </span>
+                                  <span className="method-copy">
+                                    <strong>
+                                      {uiText(methodName(method))}
+                                    </strong>
+                                    <small>{uiText(description)}</small>
+                                  </span>
+                                  {uiText(
+                                    method === "card" && (
+                                      <ArrowRight size={24} />
+                                    ),
+                                  )}
+                                </button>
+                              ),
+                            ),
+                          )}
+                        </div>
+                        <p className="payment-guidance">
+                          {uiText(
+                            "결제수단을 선택한 뒤, 리더기 안내에 따라 주세요.",
+                          )}
+                        </p>
                         <button
-                          key={o.id}
+                          className="secondary full"
+                          onClick={() => setScreen("cart")}
+                        >
+                          <ArrowLeft size={21} />
+                          {uiText("주문 내역 다시 보기")}
+                        </button>
+                      </section>
+                    ),
+                  )}
+                </>
+              ),
+            )}
+
+            {uiText(
+              toast && (
+                <div className="toast" role="status">
+                  <CheckCircle2 size={20} />
+                  {uiText(toast)}
+                </div>
+              ),
+            )}
+            {uiText(
+              storageError && (
+                <div className="storage-warning" role="alert">
+                  {uiText(
+                    "주문 임시 저장을 사용할 수 없어요. 브라우저 저장 공간을 확인해 주세요.",
+                  )}
+                </div>
+              ),
+            )}
+
+            {uiText(
+              overlay ? (
+                <Modal
+                  title={uiText(
+                    overlay === "shutdown"
+                      ? "키오스크 종료"
+                      : overlay === "receipt"
+                        ? "영수증"
+                        : overlay === "printer"
+                          ? "프린터 설정"
+                          : overlay === "history"
+                            ? "이 기기의 주문 이력"
+                            : overlay === "place"
+                              ? "이용 방법 변경"
+                              : overlay === "help"
+                                ? "직원 도움 요청"
+                                : overlay === "idle"
+                                  ? "주문을 계속할까요?"
+                                  : overlay === "clear"
+                                    ? "주문 내역을 비울까요?"
+                                    : "주문을 취소할까요?",
+                  )}
+                  onClose={closeOverlay}
+                  closeDisabled={overlay === "shutdown" && exitPending}
+                  dismissOnBackdrop={overlay !== "shutdown"}
+                  className={
+                    overlay === "history"
+                      ? "history-modal"
+                      : overlay === "receipt"
+                        ? "receipt-modal"
+                        : overlay === "printer"
+                          ? "printer-settings-modal"
+                          : ""
+                  }
+                >
+                  {uiText(
+                    overlay === "shutdown" ? (
+                      <div className="message-body exit-dialog-body">
+                        <div className="message-icon">
+                          <Power size={33} />
+                        </div>
+                        <h2>
+                          {uiText(
+                            exitPending
+                              ? "키오스크를 종료하고 있어요"
+                              : "종료하시겠습니까?",
+                          )}
+                        </h2>
+                        <p>
+                          {uiText(
+                            exitPending
+                              ? "진행 중인 출력과 연결된 프로그램을 정리하고 있어요.\n잠시만 기다려 주세요."
+                              : "키오스크 화면과 연결된 프로그램을 정리한 뒤 종료해요.",
+                          )}
+                        </p>
+                        {uiText(
+                          exitError && (
+                            <div className="exit-error" role="alert">
+                              {uiText(exitError)}
+                            </div>
+                          ),
+                        )}
+                        <div className="button-pair">
+                          <button
+                            className="secondary"
+                            disabled={exitPending}
+                            onClick={closeOverlay}
+                          >
+                            {uiText("아니요")}
+                          </button>
+                          <button
+                            className="primary"
+                            disabled={exitPending}
+                            onClick={() => void confirmExit()}
+                          >
+                            {uiText(exitPending ? "종료 중" : "예")}
+                          </button>
+                        </div>
+                      </div>
+                    ) : overlay === "cancel" || overlay === "clear" ? (
+                      <div className="message-body">
+                        <div className="message-icon">
+                          <ShoppingBag />
+                        </div>
+                        <h2>{uiText("담아 둔 메뉴가 모두 지워져요.")}</h2>
+                        <p>
+                          {uiText(
+                            overlay === "clear"
+                              ? "선택한 메뉴를 모두 삭제할까요?"
+                              : "주문을 취소하고 처음 화면으로 돌아갈까요?",
+                          )}
+                        </p>
+                        <div className="button-pair">
+                          <button className="secondary" onClick={closeOverlay}>
+                            {uiText("계속 주문하기")}
+                          </button>
+                          <button
+                            className="primary"
+                            onClick={() => {
+                              if (overlay === "clear") {
+                                setCart([]);
+                                closeOverlay();
+                              } else reset();
+                            }}
+                          >
+                            {uiText(
+                              overlay === "clear"
+                                ? "전체 삭제하기"
+                                : "주문 취소하기",
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ) : overlay === "place" ? (
+                      <div className="message-body">
+                        <h2>{uiText("어디서 즐기실 건가요?")}</h2>
+                        <p>
+                          {uiText("담아 둔 메뉴와 옵션은 그대로 유지돼요.")}
+                        </p>
+                        <div className="button-pair">
+                          {uiText(
+                            (["store", "takeout"] as const).map((p) => (
+                              <button
+                                key={p}
+                                className={
+                                  place === p ? "primary" : "secondary"
+                                }
+                                onClick={() => {
+                                  setPlace(p);
+                                  closeOverlay();
+                                }}
+                              >
+                                {uiText(
+                                  p === "store" ? <Store /> : <ShoppingBag />,
+                                )}
+                                {uiText(placeName(p))}
+                              </button>
+                            )),
+                          )}
+                        </div>
+                      </div>
+                    ) : overlay === "help" ? (
+                      <div className="message-body">
+                        <div className="message-icon">
+                          <CircleHelp />
+                        </div>
+                        <h2>
+                          {uiText(
+                            helpRequested
+                              ? "도움 요청을 표시했어요"
+                              : "천천히 주문하셔도 괜찮아요.",
+                          )}
+                        </h2>
+                        <p>
+                          {uiText(
+                            helpRequested
+                              ? "이 시제품에서는 직원 단말기로 전송되지 않아요.\n필요하면 가까운 직원에게 말씀해 주세요."
+                              : "도움이 필요하시면 직원을 불러 주세요.\n담아 둔 메뉴는 그대로 유지돼요.",
+                          )}
+                        </p>
+                        <button
+                          className="primary full"
                           onClick={() => {
-                            setReceiptSample(false);
-                            setReceiptOrder(o);
-                            setOverlay("receipt");
+                            if (helpRequested) closeOverlay();
+                            else setHelpRequested(true);
                           }}
                         >
-                          <span>
-                            <b>주문 {o.number}</b>
-                            <small>
-                              {new Date(o.createdAt).toLocaleString("ko-KR")} ·{" "}
-                              {placeName(o.place)}
-                            </small>
-                          </span>
-                          <strong>{money(o.total)}</strong>
+                          {uiText(
+                            helpRequested ? "확인했어요" : "직원 도움 요청하기",
+                          )}
                         </button>
-                      ))
+                      </div>
+                    ) : overlay === "idle" ? (
+                      <div className="message-body">
+                        <div className="message-icon">
+                          <Clock3 />
+                        </div>
+                        <h2>{uiText("주문을 계속할까요?")}</h2>
+                        <p>
+                          {uiText(idleSeconds)}
+                          {uiText("초 후에는 담은 메뉴가 지워지고")}
+                          <br />
+                          {uiText("처음 화면으로 돌아가요.")}
+                        </p>
+                        <div className="button-pair">
+                          <button className="secondary" onClick={reset}>
+                            {uiText("주문 마치기")}
+                          </button>
+                          <button className="primary" onClick={closeOverlay}>
+                            {uiText("계속 주문할게요")}
+                          </button>
+                        </div>
+                      </div>
+                    ) : overlay === "history" ? (
+                      <div className="history-list">
+                        {uiText(
+                          !history.length ? (
+                            <div className="empty-cart">
+                              <ReceiptText size={40} />
+                              <h2>{uiText("아직 완료한 주문이 없어요.")}</h2>
+                            </div>
+                          ) : (
+                            history.map((o) => (
+                              <button
+                                key={o.id}
+                                onClick={() => {
+                                  setReceiptSample(false);
+                                  setReceiptOrder(o);
+                                  setOverlay("receipt");
+                                }}
+                              >
+                                <span>
+                                  <b>
+                                    {uiText("주문 ")}
+                                    {uiText(o.number)}
+                                  </b>
+                                  <small>
+                                    {uiText(
+                                      new Date(o.createdAt).toLocaleString(
+                                        "ko-KR",
+                                      ),
+                                    )}{" "}
+                                    ·{uiText(" ")}
+                                    {uiText(placeName(o.place))}
+                                  </small>
+                                </span>
+                                <strong>{uiText(money(o.total))}</strong>
+                              </button>
+                            ))
+                          ),
+                        )}
+                      </div>
+                    ) : overlay === "printer" ? (
+                      <PrinterSettingsPanel
+                        value={printerSettings}
+                        onClose={closeOverlay}
+                        onSave={(value) => {
+                          setPrinterSettings(value);
+                          setOverlay(null);
+                          setToast("프린터 설정을 저장했어요.");
+                        }}
+                      />
+                    ) : (
+                      receipt && (
+                        <ReceiptPreview
+                          soundSettings={printerSettings}
+                          order={receipt}
+                          sample={receiptSample}
+                          onClose={closeOverlay}
+                          onSettings={() => setOverlay("printer")}
+                        />
+                      )
+                    ),
+                  )}
+                </Modal>
+              ) : editor ? (
+                <Modal
+                  title={uiText(editor.lineId ? "메뉴 수정" : "메뉴 선택")}
+                  onClose={() => setEditor(null)}
+                  className="option-modal"
+                >
+                  <div className="option-intro">
+                    <div className="option-photo">
+                      <ProductImage
+                        product={editor.product}
+                        temperature={editor.options.temperature}
+                      />
+                    </div>
+                    <div>
+                      <span className="eyebrow">SWitch COFFEE</span>
+                      <h2>{uiText(editor.product.name)}</h2>
+                      <p>{uiText(editor.product.description)}</p>
+                      <strong>{uiText(money(editor.product.price))}</strong>
+                    </div>
+                  </div>
+                  <div className="option-scroll">
+                    <div className="option-group">
+                      <h3>
+                        {uiText("온도 ")}
+                        <span className="required">{uiText("필수")}</span>
+                      </h3>
+                      {uiText(
+                        optionButtons(
+                          "temperature",
+                          editor.product.temperatures.map((temperature) => ({
+                            value: temperature,
+                            label:
+                              temperature === "ice" ? "차갑게" : "따뜻하게",
+                            extra:
+                              temperature === "ice"
+                                ? editor.product.temperatures.length === 1
+                                  ? "ICE ONLY"
+                                  : "ICE"
+                                : editor.product.temperatures.length === 1
+                                  ? "HOT ONLY"
+                                  : "HOT",
+                          })),
+                        ),
+                      )}
+                    </div>
+                    {uiText(
+                      !editor.product.fixedSize && (
+                        <div className="option-group">
+                          <h3>{uiText("사이즈")}</h3>
+                          {uiText(
+                            optionButtons("size", [
+                              {
+                                value: "regular",
+                                label: "레귤러",
+                                extra: "기본",
+                              },
+                              {
+                                value: "large",
+                                label: "라지",
+                                extra: "+500원",
+                              },
+                            ]),
+                          )}
+                        </div>
+                      ),
+                    )}
+                    {uiText(
+                      editor.product.fixedOptions && (
+                        <p className="fixed-options-note">
+                          {uiText(
+                            "이 메뉴는 온도와 구성이 정해져 있어요. 수량을 선택해 주세요.",
+                          )}
+                        </p>
+                      ),
+                    )}
+                    {uiText(
+                      editor.product.decaf && !editor.product.decafOnly && (
+                        <div className="option-group">
+                          <h3>{uiText("원두")}</h3>
+                          {uiText(
+                            optionButtons("decaf", [
+                              { value: false, label: "기본 원두" },
+                              {
+                                value: true,
+                                label: "디카페인",
+                                extra: "+500원",
+                              },
+                            ]),
+                          )}
+                        </div>
+                      ),
+                    )}
+                    {uiText(
+                      editor.product.milk && !editor.product.fixedOptions && (
+                        <div className="option-group">
+                          <h3>{uiText("우유")}</h3>
+                          {uiText(
+                            optionButtons("milk", [
+                              { value: "regular", label: "일반 우유" },
+                              {
+                                value: "oat",
+                                label: "오트밀크",
+                                extra: "+600원",
+                              },
+                            ]),
+                          )}
+                        </div>
+                      ),
+                    )}
+                    {uiText(
+                      editor.options.temperature === "ice" &&
+                        editor.product.iceAdjustable && (
+                          <div className="option-group">
+                            <h3>{uiText("얼음")}</h3>
+                            {uiText(
+                              optionButtons("ice", [
+                                { value: "normal", label: "기본" },
+                                { value: "more", label: "많이" },
+                                { value: "less", label: "적게" },
+                                { value: "none", label: "없이" },
+                              ]),
+                            )}
+                          </div>
+                        ),
+                    )}
+                    {uiText(
+                      !editor.product.fixedOptions && (
+                        <div className="option-group">
+                          <h3>{uiText("당도")}</h3>
+                          {uiText(
+                            optionButtons("sweetness", [
+                              { value: "normal", label: "기본" },
+                              { value: "less", label: "덜 달게" },
+                              { value: "none", label: "시럽 없이" },
+                            ]),
+                          )}
+                        </div>
+                      ),
+                    )}
+                    {uiText(
+                      editor.product.whippedCream &&
+                        !editor.product.fixedOptions && (
+                          <div className="option-group">
+                            <h3>{uiText("휘핑크림")}</h3>
+                            {uiText(
+                              optionButtons("whippedCream", [
+                                { value: "normal", label: "기본" },
+                                { value: "extra", label: "휘핑 추가" },
+                                { value: "none", label: "휘핑 제거" },
+                              ]),
+                            )}
+                          </div>
+                        ),
+                    )}
+                    {uiText(
+                      editor.product.coffee && !editor.product.fixedOptions && (
+                        <div className="option-group option-counter">
+                          <div>
+                            <h3>{uiText("샷 추가")}</h3>
+                            <p>{uiText("1샷당 +500원")}</p>
+                          </div>
+                          <Counter
+                            label="추가 샷"
+                            value={editor.options.shots}
+                            min={0}
+                            max={3}
+                            onChange={(n) => editOption("shots", n)}
+                          />
+                        </div>
+                      ),
+                    )}
+                    {uiText(
+                      !editor.product.fixedOptions && (
+                        <div className="option-group option-counter">
+                          <div>
+                            <h3>{uiText("시럽 추가")}</h3>
+                            <p>{uiText("1회당 +300원")}</p>
+                          </div>
+                          <Counter
+                            label="추가 시럽"
+                            value={editor.options.syrup}
+                            min={0}
+                            max={3}
+                            onChange={(n) => editOption("syrup", n)}
+                          />
+                        </div>
+                      ),
                     )}
                   </div>
-                ) : overlay === "printer" ? (
-                  <PrinterSettingsPanel
-                    value={printerSettings}
-                    onClose={closeOverlay}
-                    onSave={(value) => {
-                      setPrinterSettings(value);
-                      setOverlay(null);
-                      setToast("프린터 설정을 저장했어요.");
-                    }}
+                  <div className="option-footer">
+                    {uiText(
+                      editor.error && (
+                        <div className="inline-error" role="alert">
+                          <TriangleAlert size={17} />
+                          {uiText(editor.error)}
+                        </div>
+                      ),
+                    )}
+                    <div className="option-quantity">
+                      <span>{uiText("수량")}</span>
+                      <Counter
+                        label="메뉴 수량"
+                        value={editor.quantity}
+                        onChange={(n) => setEditor({ ...editor, quantity: n })}
+                      />
+                    </div>
+                    <button className="primary full" onClick={add}>
+                      {uiText(
+                        money(
+                          unitPrice(editor.product, editor.options) *
+                            editor.quantity,
+                        ),
+                      )}
+                      {uiText(" ")}
+                      {uiText(editor.lineId ? "수정하기" : "담기")}
+                      <Plus size={22} />
+                    </button>
+                  </div>
+                </Modal>
+              ) : (
+                payment && (
+                  <PaymentPanel
+                    payment={payment}
+                    total={total}
+                    onStart={beginPayment}
+                    onCancel={cancelPayment}
+                    onRetry={() =>
+                      setPayment({
+                        ...payment,
+                        status: "waiting",
+                        attempt: crypto.randomUUID(),
+                      })
+                    }
                   />
-                ) : (
-                  receipt && (
-                    <ReceiptPreview
-                      soundSettings={printerSettings}
-                      order={receipt}
-                      sample={receiptSample}
-                      onClose={closeOverlay}
-                      onSettings={() => setOverlay("printer")}
-                    />
-                  )
-                )}
-              </Modal>
-            ) : editor ? (
-              <Modal
-                title={editor.lineId ? "메뉴 수정" : "메뉴 선택"}
-                onClose={() => setEditor(null)}
-                className="option-modal"
-              >
-                <div className="option-intro">
-                  <div className="option-photo">
-                    <ProductImage
-                      product={editor.product}
-                      temperature={editor.options.temperature}
-                    />
-                  </div>
-                  <div>
-                    <span className="eyebrow">SWitch COFFEE</span>
-                    <h2>{editor.product.name}</h2>
-                    <p>{editor.product.description}</p>
-                    <strong>{money(editor.product.price)}</strong>
-                  </div>
-                </div>
-                <div className="option-scroll">
-                  <div className="option-group">
-                    <h3>
-                      온도 <span className="required">필수</span>
-                    </h3>
-                    {optionButtons(
-                      "temperature",
-                      editor.product.temperatures.map((temperature) => ({
-                        value: temperature,
-                        label: temperature === "ice" ? "차갑게" : "따뜻하게",
-                        extra:
-                          temperature === "ice"
-                            ? editor.product.temperatures.length === 1
-                              ? "ICE ONLY"
-                              : "ICE"
-                            : editor.product.temperatures.length === 1
-                              ? "HOT ONLY"
-                              : "HOT",
-                      })),
-                    )}
-                  </div>
-                  {!editor.product.fixedSize && (
-                    <div className="option-group">
-                      <h3>사이즈</h3>
-                      {optionButtons("size", [
-                        { value: "regular", label: "레귤러", extra: "기본" },
-                        { value: "large", label: "라지", extra: "+500원" },
-                      ])}
-                    </div>
-                  )}
-                  {editor.product.fixedOptions && (
-                    <p className="fixed-options-note">
-                      이 메뉴는 온도와 구성이 정해져 있어요. 수량을 선택해
-                      주세요.
-                    </p>
-                  )}
-                  {editor.product.decaf && !editor.product.decafOnly && (
-                    <div className="option-group">
-                      <h3>원두</h3>
-                      {optionButtons("decaf", [
-                        { value: false, label: "기본 원두" },
-                        { value: true, label: "디카페인", extra: "+500원" },
-                      ])}
-                    </div>
-                  )}
-                  {editor.product.milk && !editor.product.fixedOptions && (
-                    <div className="option-group">
-                      <h3>우유</h3>
-                      {optionButtons("milk", [
-                        { value: "regular", label: "일반 우유" },
-                        { value: "oat", label: "오트밀크", extra: "+600원" },
-                      ])}
-                    </div>
-                  )}
-                  {editor.options.temperature === "ice" &&
-                    editor.product.iceAdjustable && (
-                      <div className="option-group">
-                        <h3>얼음</h3>
-                        {optionButtons("ice", [
-                          { value: "normal", label: "기본" },
-                          { value: "more", label: "많이" },
-                          { value: "less", label: "적게" },
-                          { value: "none", label: "없이" },
-                        ])}
-                      </div>
-                    )}
-                  {!editor.product.fixedOptions && (
-                    <div className="option-group">
-                      <h3>당도</h3>
-                      {optionButtons("sweetness", [
-                        { value: "normal", label: "기본" },
-                        { value: "less", label: "덜 달게" },
-                        { value: "none", label: "시럽 없이" },
-                      ])}
-                    </div>
-                  )}
-                  {editor.product.whippedCream &&
-                    !editor.product.fixedOptions && (
-                      <div className="option-group">
-                        <h3>휘핑크림</h3>
-                        {optionButtons("whippedCream", [
-                          { value: "normal", label: "기본" },
-                          { value: "extra", label: "휘핑 추가" },
-                          { value: "none", label: "휘핑 제거" },
-                        ])}
-                      </div>
-                    )}
-                  {editor.product.coffee && !editor.product.fixedOptions && (
-                    <div className="option-group option-counter">
-                      <div>
-                        <h3>샷 추가</h3>
-                        <p>1샷당 +500원</p>
-                      </div>
-                      <Counter
-                        label="추가 샷"
-                        value={editor.options.shots}
-                        min={0}
-                        max={3}
-                        onChange={(n) => editOption("shots", n)}
-                      />
-                    </div>
-                  )}
-                  {!editor.product.fixedOptions && (
-                    <div className="option-group option-counter">
-                      <div>
-                        <h3>시럽 추가</h3>
-                        <p>1회당 +300원</p>
-                      </div>
-                      <Counter
-                        label="추가 시럽"
-                        value={editor.options.syrup}
-                        min={0}
-                        max={3}
-                        onChange={(n) => editOption("syrup", n)}
-                      />
-                    </div>
-                  )}
-                </div>
-                <div className="option-footer">
-                  {editor.error && (
-                    <div className="inline-error" role="alert">
-                      <TriangleAlert size={17} />
-                      {editor.error}
-                    </div>
-                  )}
-                  <div className="option-quantity">
-                    <span>수량</span>
-                    <Counter
-                      label="메뉴 수량"
-                      value={editor.quantity}
-                      onChange={(n) => setEditor({ ...editor, quantity: n })}
-                    />
-                  </div>
-                  <button className="primary full" onClick={add}>
-                    {money(
-                      unitPrice(editor.product, editor.options) *
-                        editor.quantity,
-                    )}{" "}
-                    {editor.lineId ? "수정하기" : "담기"}
-                    <Plus size={22} />
-                  </button>
-                </div>
-              </Modal>
-            ) : (
-              payment && (
-                <PaymentPanel
-                  payment={payment}
-                  total={total}
-                  onStart={beginPayment}
-                  onCancel={cancelPayment}
-                  onRetry={() =>
-                    setPayment({
-                      ...payment,
-                      status: "waiting",
-                      attempt: crypto.randomUUID(),
-                    })
-                  }
-                />
-              )
+                )
+              ),
             )}
           </main>
         </div>
       </div>
-      {!standalone && (
-        <div className="studio-footer">
-          <span>1600 × 2560 · 세로형</span>
-          <span>메뉴·옵션·주문 내역·결제 흐름을 직접 터치해 보세요.</span>
-          <button
-            onClick={() => {
-              if (cart.length) setOverlay("cancel");
-              else reset();
-            }}
-          >
-            <RotateCcw size={13} />
-            처음부터
-          </button>
-        </div>
+      {uiText(
+        !standalone && (
+          <div className="studio-footer">
+            <span>{uiText("1600 × 2560 · 세로형")}</span>
+            <span>
+              {uiText("메뉴·옵션·주문 내역·결제 흐름을 직접 터치해 보세요.")}
+            </span>
+            <button
+              onClick={() => {
+                if (cart.length) setOverlay("cancel");
+                else reset();
+              }}
+            >
+              <RotateCcw size={13} />
+              {uiText("처음부터")}
+            </button>
+          </div>
+        ),
       )}
-      {order && (
-        <AutoReceiptPrinter
-          order={order}
-          settings={printerSettings}
-          onPhase={(state, message) => setAutoPrint({ state, message })}
-        />
+      {uiText(
+        order && (
+          <AutoReceiptPrinter
+            order={order}
+            settings={printerSettings}
+            onPhase={(state, message) => setAutoPrint({ state, message })}
+          />
+        ),
       )}
     </div>
   );
