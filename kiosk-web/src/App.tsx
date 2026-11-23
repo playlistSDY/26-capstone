@@ -1356,7 +1356,7 @@ export default function App() {
                       {uiText(
                         placeChosen ? placeName(place) : "매장·포장 선택",
                       )}
-                      <ChevronDown size={15} />
+                      <ChevronDown size={17} />
                     </button>
                   </header>
                   {uiText(
@@ -1549,7 +1549,7 @@ export default function App() {
                                   })
                                 }
                               >
-                                <ChevronUp size={26} />
+                                <ChevronUp size={28} />
                               </button>
                               <button
                                 aria-label={uiText("주문 내역 아래로")}
@@ -1561,18 +1561,19 @@ export default function App() {
                                   })
                                 }
                               >
-                                <ChevronDown size={26} />
+                                <ChevronDown size={28} />
                               </button>
                             </div>
                           </div>
                           <footer className="cart-bar">
                             <button
-                              className="text-button"
+                              className="icon-button"
+                              aria-label={uiText("주문 취소")}
                               onClick={() =>
                                 cart.length ? setOverlay("cancel") : reset()
                               }
                             >
-                              {uiText("주문 취소")}
+                              <X size={22} aria-hidden="true" />
                             </button>
                             <div className="cart-tally">
                               <span>
@@ -1705,7 +1706,7 @@ export default function App() {
                                 })
                               }
                             >
-                              <ChevronUp size={26} />
+                              <ChevronUp size={28} />
                             </button>
                             <button
                               aria-label={uiText("주문 확인 목록 아래로")}
@@ -1717,7 +1718,7 @@ export default function App() {
                                 })
                               }
                             >
-                              <ChevronDown size={26} />
+                              <ChevronDown size={28} />
                             </button>
                           </div>
                         </div>

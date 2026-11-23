@@ -228,6 +228,10 @@ test("order dock supports editing, review before payment, and clearing", async (
   await addCoffee(page);
   const dock = page.getByRole("region", { name: "현재 주문 내역" });
   await expect(dock).toContainText("바닐라라떼");
+  await expect(
+    dock.getByRole("button", { name: "주문 취소" }),
+  ).not.toContainText("주문 취소");
+  await expect(dock.locator(".dock-scroll-buttons")).toBeHidden();
   await dock
     .getByRole("button", { name: "바닐라라떼 주문 수량 늘리기" })
     .click();
@@ -340,6 +344,13 @@ test("order list scrolls independently with both wheel and up/down buttons", asy
     up = page.getByRole("button", { name: "주문 내역 위로" }),
     down = page.getByRole("button", { name: "주문 내역 아래로" });
   await expect(up).toBeEnabled();
+  const listBounds = await list.boundingBox();
+  const rail = await page
+    .locator(".dock-body .dock-scroll-buttons")
+    .boundingBox();
+  const upButton = await up.boundingBox();
+  expect(rail!.height).toBeCloseTo(listBounds!.height, 0);
+  expect(upButton!.height / rail!.height).toBeGreaterThan(0.45);
   await up.click();
   await expect.poll(() => list.evaluate((el) => el.scrollTop)).toBe(0);
   await expect(down).toBeEnabled();

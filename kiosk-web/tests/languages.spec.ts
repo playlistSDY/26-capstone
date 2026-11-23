@@ -30,8 +30,14 @@ test("The basic order flow switches languages without changing prices or a saved
   await page
     .getByRole("button", { name: new RegExp(words["포장할게요"].en) })
     .click();
-  await expect(language).toHaveCSS("height", "38px");
-  await expect(page.locator(".kiosk-header .language-globe")).toBeVisible();
+  await expect(language).toHaveCSS("height", "42px");
+  await expect(language).toHaveCSS("color", "rgba(0, 0, 0, 0)");
+  const homeIcon = page.locator(".kiosk-header .icon-button svg");
+  const globe = page.locator(".kiosk-header .language-globe");
+  await expect(globe).toHaveCSS(
+    "width",
+    await homeIcon.evaluate((node) => getComputedStyle(node).width),
+  );
   await page
     .getByRole("button", { name: /Vanilla Latte.*4,500/, exact: false })
     .click();

@@ -465,14 +465,17 @@ button:disabled:active {
 .place-switch {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 8px 11px;
+  min-width: 124px;
+  min-height: 48px;
+  padding: 8px 15px;
+  font-size: 17px;
 }
 .place-switch,
 .language-selector select {
   border: 1px solid #edf0f4;
   border-radius: 9px;
-  font-size: 14px;
   color: #6b7684;
 }
 .categories {
@@ -1552,10 +1555,6 @@ button:disabled:active {
 .order-dock .cart-bar > .primary:disabled {
   background: #e9edf3;
 }
-.order-dock .cart-bar > .text-button {
-  font-size: 16px;
-  padding-left: 0;
-}
 .payment-panel {
   padding: 30px 38px;
   text-align: center;
@@ -1608,32 +1607,38 @@ button:disabled:active {
   padding-right: 0;
 }
 .dock-scroll-buttons {
-  width: 48px;
+  width: 54px;
   flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  justify-content: center;
-  align-self: center;
-  padding: 4px 0;
+  display: grid;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  align-self: stretch;
+  border: 1px solid #e5e8ed;
+  border-radius: 14px;
+  background: #f7f8fa;
+}
+.dock-scroll-buttons:not(:has(button:enabled)) {
+  display: none;
 }
 .dock-scroll-buttons button {
-  width: 48px;
-  height: 45px;
-  border: 1px solid #e5e8ed;
-  border-radius: 9px;
-  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
   color: #4e5968;
 }
+.dock-scroll-buttons button:first-child {
+  border-radius: 13px 13px 0 0;
+}
+.dock-scroll-buttons button:last-child {
+  border-top: 1px solid #e5e8ed;
+  border-radius: 0 0 13px 13px;
+}
 .dock-scroll-buttons button:hover:not(:disabled) {
-  background: #f2f4f6;
+  background: #ecf0f5;
 }
 .dock-scroll-buttons button:disabled {
-  background: #f9fafb;
-  opacity: 0.35;
+  color: #aeb7c2;
+  opacity: 1;
 }
 .dock-body .dock-line {
   gap: 15px;
@@ -1677,6 +1682,6 @@ button:disabled:active {
 .review-scroll-buttons {
   position: absolute;
   right: 22px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 20px;
 }
