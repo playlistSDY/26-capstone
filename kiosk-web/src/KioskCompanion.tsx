@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  useLayoutEffect,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { AgentAvatar } from "./AgentAvatar";
 import type { AttendantState } from "./attendantState";
 import { guidanceElement, type GuidanceState } from "./AgentGuidance";
@@ -15,6 +21,7 @@ export function KioskCompanion({
   state,
   level,
   caption,
+  notice,
   conversation,
   guidance,
   screen,
@@ -23,7 +30,13 @@ export function KioskCompanion({
   state: AttendantState;
   level: number;
   caption: string;
-  conversation: { role: "assistant" | "user"; text: string }[];
+  notice?: string;
+  conversation: {
+    role: "assistant" | "user";
+    text: string;
+    id?: string;
+    status?: "streaming" | "complete" | "interrupted";
+  }[];
   guidance: GuidanceState | null;
   screen: string;
 }) {
@@ -222,7 +235,14 @@ export function KioskCompanion({
     (found, message, index) => (message.role === "user" ? index : found),
     -1,
   );
-  useEffect(() => {
+  const lastUser = useRef<number>(-1);
+  useLayoutEffect(() => {
+    const userIndex = conversation.reduce(
+      (last, message, index) => (message.role === "user" ? index : last),
+      -1,
+    );
+    if (lastUser.current !== userIndex || inputPending) follow.current = true;
+    lastUser.current = userIndex;
     if (thread.current && (follow.current || inputPending))
       thread.current.scrollTop = thread.current.scrollHeight;
   }, [conversation, inputPending, waitingCaption, collapsed]);
@@ -309,7 +329,10 @@ export function KioskCompanion({
               !inputPending && !showWait && index === recent.length - 1;
             return (
               <div
-                key={`${conversation.length - recent.length + index}:${message.role}`}
+                key={
+                  message.id ??
+                  `${conversation.length - recent.length + index}:${message.role}`
+                }
                 className={
                   message.role === "user"
                     ? "companion-user-bubble"
@@ -327,10 +350,13 @@ export function KioskCompanion({
                   className={`companion-text${active ? " companion-caption" : ""}`}
                   aria-label={active ? "현재 응답 자막" : undefined}
                 >
-                  {active && message.role === "assistant"
-                    ? caption
-                    : message.text}
+                  {message.text}
                 </p>
+                {message.status === "interrupted" && (
+                  <small className="companion-interrupted">
+                    말씀 도중 멈췄어요
+                  </small>
+                )}
               </div>
             );
           })}
@@ -350,6 +376,11 @@ export function KioskCompanion({
                 <i />
                 <i />
               </span>
+            </div>
+          )}
+          {notice && (
+            <div className="companion-speech is-notice" role="status">
+              <p className="companion-text">{notice}</p>
             </div>
           )}
           {showWait && (

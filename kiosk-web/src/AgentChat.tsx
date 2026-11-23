@@ -89,6 +89,7 @@ type Message = {
   id?: string;
   usage?: UsageReport;
   elapsed_ms?: number;
+  status?: "streaming" | "complete" | "interrupted";
 };
 type Pending = {
   request_id: string;
@@ -113,6 +114,9 @@ type StreamEvent = Result & {
   sequence: number;
   needs_delivery?: boolean;
 };
+// Share a pending cancellation across overlapping submissions for this speaker.
+const interruptionBarriers = new WeakMap<AgentSpeech, Promise<void>>();
+
 const greeting: Message = {
   role: "assistant",
   text: "안녕하세요. 무엇을 드릴까요?",
@@ -354,8 +358,11 @@ export function AgentChat({
   }
 
   async function interrupt(replyText?: string) {
+    const barrier = interruptionBarriers.get(speech.current!);
+    if (barrier) return barrier;
     const ownGeneration = ++generation.current;
     const target = activeRequest.current;
+    activeRequest.current = null;
     const confirmationVisible =
       !!target && delivery.current?.request === target.request;
     const before = JSON.stringify([
@@ -369,7 +376,19 @@ export function AgentChat({
     setPlayback({ active: false, level: 0 });
     delivery.current = null;
     streamAbort.current?.abort();
-    if (target && status) {
+    sending.current = false;
+    setBusy(false);
+    setPending(null);
+    if (target)
+      setMessages((previous) =>
+        previous.map((message) =>
+          message.id === target.request && message.status === "streaming"
+            ? { ...message, status: "interrupted" }
+            : message,
+        ),
+      );
+    const stopping = (async () => {
+      if (!target || !status) return;
       const result = await request<Result>(
         `sessions/${target.session}/interrupt`,
         status.token,
@@ -379,8 +398,8 @@ export function AgentChat({
           confirmation_visible: confirmationVisible,
         },
       );
-      if (result.usage) recordUsage(target.request, result.usage);
       if (generation.current !== ownGeneration) return;
+      if (result.usage) recordUsage(target.request, result.usage);
       if (
         result.state &&
         canApply &&
@@ -389,11 +408,14 @@ export function AgentChat({
         !["finalizing", "completed"].includes(current.current.screen)
       )
         apply(result.state);
+    })();
+    interruptionBarriers.set(speech.current!, stopping);
+    try {
+      await stopping;
+    } finally {
+      if (interruptionBarriers.get(speech.current!) === stopping)
+        interruptionBarriers.delete(speech.current!);
     }
-    if (generation.current !== ownGeneration) return;
-    sending.current = false;
-    setBusy(false);
-    setPending(null);
   }
 
   async function submit(retry?: Pending, paymentEvent = false) {
@@ -406,7 +428,12 @@ export function AgentChat({
     }
     if (ttsEnabled) unlockAgentAudio();
     if (!status?.ready || (!retry && !paymentEvent && !text.trim())) return;
-    if (sending.current || speaking || delivery.current) {
+    if (
+      sending.current ||
+      speaking ||
+      delivery.current ||
+      interruptionBarriers.has(speech.current!)
+    ) {
       try {
         await interrupt(
           paymentEvent ? undefined : (retry?.text ?? text.trim()),
@@ -550,11 +577,13 @@ export function AgentChat({
               role: "assistant",
               text: value,
               id: operation!.request_id,
+              status: append ? "streaming" : "complete",
             });
           else
             next[index] = {
               ...next[index],
               text: append ? next[index].text + value : value,
+              status: append ? "streaming" : "complete",
             };
           return next;
         });
@@ -645,6 +674,18 @@ export function AgentChat({
     } catch (cause) {
       if (generation.current !== turnGeneration) return;
       if (cause instanceof Error && cause.name === "AbortError") return;
+      speech.current!.stop();
+      setPlayback({ active: false, level: 0 });
+      delivery.current = null;
+      if (operation)
+        setMessages((previous) =>
+          previous.map((message) =>
+            message.id === operation!.request_id &&
+            message.status === "streaming"
+              ? { ...message, status: "interrupted" }
+              : message,
+          ),
+        );
       try {
         const fresh = await request<Status>("status");
         if (generation.current !== turnGeneration) return;
@@ -706,7 +747,8 @@ export function AgentChat({
               kiosk={companionSlot}
               state={presence}
               level={playback.level}
-              caption={error || caption}
+              caption={caption}
+              notice={error}
               conversation={messages}
               guidance={guidance}
               screen={cart.screen}

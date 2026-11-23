@@ -788,9 +788,11 @@ export default function App() {
           validateOptions(product, line.options) ||
           !Number.isInteger(line.quantity) ||
           line.quantity < 1 ||
-          line.quantity > 20
+          line.quantity > MAX_ORDER_QUANTITY
         );
       }) ||
+      lines.reduce((sum, line) => sum + line.quantity, 0) >
+        MAX_ORDER_QUANTITY ||
       totalPrice(lines) !== state.total
     )
       throw new Error(

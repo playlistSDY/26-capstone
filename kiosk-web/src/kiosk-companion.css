@@ -365,3 +365,83 @@
 .companion-user-bubble .companion-activity i {
   background: #dce9ff;
 }
+
+/* Diagnostics must never resize the kiosk as token counts or errors grow. */
+.studio.demo-layout.agent-stage-layout {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: auto minmax(0, 1fr) 76px auto;
+}
+.studio.demo-layout.agent-stage-layout > .preview-surface {
+  height: auto;
+  min-height: 0;
+}
+.studio.demo-layout.agent-stage-layout > .agent-chat-pane {
+  height: 76px;
+  padding: 6px 12px;
+}
+.agent-test-console {
+  position: relative;
+  width: 100%;
+  height: 64px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-rows: 38px 18px;
+  grid-template-areas: "label input footer controls" "usage usage usage usage";
+  gap: 4px 10px;
+}
+.agent-test-caption {
+  grid-area: label;
+}
+.agent-test-console .agent-chat-composer {
+  grid-area: input;
+  min-width: 0;
+}
+.agent-test-console .agent-chat-footer {
+  grid-area: footer;
+}
+.agent-test-console .agent-chat-controls {
+  grid-area: controls;
+}
+.agent-test-console .agent-session-usage {
+  grid-area: usage;
+  min-width: 0;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow-x: auto;
+  align-self: start;
+  margin: 0;
+}
+.agent-test-console .agent-chat-error {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-height: 100px;
+  overflow-y: auto;
+  background: #fff2ed;
+  border: 1px solid #f0c9bc;
+  border-radius: 10px;
+  z-index: 90;
+}
+.companion-interrupted {
+  display: block;
+  margin-top: calc(5px / var(--companion-scale));
+  font-size: calc(16px / var(--companion-scale));
+  color: #61736a;
+}
+@media (max-width: 1023px) {
+  .studio.demo-layout.agent-stage-layout {
+    grid-template-rows: auto minmax(0, 1fr) 104px auto;
+  }
+  .studio.demo-layout.agent-stage-layout > .agent-chat-pane {
+    height: 104px;
+  }
+  .agent-test-console {
+    height: 92px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: 38px 28px 18px;
+    grid-template-areas: "input input" "footer controls" "usage usage";
+  }
+}

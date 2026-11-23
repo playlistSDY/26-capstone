@@ -16,6 +16,7 @@ async function fixture(page: Page) {
   const requests: any[] = [];
   const turns = new Map<string, any>();
   let respond: (body: any) => any = () => ({});
+  let report: any = undefined;
   await page.route("**/agent-api/**", async (route) => {
     const req = route.request(),
       path = new URL(req.url()).pathname;
@@ -53,6 +54,7 @@ async function fixture(page: Page) {
         text: "현재 화면에 설명하는 위치를 표시했어요.",
         state,
         needs_delivery: false,
+        usage: report,
       });
       return route.fulfill({ json: { ok: true } });
     }
@@ -77,6 +79,9 @@ async function fixture(page: Page) {
   return {
     requests,
     say,
+    reportUsage: (value: any) => {
+      report = value;
+    },
     respond: (fn: typeof respond) => {
       respond = fn;
     },
@@ -366,4 +371,73 @@ test("New cream and ice controls are highlighted and direct changes reach the ne
   await expect(page.locator('[data-guide="editor.add"]')).toContainText(
     "4,700원",
   );
+});
+
+test("Delegated 100-cup orders reach the screen and stay in the following turn", async ({
+  page,
+}) => {
+  const f = await fixture(page);
+  const lines = [
+    { id: "bulk-31", product_id: "latte", quantity: 31, options },
+    {
+      id: "bulk-19",
+      product_id: "latte",
+      quantity: 19,
+      options: { ...options, temperature: "hot" },
+    },
+    {
+      id: "bulk-50",
+      product_id: "mocha",
+      quantity: 50,
+      options: { ...options, temperature: "hot", whippedCream: "none" },
+    },
+  ];
+  f.respond(() => ({ lines, total: 470000 }));
+  await f.say("100명 걸로 알아서 담아줘");
+  await expect(page.locator(".cart-tally")).toContainText("100개");
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  f.respond(() => ({ place: "store" }));
+  await f.say("매장에서 먹을게");
+  expect(
+    f.requests.at(-1).cart.lines.map((line: any) => line.quantity),
+  ).toEqual([31, 19, 50]);
+  await expect(page.locator(".place-switch")).toHaveText("매장");
+});
+
+test("Long dialogue and growing usage never resize the kiosk at desktop and narrow widths", async ({
+  page,
+}) => {
+  const f = await fixture(page);
+  for (const width of [1360, 430]) {
+    await page.setViewportSize({ width, height: 1040 });
+    await page.waitForTimeout(900);
+    const before = await page.locator(".kiosk-space").boundingBox();
+    for (let turn = 0; turn < 8; turn++) {
+      f.reportUsage({
+        turn: { input_tokens: 100, output_tokens: 20, total_tokens: 120 },
+        session: {
+          input_tokens: 999999,
+          output_tokens: 888888,
+          total_tokens: 1888887,
+          unreported_requests: turn % 2,
+        },
+        tts_session: {
+          input_tokens: 999999,
+          output_tokens: 999999,
+          total_tokens: 1999998,
+        },
+      });
+      await f.say(`긴 대화 ${width} ${turn}`);
+    }
+    await page.waitForTimeout(900);
+    const after = await page.locator(".kiosk-space").boundingBox();
+    expect(Math.abs(after!.width - before!.width)).toBeLessThan(1);
+    expect(Math.abs(after!.height - before!.height)).toBeLessThan(1);
+    await expect(page.locator(".companion-caption")).toBeInViewport();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
 });

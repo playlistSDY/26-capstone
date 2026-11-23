@@ -541,3 +541,71 @@ test("Order-type correction and agreement advance even if speech fails and no AC
   await expect.poll(() => f.ended()).toBeGreaterThan(0);
   await expect(page.locator(".agent-chat-log")).toContainText("안녕하세요");
 });
+
+test("Stopping a partial reply is immediate and the next input waits for one cancellation", async ({
+  page,
+}) => {
+  const f = await fixture(page);
+  await page.evaluate(() => {
+    const original = window.fetch;
+    let first = true;
+    (window as any).fetch = async (...args: Parameters<typeof fetch>) => {
+      const url = String(args[0]);
+      if (url.includes("/events") && first) {
+        first = false;
+        return new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue(
+                new TextEncoder().encode(
+                  JSON.stringify({
+                    type: "text.delta",
+                    sequence: 1,
+                    text: "이전 답변은 여기까지만 말했어요. ",
+                  }) + "\n",
+                ),
+              );
+            },
+          }),
+          { headers: { "Content-Type": "application/x-ndjson" } },
+        );
+      }
+      if (url.endsWith("/interrupt"))
+        return new Promise((resolve) => {
+          (window as any).releaseStop = () => resolve(original(...args));
+        });
+      return original(...args);
+    };
+  });
+  const input = page.getByRole("textbox", { name: "주문 메시지" });
+  await input.fill("첫 요청");
+  await page
+    .getByRole("button", { name: "메시지 보내기", exact: true })
+    .click();
+  await expect(page.locator(".companion-caption")).toContainText(
+    "이전 답변은 여기까지만",
+  );
+  await page.getByRole("button", { name: "말 끊기", exact: true }).click();
+  await expect(page.locator(".kiosk-companion .agent-avatar")).toHaveAttribute(
+    "data-state",
+    "ready",
+  );
+  await expect(page.locator(".companion-interrupted")).toHaveText(
+    "말씀 도중 멈췄어요",
+  );
+  await input.fill("네");
+  await page
+    .getByRole("button", { name: "메시지 보내기", exact: true })
+    .click();
+  expect(f.requests).toHaveLength(1);
+  await page.evaluate(() => (window as any).releaseStop());
+  await expect(page.locator(".payment-method")).toHaveCount(5);
+  expect(f.interrupts).toHaveLength(1);
+  expect(f.requests).toHaveLength(2);
+  await expect(page.getByLabel("내가 한 말")).toHaveText("네");
+  await expect(
+    page
+      .locator(".companion-speech")
+      .filter({ hasText: "이전 답변은 여기까지만" }),
+  ).toHaveCount(1);
+});
