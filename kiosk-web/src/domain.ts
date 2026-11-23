@@ -7,7 +7,8 @@ export type Options = {
   shots: number;
   syrup: number;
   milk: "regular" | "oat";
-  ice: "normal" | "less" | "none";
+  ice: "normal" | "more" | "less" | "none";
+  whippedCream?: "normal" | "extra" | "none";
   sweetness: "normal" | "less" | "none";
   decaf: boolean;
 };
@@ -44,7 +45,8 @@ export const defaults = (p: Product, decaf = false): Options => ({
   milk: "regular",
   ice: "normal",
   sweetness: "normal",
-  decaf: !!p.decaf && decaf,
+  decaf: !!p.decafOnly || (!!p.decaf && decaf),
+  whippedCream: "normal",
 });
 export function validateOptions(p: Product, o: Options): string | null {
   if (o.temperature !== "ice" && o.temperature !== "hot")
@@ -63,7 +65,8 @@ export function validateOptions(p: Product, o: Options): string | null {
       o.milk !== "regular" ||
       o.ice !== "normal" ||
       o.sweetness !== "normal" ||
-      o.decaf)
+      o.decaf ||
+      (o.whippedCream ?? "normal") !== "normal")
   )
     return "이 메뉴는 수량만 변경할 수 있어요.";
   if (!p.iceAdjustable && o.ice !== "normal")
@@ -71,11 +74,16 @@ export function validateOptions(p: Product, o: Options): string | null {
   if (
     !["regular", "large"].includes(o.size) ||
     !["regular", "oat"].includes(o.milk) ||
-    !["normal", "less", "none"].includes(o.ice) ||
+    !["normal", "more", "less", "none"].includes(o.ice) ||
     !["normal", "less", "none"].includes(o.sweetness) ||
+    !["normal", "extra", "none"].includes(o.whippedCream ?? "normal") ||
     typeof o.decaf !== "boolean"
   )
     return "옵션을 다시 선택해 주세요.";
+  if (p.decafOnly && !o.decaf)
+    return "이 메뉴는 디카페인 원두로만 주문할 수 있어요.";
+  if (!p.whippedCream && (o.whippedCream ?? "normal") !== "normal")
+    return "이 메뉴는 휘핑을 변경할 수 없어요.";
   if (![o.shots, o.syrup].every((n) => Number.isInteger(n) && n >= 0 && n <= 3))
     return "추가 옵션은 0~3개까지 선택할 수 있어요.";
   if (
@@ -95,6 +103,7 @@ export const normalizeOptions = (o: Options): Options => ({
   ice: o.temperature === "hot" ? "normal" : o.ice,
   sweetness: o.sweetness,
   decaf: o.decaf,
+  whippedCream: o.whippedCream ?? "normal",
 });
 export function unitPrice(p: Product, o: Options) {
   return (
@@ -103,7 +112,7 @@ export function unitPrice(p: Product, o: Options) {
     o.shots * 500 +
     o.syrup * 300 +
     (o.milk === "oat" ? 600 : 0) +
-    (o.decaf ? 500 : 0)
+    (o.decaf && !p.decafOnly ? 500 : 0)
   );
 }
 export function totalPrice(lines: CartLine[]) {
@@ -122,10 +131,17 @@ export function summary(o: Options) {
     o.syrup ? `시럽 ${o.syrup} 추가` : null,
     o.milk === "oat" ? "오트밀크" : null,
     o.temperature === "ice" && o.ice !== "normal"
-      ? o.ice === "less"
-        ? "얼음 적게"
-        : "얼음 없이"
+      ? o.ice === "more"
+        ? "얼음 많이"
+        : o.ice === "less"
+          ? "얼음 적게"
+          : "얼음 없이"
       : null,
+    o.whippedCream === "extra"
+      ? "휘핑 추가"
+      : o.whippedCream === "none"
+        ? "휘핑 제거"
+        : null,
     o.sweetness !== "normal"
       ? o.sweetness === "less"
         ? "덜 달게"

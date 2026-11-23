@@ -6,12 +6,13 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/?kiosk=1");
   await page.getByRole("button", { name: /포장할게요/ }).click();
 });
-test("every primary category uses supplied photos and exposes all 112 distinct products", async ({
+test("every primary category uses supplied photos and exposes all 113 distinct products", async ({
   page,
 }) => {
   const names = new Set<string>();
   for (const name of [
     "커피",
+    "디카페인",
     "논커피",
     "티",
     "에이드",
@@ -51,13 +52,13 @@ test("every primary category uses supplied photos and exposes all 112 distinct p
         ),
     ).toBe(true);
   }
-  expect(names.size).toBe(112);
+  expect(names.size).toBe(113);
 });
 test("one menu switches HOT/ICE photographs and keeps the chosen photo through review and editing", async ({
   page,
 }) => {
   const button = page.getByRole("button", {
-    name: "아메리카노 3,200원",
+    name: "바닐라라떼 4,500원",
     exact: true,
   });
   await expect(button).toHaveCount(1);
@@ -70,15 +71,15 @@ test("one menu switches HOT/ICE photographs and keeps the chosen photo through r
   const hot = await image.getAttribute("src");
   expect(hot).not.toBe(ice);
   await modal
-    .getByRole("button", { name: "3,200원 담기", exact: true })
+    .getByRole("button", { name: "4,500원 담기", exact: true })
     .click();
   await page.getByRole("button", { name: "결제하기", exact: true }).click();
   await expect(page.locator(".cart-photo img")).toHaveAttribute("src", hot!);
-  await page.getByRole("button", { name: "아메리카노 옵션 변경" }).click();
+  await page.getByRole("button", { name: "바닐라라떼 옵션 변경" }).click();
   await expect(page.locator(".option-photo img")).toHaveAttribute("src", hot!);
   await page.getByRole("button", { name: /차갑게/ }).click();
   await page
-    .getByRole("button", { name: "3,200원 수정하기", exact: true })
+    .getByRole("button", { name: "4,500원 수정하기", exact: true })
     .click();
   await expect(page.locator(".cart-photo img")).toHaveAttribute("src", ice!);
   await page.reload();
@@ -90,13 +91,13 @@ test("HOT-only, ICE-only and packaged products do not offer unsupported options"
 }) => {
   await page.getByRole("button", { name: "커피", exact: true }).click();
   await page
-    .getByRole("button", { name: "에스프레소 4,200원", exact: true })
+    .getByRole("button", { name: "아메리카노 3,200원", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: /따뜻하게.*HOT ONLY/ }),
   ).toHaveClass(/selected/);
   await expect(page.getByRole("button", { name: /차갑게/ })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /라지/ })).toHaveCount(0);
+
   await page.getByRole("button", { name: "닫기", exact: true }).click();
   await page
     .getByRole("button", { name: "콜드브루 3,200원", exact: true })

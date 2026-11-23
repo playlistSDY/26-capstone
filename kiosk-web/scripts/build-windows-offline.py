@@ -92,7 +92,7 @@ def main():
     shutil.copytree(ROOT/"backend",stage/"source/backend",ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copy2(ROOT/"public/assets/fonts/Pretendard-LICENSE.txt",stage/"source/backend/fonts/OFL.txt")
     (stage/"source/scripts").mkdir()
-    for file in ["build-windows-offline.py","build-updater-setup.py","check-offline-local.mjs","check-shutdown-local.mjs","receipt-qa.mjs","capture-qa.mjs","publish-local-release.py","import-drink-catalog.py","build-sound-pack.py"]:
+    for file in ["build-windows-offline.py","build-updater-setup.py","check-offline-local.mjs","check-shutdown-local.mjs","receipt-qa.mjs","capture-qa.mjs","publish-local-release.py","import-drink-catalog.py","drink-photo-policy.json","build-sound-pack.py"]:
         shutil.copy2(ROOT/"scripts"/file,stage/"source/scripts"/file)
     notices=stage/"THIRD_PARTY_LICENSES"
     notices.mkdir()

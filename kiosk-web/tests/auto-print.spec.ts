@@ -3,10 +3,10 @@ import { mockBackend } from "./backend-fixture";
 async function finish(page: Page) {
   await page.getByRole("button", { name: /포장할게요/ }).click();
   await page
-    .getByRole("button", { name: "아메리카노 3,200원", exact: true })
+    .getByRole("button", { name: "바닐라라떼 4,500원", exact: true })
     .click();
   await page.getByRole("button", { name: /차갑게/ }).click();
-  await page.getByRole("button", { name: "3,200원 담기", exact: true }).click();
+  await page.getByRole("button", { name: "4,500원 담기", exact: true }).click();
   await page.getByRole("button", { name: "결제하기", exact: true }).click();
   await expect(
     page
