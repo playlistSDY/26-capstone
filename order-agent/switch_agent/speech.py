@@ -13,7 +13,7 @@ class RealtimeSpeaker:
         self.client = self.manager = self.connection = None
         self.lock = asyncio.Lock()
         self.model = os.environ.get('OPENAI_TTS_MODEL', 'gpt-realtime-2.1-mini')
-        self.voice = os.environ.get('OPENAI_TTS_VOICE', 'marin')
+        self.voice = os.environ.get('OPENAI_TTS_VOICE', 'cedar')
 
     async def connect(self):
         if self.connection is not None: return
