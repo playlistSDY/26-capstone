@@ -1,117 +1,80 @@
-"""Generate SWitch's local kiosk tones and a listening preview."""
-
-import hashlib
-import json
+"""Generate the original SWitch v2 earcons; NumPy is needed only to rebuild assets."""
 from pathlib import Path
-import wave
-
+import hashlib,json,wave
 import numpy as np
 
+ROOT=Path(__file__).resolve().parents[1]
+DEST=ROOT/'public/assets/sounds/v2'
+RATE=48000
+rng=np.random.default_rng(20261120)
 
-ROOT = Path(__file__).resolve().parents[1]
-DEST = ROOT / "public/assets/sounds/v2"
-RATE = 48000
+def tone(f,dur,style='pluck',gain=1):
+    t=np.arange(round(dur*RATE))/RATE
+    attack=np.minimum(t/.004,1)
+    fade=np.minimum((dur-t)/.018,1).clip(0,1)
+    if style=='wood':
+        signal=(np.sin(2*np.pi*f*t)*.7+np.sin(2*np.pi*f*2.73*t)*.22+rng.normal(0,1,len(t))*.07*np.exp(-t*160))
+        env=np.exp(-t*38)*attack*fade
+    elif style=='bell':
+        signal=np.sin(2*np.pi*f*t)+.24*np.sin(2*np.pi*f*2.01*t)*np.exp(-t*5)+.10*np.sin(2*np.pi*f*3.97*t)*np.exp(-t*10)
+        env=np.exp(-t*5)*attack*fade
+    elif style=='softbuzz':
+        signal=np.sin(2*np.pi*f*t)+.28*np.sin(2*np.pi*f*3*t)+.12*np.sin(2*np.pi*f*5*t)
+        env=(np.sin(np.pi*np.minimum(t/.025,.5))*np.minimum((dur-t)/.025,1)).clip(0,1)
+    elif style=='tick':
+        signal=np.sin(2*np.pi*f*t)+.35*np.sin(2*np.pi*f*2*t)
+        env=np.exp(-t*65)*np.minimum(t/.002,1)*fade
+    else:
+        signal=np.sin(2*np.pi*f*t)+.22*np.sin(2*np.pi*f*2*t)+.08*np.sin(2*np.pi*f*3*t)
+        env=np.exp(-t*14)*attack*fade
+    return signal*env*gain
 
+def sequence(parts):
+    n=max(round(offset*RATE)+len(signal) for offset,signal in parts)+round(.018*RATE)
+    result=np.zeros(n)
+    for offset,signal in parts:
+        start=round(offset*RATE);result[start:start+len(signal)]+=signal
+    result-=np.mean(result)
+    fade=round(.003*RATE);result[:fade]*=np.linspace(0,1,fade);result[-fade:]*=np.linspace(1,0,fade)
+    result=np.tanh(result*1.25)
+    return result
 
-def tone(start_hz, seconds, end_hz=None, gain=1):
-    time = np.arange(round(seconds * RATE)) / RATE
-    end_hz = start_hz if end_hz is None else end_hz
-    sweep = (end_hz - start_hz) / seconds
-    phase = 2 * np.pi * (start_hz * time + 0.5 * sweep * time**2)
-
-    attack = np.clip(time / 0.008, 0, 1)
-    release = np.clip((time[-1] - time) / min(0.035, seconds * 0.55), 0, 1)
-    envelope = np.sin(attack * np.pi / 2)**2 * np.sin(release * np.pi / 2)**2
-    waveform = np.sin(phase) + 0.08 * np.sin(2 * phase) + 0.015 * np.sin(3 * phase)
-    return gain * waveform * envelope
-
-
-def sequence(*parts):
-    length = max(round(offset * RATE) + len(signal) for offset, signal in parts)
-    samples = np.zeros(length + round(0.012 * RATE))
-    for offset, signal in parts:
-        start = round(offset * RATE)
-        samples[start : start + len(signal)] += signal
-    return samples
-
-
-def write_wave(path, samples):
-    pcm = np.round(samples * 32767).astype("<i2")
-    with wave.open(str(path), "wb") as output:
-        output.setnchannels(1)
-        output.setsampwidth(2)
-        output.setframerate(RATE)
-        output.writeframes(pcm.tobytes())
-
-
-# Maximum sample amplitudes at full volume. Routine navigation stays below
-# the card-reader, confirmation and error cues.
-sounds = {
-    "tap": ("기본 터치", 0.40, sequence((0, tone(490, 0.065, 395)))),
-    "select": ("메뉴·옵션 선택", 0.42, sequence((0, tone(525, 0.083, 570)))),
-    "add": (
-        "메뉴 담기",
-        0.48,
-        sequence((0, tone(480, 0.085, gain=0.7)), (0.066, tone(635, 0.112))),
-    ),
-    "increase": ("수량 증가", 0.36, sequence((0, tone(545, 0.063, 655)))),
-    "decrease": ("수량 감소", 0.35, sequence((0, tone(530, 0.072, 426)))),
-    "back": ("이전·취소", 0.36, sequence((0, tone(440, 0.096, 345)))),
-    "remove": ("메뉴 삭제", 0.40, sequence((0, tone(370, 0.111, 285)))),
-    "scroll": ("목록 스크롤", 0.22, sequence((0, tone(420, 0.049, 370)))),
-    "read": ("카드 인식", 0.49, sequence((0, tone(670, 0.112)))),
-    "success": (
-        "주문 완료",
-        0.58,
-        sequence((0, tone(523.25, 0.147, gain=0.72)), (0.113, tone(659.25, 0.193))),
-    ),
-    "error": (
-        "오류 안내",
-        0.52,
-        sequence((0, tone(349.23, 0.115)), (0.146, tone(293.66, 0.143, gain=0.82))),
-    ),
-    "print": ("출력 알림", 0.43, sequence((0, tone(605, 0.123, 550)))),
+sounds={
+ 'tap':sequence([(0,tone(730,.095,'wood'))]),
+ 'select':sequence([(0,tone(587.33,.16)),(.075,tone(880,.18))]),
+ 'add':sequence([(0,tone(523.25,.18)),(.075,tone(659.25,.18)),(.15,tone(1046.5,.25,'bell',.8))]),
+ 'increase':sequence([(0,tone(1046.5,.07,'tick')),(.045,tone(1396.9,.08,'tick'))]),
+ 'decrease':sequence([(0,tone(880,.07,'tick')),(.05,tone(659.25,.09,'tick'))]),
+ 'back':sequence([(0,tone(659.25,.14)),(.10,tone(440,.18))]),
+ 'remove':sequence([(0,tone(430,.10,'wood')),(.085,tone(285,.12,'wood'))]),
+ 'scroll':sequence([(0,tone(1180,.045,'tick'))]),
+ 'read':sequence([(0,tone(1100,.09,'softbuzz')),(.15,tone(1550,.12,'softbuzz'))]),
+ 'success':sequence([(0,tone(523.25,.42,'bell',.7)),(.10,tone(659.25,.44,'bell',.7)),(.20,tone(783.99,.46,'bell',.65)),(.32,tone(1046.5,.48,'bell',.6))]),
+ 'error':sequence([(0,tone(310,.16,'softbuzz')),(.23,tone(260,.21,'softbuzz'))]),
+ 'print':sequence([(0,tone(620,.055,'wood',.5)),(.065,tone(620,.055,'wood',.5)),(.15,tone(880,.12)),(.27,tone(1174.66,.18))]),
 }
-
-DEST.mkdir(parents=True, exist_ok=True)
-metadata = []
-preview = []
-for key, (label, target_peak, samples) in sounds.items():
-    samples = samples * target_peak / np.max(np.abs(samples))
-    file = DEST / f"{key}.wav"
-    write_wave(file, samples)
-
-    spectrum = np.abs(np.fft.rfft(samples))
-    frequencies = np.fft.rfftfreq(len(samples), 1 / RATE)
-    rms = float(np.sqrt(np.mean(samples**2)))
-    metadata.append({
-        "id": key,
-        "label": label,
-        "file": file.name,
-        "durationMs": round(len(samples) / RATE * 1000),
-        "peak": target_peak,
-        "rmsDbFS": round(float(20 * np.log10(rms)), 2),
-        "spectralCentroidHz": round(float(np.sum(spectrum * frequencies) / np.sum(spectrum))),
-        "sha256": hashlib.sha256(file.read_bytes()).hexdigest(),
-    })
-    preview.extend([samples * 0.75, np.zeros(round(0.4 * RATE))])
-
-manifest = {
-    "pack": "switch-original-sfx-v2",
-    "sampleRate": RATE,
-    "channels": 1,
-    "license": "Original audio generated for SWitch; project use permitted.",
-    "sounds": metadata,
-}
-(DEST / "manifest.json").write_text(
-    json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-)
-
-preview_path = ROOT.parent / "output/audio/SWitch-SFX-Preview.wav"
-preview_path.parent.mkdir(parents=True, exist_ok=True)
-write_wave(preview_path, np.concatenate(preview))
-
-qa_path = ROOT / "qa/sound-pack.json"
-qa_path.parent.mkdir(parents=True, exist_ok=True)
-qa_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-print(f"Wrote {len(metadata)} tones and listening preview: {preview_path}")
+labels={'tap':'기본 터치','select':'메뉴·옵션 선택','add':'메뉴 담기','increase':'수량 증가','decrease':'수량 감소','back':'이전·취소','remove':'메뉴 삭제','scroll':'목록 스크롤','read':'카드 인식','success':'주문 완료','error':'오류 안내','print':'출력 알림'}
+DEST.mkdir(parents=True,exist_ok=True)
+metadata=[];preview=[]
+for key,samples in sounds.items():
+    target=.58 if key=='scroll' else .86
+    samples=samples/max(np.max(np.abs(samples)),1e-9)*target
+    rms=float(np.sqrt(np.mean(samples*samples)))
+    if rms>.32:samples*=.32/rms
+    pcm=np.round(samples*32767).astype('<i2')
+    file=DEST/(key+'.wav')
+    with wave.open(str(file),'wb') as out:
+        out.setnchannels(1);out.setsampwidth(2);out.setframerate(RATE);out.writeframes(pcm.tobytes())
+    spectrum=np.abs(np.fft.rfft(samples))
+    frequencies=np.fft.rfftfreq(len(samples),1/RATE)
+    row={'id':key,'label':labels[key],'file':file.name,'durationMs':round(len(samples)/RATE*1000),
+         'peak':round(float(np.max(np.abs(samples))),4),'rmsDbFS':round(float(20*np.log10(np.sqrt(np.mean(samples*samples)))),2),
+         'spectralCentroidHz':round(float(np.sum(spectrum*frequencies)/np.sum(spectrum))),
+         'sha256':hashlib.sha256(file.read_bytes()).hexdigest()}
+    metadata.append(row);preview.extend([samples*.75,np.zeros(round(.6*RATE))])
+(DEST/'manifest.json').write_text(json.dumps({'pack':'switch-original-sfx-v2','sampleRate':RATE,'channels':1,'license':'Original audio generated for SWitch; project use permitted.','sounds':metadata},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+preview_path=ROOT.parent/'output/audio/SWitch-SFX-Preview.wav';preview_path.parent.mkdir(parents=True,exist_ok=True)
+with wave.open(str(preview_path),'wb') as out:
+    out.setnchannels(1);out.setsampwidth(2);out.setframerate(RATE);out.writeframes(np.round(np.concatenate(preview)*32767).astype('<i2').tobytes())
+(ROOT/'qa/sound-pack.json').write_text(json.dumps(metadata,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print(json.dumps({'sounds':len(metadata),'bytes':sum(p.stat().st_size for p in DEST.iterdir()),'preview':str(preview_path),'levels':[{k:x[k] for k in ['id','durationMs','rmsDbFS','spectralCentroidHz']} for x in metadata]},ensure_ascii=False,indent=2))

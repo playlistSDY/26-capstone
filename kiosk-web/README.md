@@ -20,7 +20,7 @@ Windows 11 x64, Windows 기본 PowerShell/.NET과 Epson 프린터 드라이버�
 - `backend/receipt_renderer.py`: Pillow + 포함한 Pretendard로 576px(72mm/203dpi) 흑백 PNG 생성.
 - `backend/windows_print.ps1`: Windows 프린터 목록과 PrintDocument/StandardPrintController 출력. Chrome 인쇄 창이나 자동 인쇄 플래그를 사용하지 않습니다.
 - `src/localBackend.ts`, `src/printReceipt.ts`: 동일 로컬 주소에서 설정 조회·저장·출력 요청.
-- `src/sounds.ts`: 터치·선택·담기·수량 증가/감소·취소·삭제·스크롤·카드 인식·완료·오류·출력을 서로 다른 원음 12종으로 재생합니다. `public/assets/sounds/v2`의 로컬 WAV를 사용하며 PC 스피커로 출력합니다. 새 설치 기본 볼륨은 75%이며 기존에 저장한 볼륨·음소거는 유지합니다. 터치와 스크롤은 짧고 조용하게, 결제 완료와 오류는 가려지지 않도록 더 분명하게 재생합니다. 설정에서 12종을 개별로 들어볼 수 있습니다. OS 볼륨은 변경하지 않습니다.
+- `src/sounds.ts`: 터치·선택·담기·수량 증가/감소·취소·삭제·스크롤·카드 인식·완료·오류·출력을 서로 다른 원음 12종으로 재생합니다. `public/assets/sounds/v2`의 로컬 WAV를 사용하며 PC 스피커로 출력합니다. 새 설치 기본 볼륨은 75%이며 기존에 저장한 볼륨·음소거는 유지합니다. 원음 크기를 높이고 동시 재생을 제한해 겹침과 클리핑을 방지합니다. 설정에서 12종을 개별로 들어볼 수 있습니다. OS 볼륨은 변경하지 않습니다.
 - `scripts/build-sound-pack.py`: 효과음 원본 생성기(재생에는 불필요). NumPy가 있는 Python으로 다시 생성하며 48kHz/16bit 모노 WAV와 음량 분석 메타데이터를 만듭니다.
 
 설정은 프린터, 자동 출력, 영수증 종류, 글자 크기, 좌우 보정, 효과음/볼륨입니다. 설정·이력·PNG·로그는 `%LOCALAPPDATA%\SWitch\Kiosk`에 저장합니다. 장바구니·주문은 전용 브라우저 프로필에 보관합니다. 개발 컴퓨터의 설정·주문·로그는 ZIP에 포함하지 않습니다.
