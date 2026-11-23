@@ -28,12 +28,19 @@ try{
  await expect(dialog).toHaveCount(0);
  await page.getByRole('button',{name:/포장할게요/}).click();
  await expect.poll(()=>page.locator('.product-card img').evaluateAll(imgs=>imgs.length===12&&imgs.every(i=>i.complete&&i.naturalWidth>0))).toBe(true);
- await page.getByRole('button',{name:'아메리카노 3,200원',exact:true}).click();
+ await page.getByRole('button',{name:'디카페인',exact:true}).click();
+ await expect(page.locator('.product-card')).toHaveCount(9);
+ await page.getByRole('button',{name:'디카페인 카페모카 4,700원',exact:true}).click();
  await page.getByRole('button',{name:/차갑게/}).click();
- await page.getByRole('button',{name:'3,200원 담기',exact:true}).click();
+ await page.getByRole('button',{name:'많이',exact:true}).click();
+ await page.getByRole('button',{name:'휘핑 제거',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'시럽 추가',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'4,700원 담기',exact:true}).click();
  await page.getByRole('button',{name:'결제하기',exact:true}).click();
  await expect(page.locator('.kiosk-header').getByRole('button',{name:/돌아가기|이전/})).toHaveCount(0);
  await expect(page.getByRole('button',{name:'이전으로',exact:true})).toHaveCount(1);
+ await expect(page.locator('.cart-line')).toContainText('얼음 많이');
+ await expect(page.locator('.cart-line')).toContainText('휘핑 제거');
  await page.screenshot({path:'qa/offline-review.png'});
  await page.getByRole('button',{name:'확인하고 결제하기',exact:true}).click();
  await page.getByRole('button',{name:'신용·체크카드',exact:true}).click();
@@ -48,7 +55,7 @@ try{
  const again=page.getByRole('dialog',{name:'프린터 설정'});
  await expect(again.getByLabel('출력 대상',{exact:true})).toHaveValue('개발용 PNG 저장');
  await expect(again.getByLabel('글자 크기',{exact:true})).toHaveValue('1.15');
- const report={base,internetRequests:external,failedRequests:failures,pageErrors:errors,localFontLoaded:await page.evaluate(()=>document.fonts.check('16px Pretendard')),menuImages:12,fullscreenKioskPage:true,previewToolbarHidden:true,topBackButtonRemoved:true,backendJobState:latest.state,settingsPersisted:true,browserPrintCalls:0,physicalOutputTested:false};
+ const report={base,internetRequests:external,failedRequests:failures,pageErrors:errors,localFontLoaded:await page.evaluate(()=>document.fonts.check('16px Pretendard')),menuImages:12,decafItems:9,moreIce:true,whippingRemoval:true,syrupLabel:true,fullscreenKioskPage:true,previewToolbarHidden:true,topBackButtonRemoved:true,backendJobState:latest.state,settingsPersisted:true,browserPrintCalls:0,physicalOutputTested:false};
  if(external.length||failures.length||errors.length)throw Error(JSON.stringify(report));
  await fs.writeFile('qa/offline-local-check.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
 }finally{await browser.close();}
