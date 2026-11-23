@@ -14,7 +14,8 @@ page.on('pageerror',e=>errors.push(e.message));
 page.on('requestfailed',r=>failures.push(r.url()));
 try{
  await page.addInitScript(()=>{window.print=()=>{throw Error('Browser print must not be called');};});
- await page.goto(base+'?kiosk=1&printerSetup=1');
+ const entry=await page.goto(base+'?kiosk=1&printerSetup=1');
+ if(!entry.headers()['cache-control']?.includes('no-store'))throw Error('Entry page permits stale HTML');
  await expect(page.locator('.studio-bar,.studio-footer')).toHaveCount(0);
  const dialog=page.getByRole('dialog',{name:'프린터 설정'});
  await dialog.getByLabel('출력 대상',{exact:true}).selectOption('개발용 PNG 저장');
@@ -55,7 +56,7 @@ try{
  const again=page.getByRole('dialog',{name:'프린터 설정'});
  await expect(again.getByLabel('출력 대상',{exact:true})).toHaveValue('개발용 PNG 저장');
  await expect(again.getByLabel('글자 크기',{exact:true})).toHaveValue('1.15');
- const report={base,internetRequests:external,failedRequests:failures,pageErrors:errors,localFontLoaded:await page.evaluate(()=>document.fonts.check('16px Pretendard')),menuImages:12,decafItems:9,moreIce:true,whippingRemoval:true,syrupLabel:true,fullscreenKioskPage:true,previewToolbarHidden:true,topBackButtonRemoved:true,backendJobState:latest.state,settingsPersisted:true,browserPrintCalls:0,physicalOutputTested:false};
+ const report={base,internetRequests:external,failedRequests:failures,pageErrors:errors,localFontLoaded:await page.evaluate(()=>document.fonts.check('16px Pretendard')),menuImages:12,decafItems:9,moreIce:true,whippingRemoval:true,syrupLabel:true,entryCacheDisabled:true,fullscreenKioskPage:true,previewToolbarHidden:true,topBackButtonRemoved:true,backendJobState:latest.state,settingsPersisted:true,browserPrintCalls:0,physicalOutputTested:false};
  if(external.length||failures.length||errors.length)throw Error(JSON.stringify(report));
  await fs.writeFile('qa/offline-local-check.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
 }finally{await browser.close();}

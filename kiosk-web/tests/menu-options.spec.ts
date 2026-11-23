@@ -88,3 +88,21 @@ test("recommendations cover different drinks and ordinary coffee has no cream co
     page.getByRole("button", { name: "휘핑 추가", exact: true }),
   ).toHaveCount(0);
 });
+
+
+test("blended, yogurt and shake recipes have no adjustable ice control",async({page})=>{
+  await mockBackend(page);await page.goto('/?kiosk=1');
+  await page.getByRole('button',{name:/포장할게요/}).click();
+  await page.getByRole('button',{name:'블렌디드',exact:true}).click();
+  for(const name of ['망고 플랫치노','플레인 요거트 플랫치노','밀크 쉐이크']){
+    await page.locator('.product-card').filter({hasText:name}).click();
+    const dialog=page.getByRole('dialog',{name:'메뉴 선택'});
+    await expect(dialog.getByRole('heading',{name:'얼음',exact:true})).toHaveCount(0);
+    await expect(dialog.getByRole('button',{name:'많이',exact:true})).toHaveCount(0);
+    await dialog.getByRole('button',{name:'닫기',exact:true}).click();
+  }
+  await page.getByRole('button',{name:'에이드',exact:true}).click();
+  await page.getByRole('button',{name:'감귤 레몬 에이드 4,500원',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'얼음',exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'많이',exact:true})).toBeVisible();
+});

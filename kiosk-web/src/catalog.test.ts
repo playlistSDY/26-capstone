@@ -108,3 +108,17 @@ test("recommended menu mixes coffee, iced tea, ade, blended drinks and tea", () 
   assert.ok(recommended.some((p) => p.name.includes("아이스티")));
   assert.ok(recommended.every((p) => !p.soldOut));
 });
+
+
+test("blended drinks reject ice changes while ordinary iced drinks retain them", () => {
+  const blended=products.filter(p=>p.categories.includes("블렌디드"));
+  assert.equal(blended.length,14);
+  for(const p of blended){
+    assert.equal(p.iceAdjustable,false,p.name);
+    assert.equal(validateOptions(p,defaults(p)),null,p.name);
+    for(const ice of ["more","less","none"] as const)
+      assert.match(validateOptions(p,{...defaults(p),ice})!,/얼음 양/,p.name);
+  }
+  const ade=products.find(p=>p.id==="lemon")!;
+  assert.equal(validateOptions(ade,{...defaults(ade),ice:"more"}),null);
+});

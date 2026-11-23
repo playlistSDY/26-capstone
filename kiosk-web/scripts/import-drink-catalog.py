@@ -81,7 +81,7 @@ def main():
              'temperatures':[t for t in ['ice','hot'] if t in photos],'temperatureImages':{t:v['path'] for t,v in photos.items()},
              'sourcePhotos':list(photos.values()),'coffee':coffee,'milk':milk,'decaf':is_decaf,'decafOnly':is_decaf,'whippedCream':base in WHIPPED_CREAM,
              'packaged':packaged,'fixedOptions':packaged or base=='아포가토 오리지널','fixedSize':packaged or base in {'아포가토 오리지널','에스프레소'},
-             'iceAdjustable':not packaged and base not in {'에스프레소','아포가토 오리지널','에스프레소 쉐이크'}}
+             'iceAdjustable':not packaged and category!='블렌디드' and base not in {'에스프레소','아포가토 오리지널','에스프레소 쉐이크'}}
         if base=='얼그레이':row['soldOut']=True
         result.append(row)
     assert len({p['id'] for p in result})==len(result)

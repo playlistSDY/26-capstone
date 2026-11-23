@@ -24,13 +24,17 @@ DEFAULTS = {"printerName": "", "autoPrint": False, "variant": "receipt",
             "fontScale": 1.0, "offsetXmm": 0.0, "soundEnabled": True, "soundVolume": 75}
 
 
-def browser_arguments(browser, profile, port, show_settings):
-    query = "?kiosk=1&printerSetup=1" if show_settings else "?kiosk=1"
+def browser_arguments(browser, profile, port, show_settings, version=None):
+    query = {"kiosk": "1"}
+    if show_settings:
+        query["printerSetup"] = "1"
+    if version:
+        query["appVersion"] = version
     return [str(browser), f"--user-data-dir={profile}", "--no-first-run", "--no-default-browser-check",
             "--disable-background-networking", "--disable-background-mode", "--disable-component-update", "--disable-sync",
             # CfT's buttonless product banner otherwise remains visible even in kiosk mode.
             # https://github.com/chromium/chromium/blob/main/components/infobars/core/infobar_manager.cc
-            "--disable-infobars", "--kiosk", f"http://127.0.0.1:{port}/{query}"]
+            "--disable-infobars", "--kiosk", f"http://127.0.0.1:{port}/?" + urlencode(query)]
 
 
 class ApiError(Exception):
@@ -62,8 +66,9 @@ def close_owned_browser(process):
 
 
 class OwnedKioskWindows:
-    def __init__(self, browser, profile, port):
+    def __init__(self, browser, profile, port, version=None):
         self.browser, self.profile, self.port = browser, profile, port
+        self.version = version
         self.lock = threading.RLock()
         self.processes = []
         self.closed = False
@@ -73,7 +78,7 @@ class OwnedKioskWindows:
             if self.closed:
                 raise ApiError("키오스크를 종료하고 있어요.", 503)
             self.processes = [p for p in self.processes if p.poll() is None]
-            process = subprocess.Popen(browser_arguments(self.browser, self.profile, self.port, show_settings),
+            process = subprocess.Popen(browser_arguments(self.browser, self.profile, self.port, show_settings, self.version),
                                        creationflags=0x00000008)
             self.processes.append(process)
 
@@ -350,6 +355,15 @@ def handler_for(service, web_root, port, dev=False):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, directory=str(web_root), **kwargs)
 
+        def end_headers(self):
+            # Only the entry page must always revalidate. Hashed menu assets can
+            # keep their cache so slow kiosks do not reload every image/font.
+            if urlsplit(self.path).path in ["/", "/index.html"]:
+                self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+                self.send_header("Pragma", "no-cache")
+                self.send_header("Expires", "0")
+            super().end_headers()
+
         def permitted(self):
             if self.headers.get("Host") not in {f"127.0.0.1:{port}", f"localhost:{port}"}:
                 raise ApiError("허용되지 않은 호스트예요.", 403)
@@ -390,6 +404,10 @@ def handler_for(service, web_root, port, dev=False):
                     return self.send_json({"jobs": service.jobs()})
                 if route.startswith("/api/"):
                     raise ApiError("없는 API예요.", 404)
+                if route in ["/", "/index.html"] and "If-Modified-Since" in self.headers:
+                    # An old/future timestamp must never turn the entry page into
+                    # a 304 that preserves a previous release's script URL.
+                    del self.headers["If-Modified-Since"]
                 self.path = route
                 super().do_GET()
             except ApiError as e:
@@ -483,7 +501,7 @@ def main():
     service = KioskService(root, data, FilePrinter() if args.file_mode else None)
     browser = root.parent / "browser/chrome-win64/chrome.exe"
     if sys.platform == "win32" and browser.exists():
-        service.windows = OwnedKioskWindows(browser, data / "BrowserProfile", args.port)
+        service.windows = OwnedKioskWindows(browser, data / "BrowserProfile", args.port, service.version)
     web = root.parent / "web"
     if not web.exists():
         web = root.parent / "dist"

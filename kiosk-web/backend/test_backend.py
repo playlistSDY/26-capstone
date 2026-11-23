@@ -28,6 +28,40 @@ class BackendTests(unittest.TestCase):
             self.assertEqual('printerSetup=1' in args[-1],setup)
             self.assertNotIn('--no-sandbox',args)
             self.assertNotIn('--ignore-certificate-errors',args)
+    def test_launch_address_changes_with_release_without_dropping_settings_mode(self):
+        from urllib.parse import urlsplit, parse_qs
+        urls=[browser_arguments(Path('chrome.exe'),Path('profile'),18731,True,version)[-1]
+              for version in ['2026.11.23.1','2026.11.23.2']]
+        self.assertNotEqual(urls[0],urls[1])
+        for url,version in zip(urls,['2026.11.23.1','2026.11.23.2']):
+            query=parse_qs(urlsplit(url).query)
+            self.assertEqual(query,{'kiosk':['1'],'printerSetup':['1'],'appVersion':[version]})
+
+    def test_entry_page_never_returns_a_cached_304_but_hashed_assets_can(self):
+        import os
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);entry=root/'index.html';entry.write_text('first',encoding='utf-8')
+            (root/'asset.txt').write_text('cached asset',encoding='utf-8')
+            server=ThreadingHTTPServer(('127.0.0.1',0),lambda *a:None)
+            port=server.server_port;server.RequestHandlerClass=handler_for(self.service,root,port)
+            worker=threading.Thread(target=server.serve_forever,daemon=True);worker.start()
+            try:
+                for content in ['first','new release']:
+                    entry.write_text(content,encoding='utf-8');os.utime(entry,(1,1))
+                    for route in ['/?kiosk=1&appVersion=old','/index.html']:
+                        request=urllib.request.Request(f'http://127.0.0.1:{port}'+route,
+                          headers={'If-Modified-Since':'Wed, 01 Jan 2099 00:00:00 GMT'})
+                        with urllib.request.urlopen(request,timeout=3) as response:
+                            self.assertEqual(response.status,200)
+                            self.assertIn('no-store',response.headers['Cache-Control'])
+                            self.assertEqual(response.read().decode(),content)
+                request=urllib.request.Request(f'http://127.0.0.1:{port}/asset.txt',
+                  headers={'If-Modified-Since':'Wed, 01 Jan 2099 00:00:00 GMT'})
+                with self.assertRaises(urllib.error.HTTPError) as error:urllib.request.urlopen(request,timeout=3)
+                self.assertEqual(error.exception.code,304)
+            finally:
+                server.shutdown();server.server_close();worker.join(2)
+
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory()
         self.service=KioskService(ROOT,Path(self.tmp.name),FilePrinter())

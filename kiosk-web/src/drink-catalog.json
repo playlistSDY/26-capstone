@@ -283,7 +283,7 @@
     "packaged": false,
     "fixedOptions": false,
     "fixedSize": false,
-    "iceAdjustable": true
+    "iceAdjustable": false
   },
   {
     "id": "drink-0d2888eb5b29",
@@ -317,7 +317,7 @@
     "packaged": false,
     "fixedOptions": false,
     "fixedSize": false,
-    "iceAdjustable": true
+    "iceAdjustable": false
   },
   {
     "id": "chamomile",
@@ -784,7 +784,7 @@
     "packaged": false,
     "fixedOptions": false,
     "fixedSize": false,
-    "iceAdjustable": true
+    "iceAdjustable": false
   },
   {
     "id": "drink-a6f91ec084cd",
@@ -817,7 +817,7 @@
     "packaged": false,
     "fixedOptions": false,
     "fixedSize": false,
-    "iceAdjustable": true
+    "iceAdjustable": false
   },
   {
     "id": "drink-960995f7d0ec",
@@ -1062,7 +1062,7 @@
     "packaged": false,
     "fixedOptions": false,
     "fixedSize": false,
-    "iceAdjustable": true
+    "iceAdjustable": false
   },
   {
     "id": "drink-28b175946654",
@@ -1347,7 +1347,7 @@
     "packaged": false,
     "fixedOptions": false,
     "fixedSize": false,
-    "iceAdjustable": true
+    "iceAdjustable": false
   },
   {
     "id": "matcha",
@@ -1771,7 +1771,7 @@
     "packaged": false,
     "fixedOptions": false,
     "fixedSize": false,
-    "iceAdjustable": true
+    "iceAdjustable": false
   },
   {
     "id": "drink-74a96aa4f21c",
@@ -1804,7 +1804,7 @@
     "packaged": false,
     "fixedOptions": false,
     "fixedSize": false,
-    "iceAdjustable": true
+    "iceAdjustable": false
   },
   {
     "id": "drink-5a5a75a4b36b",
@@ -1990,7 +1990,7 @@
     "packaged": false,
     "fixedOptions": false,
     "fixedSize": false,
-    "iceAdjustable": true
+    "iceAdjustable": false
   },
   {
     "id": "drink-5fef48d8cfa5",
@@ -2719,7 +2719,7 @@
     "packaged": false,
     "fixedOptions": false,
     "fixedSize": false,
-    "iceAdjustable": true
+    "iceAdjustable": false
   },
   {
     "id": "drink-32a33155b5f1",
@@ -3228,7 +3228,7 @@
     "packaged": false,
     "fixedOptions": false,
     "fixedSize": false,
-    "iceAdjustable": true
+    "iceAdjustable": false
   },
   {
     "id": "chocolate",
@@ -3301,7 +3301,7 @@
     "packaged": false,
     "fixedOptions": false,
     "fixedSize": false,
-    "iceAdjustable": true
+    "iceAdjustable": false
   },
   {
     "id": "caramel",
@@ -3666,7 +3666,7 @@
     "packaged": false,
     "fixedOptions": false,
     "fixedSize": false,
-    "iceAdjustable": true
+    "iceAdjustable": false
   },
   {
     "id": "drink-5f403fb0be54",
@@ -3739,7 +3739,7 @@
     "packaged": false,
     "fixedOptions": false,
     "fixedSize": false,
-    "iceAdjustable": true
+    "iceAdjustable": false
   },
   {
     "id": "drink-3f416068c3ae",
