@@ -20,68 +20,140 @@
   grid-row: 4;
 }
 .kiosk {
-  padding-bottom: 180px;
+  padding-bottom: 0;
 }
 .kiosk > .overlay {
-  bottom: 180px;
+  bottom: 0;
 }
 .kiosk-companion {
   position: absolute;
   top: 0;
   left: 0;
-  width: 560px;
-  height: 170px;
   z-index: 45;
   display: flex;
-  align-items: center;
-  gap: 4px;
+  align-items: flex-end;
+  gap: calc(8px / var(--companion-scale));
   pointer-events: none;
-  transition: transform 0.55s ease-in-out;
+  transition: transform 0.8s ease-in-out;
+}
+.companion-character {
+  position: relative;
+  display: block;
+  flex: 0 0 calc(180px / var(--companion-scale));
+  width: calc(180px / var(--companion-scale));
+  align-self: flex-end;
+  padding: 0;
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  background: transparent;
+  border: 0;
+}
+.companion-character:active {
+  cursor: grabbing;
 }
 .kiosk-companion .agent-avatar {
-  flex: 0 0 160px;
-  width: 160px;
+  width: 100%;
+}
+.companion-bubbles {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-self: flex-end;
+  gap: calc(12px / var(--companion-scale));
+  padding: calc(10px / var(--companion-scale))
+    calc(8px / var(--companion-scale)) calc(8px / var(--companion-scale));
+}
+.companion-speech,
+.companion-user-bubble {
+  position: relative;
+  padding: calc(13px / var(--companion-scale))
+    calc(18px / var(--companion-scale));
+  box-shadow: 0 5px 22px #152b4014;
+  pointer-events: none;
 }
 .companion-speech {
-  position: relative;
-  width: 390px;
-  padding: 8px 14px;
+  align-self: flex-start;
+  max-width: 100%;
   background: #fff;
-  border: 1px solid #dfe8e6;
-  border-radius: 18px 18px 18px 4px;
-  box-shadow: 0 4px 18px #203c3210;
-  pointer-events: auto;
+  border: 1px solid #edf0f2;
+  border-radius: 24px 24px 24px 5px;
+  color: #172b20;
 }
-.companion-status {
-  color: #39604c;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 15px;
-  font-weight: 650;
+.companion-speech::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  bottom: 0;
+  width: 16px;
+  height: 15px;
+  background: #fff;
+  border-bottom-left-radius: 14px;
+  transform: skewX(-20deg);
 }
-.companion-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #46755b;
+.companion-user-bubble {
+  align-self: flex-end;
+  max-width: 94%;
+  margin-left: calc(12px / var(--companion-scale));
+  background: #2458c6;
+  color: #fff;
+  border-radius: 24px 24px 5px 24px;
+}
+.companion-user-bubble::after {
+  content: "";
+  position: absolute;
+  right: -5px;
+  bottom: 0;
+  width: 14px;
+  height: 15px;
+  background: #2458c6;
+  border-bottom-right-radius: 14px;
+  transform: skewX(20deg);
+}
+.companion-user-bubble p {
+  font-size: calc(24px / var(--companion-scale));
+  line-height: 1.45;
+  max-height: calc(68px / var(--companion-scale));
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 .companion-caption {
-  color: #243b31;
-  font-size: 19px;
-  line-height: 1.55;
-  max-height: 58px;
+  font-size: calc(24px / var(--companion-scale));
+  line-height: 1.45;
+  max-height: calc(106px / var(--companion-scale));
   overflow-y: auto;
   overflow-wrap: anywhere;
-  margin-top: 5px;
 }
-.companion-speech button {
+.companion-activity {
   display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 14px;
-  color: #667c72;
-  padding: 6px 0 0;
+  gap: calc(5px / var(--companion-scale));
+  margin-top: calc(8px / var(--companion-scale));
+}
+.companion-activity i {
+  width: calc(6px / var(--companion-scale));
+  height: calc(6px / var(--companion-scale));
+  background: #789385;
+  border-radius: 50%;
+  animation: companion-patient-dots 1.8s ease-in-out infinite;
+}
+.companion-activity i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.companion-activity i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes companion-patient-dots {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
 }
 .kiosk-conversation-history {
   position: absolute;
@@ -197,26 +269,53 @@
   }
 }
 
-.kiosk > .toast {
-  bottom: 190px;
+.kiosk-conversation-history {
+  top: 90px;
+  bottom: 24px;
+  height: auto;
+}
+.kiosk-conversation-history .agent-chat-message p {
+  font-size: calc(22px / var(--kiosk-display-scale, 1));
+}
+.kiosk-conversation-history .agent-chat-message > span {
+  font-size: calc(17px / var(--kiosk-display-scale, 1));
+}
+.kiosk-history-heading h2 {
+  font-size: calc(22px / var(--kiosk-display-scale, 1));
+}
+.kiosk-history-heading button {
+  font-size: calc(20px / var(--kiosk-display-scale, 1));
+  min-height: calc(44px / var(--kiosk-display-scale, 1));
+}
+@media (max-width: 600px) {
+  .companion-character {
+    flex-basis: calc(130px / var(--companion-scale));
+    width: calc(130px / var(--companion-scale));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .companion-activity i {
+    animation: none;
+  }
 }
 
-.companion-heard {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  margin-top: 5px;
-  color: #536e91;
-  font-size: 15px;
+/* Only the AI demo uses this gentler menu layout. The original kiosk is separate. */
+.agent-stage-layout .kiosk .welcome-drinks {
+  visibility: hidden;
+}
+.agent-stage-layout .kiosk .product-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 30px 22px;
+}
+.agent-stage-layout .kiosk .product-card strong {
+  font-size: 26px;
   line-height: 1.4;
 }
-.companion-heard > span {
+.agent-dialogue-space {
+  height: var(--agent-dialogue-space, 0px);
   flex-shrink: 0;
-  font-size: 12px;
-  font-weight: 650;
 }
-.companion-heard > p {
-  max-height: 42px;
-  overflow-y: auto;
-  overflow-wrap: anywhere;
+
+.agent-stage-layout .order-dock:has(.dock-empty) {
+  display: none;
 }

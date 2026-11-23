@@ -1,19 +1,14 @@
-import { useEffect, useState } from "react";
-import { MessageCircle } from "lucide-react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { AgentAvatar } from "./AgentAvatar";
-import { attendantLabels, type AttendantState } from "./attendantState";
+import type { AttendantState } from "./attendantState";
 import { guidanceElement, type GuidanceState } from "./AgentGuidance";
+import { companionFeedback, waitingState } from "./companionFeedback";
+import {
+  companionPosition,
+  clampPosition,
+  type Rect,
+} from "./companionPlacement";
 import "./kiosk-companion.css";
-
-type Rect = { x: number; y: number; width: number; height: number };
-export function overlaps(a: Rect, b: Rect, gap = 8) {
-  return (
-    a.x < b.x + b.width + gap &&
-    a.x + a.width + gap > b.x &&
-    a.y < b.y + b.height + gap &&
-    a.y + a.height + gap > b.y
-  );
-}
 
 export function KioskCompanion({
   kiosk,
@@ -23,8 +18,6 @@ export function KioskCompanion({
   heard,
   guidance,
   screen,
-  historyOpen,
-  onHistory,
 }: {
   kiosk: HTMLElement;
   state: AttendantState;
@@ -33,134 +26,270 @@ export function KioskCompanion({
   heard: string;
   guidance: GuidanceState | null;
   screen: string;
-  historyOpen: boolean;
-  onHistory: () => void;
 }) {
-  const [position, setPosition] = useState({ x: 120, y: 1110 });
+  const root = useRef<HTMLElement>(null);
+  const latestGuidance = useRef(guidance);
+  latestGuidance.current = guidance;
+  const [position, setPosition] = useState({ x: 20, y: 700 });
+  const [scale, setScale] = useState(1);
+  const [physicalWidth, setPhysicalWidth] = useState(640);
+  const anchored = useRef("");
+  const [collapsed, setCollapsed] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const manual = useRef(false);
+  const dragged = useRef(false);
+  const drag = useRef<{
+    x: number;
+    y: number;
+    left: number;
+    top: number;
+  } | null>(null);
+  const current = useRef(position);
+  current.current = position;
+  const size = useRef({ width: 540, height: 250 });
+  const isWaiting = waitingState(state);
+  useEffect(() => {
+    setElapsed(0);
+    if (!isWaiting) return;
+    const start = performance.now();
+    const timer = setInterval(
+      () => setElapsed(performance.now() - start),
+      1000,
+    );
+    return () => clearInterval(timer);
+  }, [state, isWaiting]);
   useEffect(() => {
     const update = () => {
+      if (document.hidden || !root.current) return;
       const bounds = kiosk.getBoundingClientRect();
-      const scale = bounds.width / kiosk.offsetWidth;
-      if (!scale) return;
+      const factor = bounds.width / kiosk.offsetWidth;
+      if (!factor) return;
+      setScale(factor);
+      setPhysicalWidth(Math.min(640, Math.max(240, bounds.width - 20)));
+      kiosk.style.setProperty("--kiosk-display-scale", String(factor));
       const local = (node: HTMLElement): Rect => {
-        const rect = node.getBoundingClientRect();
+        const r = node.getBoundingClientRect();
         return {
-          x: (rect.left - bounds.left) / scale,
-          y: (rect.top - bounds.top) / scale,
-          width: rect.width / scale,
-          height: rect.height / scale,
+          x: (r.left - bounds.left) / factor,
+          y: (r.top - bounds.top) / factor,
+          width: r.width / factor,
+          height: r.height / factor,
         };
       };
-      const width = 560,
-        height = 170;
+      size.current = {
+        width: root.current.offsetWidth,
+        height: root.current.offsetHeight,
+      };
+      const stage = { width: kiosk.offsetWidth, height: kiosk.offsetHeight };
+      const inModal = !!kiosk.querySelector(".overlay");
+      kiosk.style.setProperty(
+        "--agent-dialogue-space",
+        screen === "menu" && !inModal ? `${size.current.height + 12}px` : "0px",
+      );
+      const modal = kiosk.querySelector<HTMLElement>(".overlay .modal");
+      const sceneReady =
+        screen === "menu"
+          ? !!kiosk.querySelector(".agent-dialogue-space")
+          : screen === "home"
+            ? !!kiosk.querySelector(".welcome-drinks")
+            : true;
+      const context = `${screen}:${sceneReady}:${modal?.getAttribute("aria-label") ?? ""}:${kiosk.querySelector(".option-intro h2")?.textContent ?? ""}`;
+      const key = `${context}:${Math.round(bounds.width)}:${Math.round(size.current.width)}:${Math.round(size.current.height)}`;
+      if (anchored.current === key) return;
+      if (!anchored.current.startsWith(context + ":")) manual.current = false;
+      anchored.current = key;
+      if (manual.current) {
+        const clamped = clampPosition(current.current, size.current, stage);
+        setPosition((old) =>
+          old.x === clamped.x && old.y === clamped.y ? old : clamped,
+        );
+        return;
+      }
+      const currentGuide = latestGuidance.current;
       const target =
-        guidance?.status === "showing" ? guidanceElement(guidance) : undefined;
-      const focus = target ? local(target) : null;
+        currentGuide?.status === "showing"
+          ? guidanceElement(currentGuide)
+          : undefined;
       const obstacles = Array.from(
         kiosk.querySelectorAll<HTMLElement>(
-          "button, input, textarea, h1, h2, h3, p, strong, img, .payment-total, .toast",
+          "button, input, textarea, h1, h2, h3, img, .payment-total, .option-footer, .cart-bar, .cart-checkout, .toast",
         ),
       )
         .filter(
           (node) =>
             !node.closest(".kiosk-companion, .kiosk-conversation-history") &&
             !node.classList.contains("exit-hotspot") &&
-            node.getClientRects().length,
+            node.getClientRects().length &&
+            getComputedStyle(node).visibility !== "hidden",
         )
         .map(local)
         .filter(
-          (rect) =>
-            rect.width > 0 &&
-            rect.height > 0 &&
-            rect.y < kiosk.offsetHeight - 180 &&
-            rect.y + rect.height > 0,
+          (r) =>
+            r.width > 0 &&
+            r.height > 0 &&
+            r.y < stage.height &&
+            r.y + r.height > 0,
         );
-      const clampX = (x: number) =>
-        Math.max(20, Math.min(kiosk.offsetWidth - width - 20, x));
-      const preferredX = clampX(
-        focus
-          ? focus.x + focus.width / 2 - width / 2
-          : screen === "cart"
-            ? 24
-            : screen === "payment"
-              ? 210
-              : 120,
-      );
-      const candidates: Rect[] = [];
-      if (focus) {
-        candidates.push({
-          x: preferredX,
-          y: focus.y + focus.height + 20,
-          width,
-          height,
-        });
-        candidates.push({
-          x: preferredX,
-          y: focus.y - height - 20,
-          width,
-          height,
-        });
-      } else if (screen === "cart")
-        candidates.push({ x: 24, y: 560, width, height });
-      for (const y of [320, 480, 660, 840, 1000])
-        if (focus) candidates.push({ x: preferredX, y, width, height });
-      const safe = candidates.find(
-        (candidate) =>
-          candidate.y >= 80 &&
-          candidate.y + height <= kiosk.offsetHeight - 180 &&
-          !obstacles.some((rect) => overlaps(candidate, rect)),
-      );
-      const next = safe ?? { x: preferredX, y: kiosk.offsetHeight - 174 };
+      const dialogue = !inModal
+        ? kiosk.querySelector<HTMLElement>(
+            screen === "home" ? ".welcome-drinks" : ".agent-dialogue-space",
+          )
+        : null;
+      const nook = dialogue ? local(dialogue) : null;
+      const inNook =
+        nook && nook.y >= 72 && nook.y < stage.height
+          ? clampPosition(
+              {
+                x: (stage.width - size.current.width) / 2,
+                y:
+                  screen === "home"
+                    ? nook.y + nook.height - size.current.height - 16
+                    : nook.y + 12,
+              },
+              size.current,
+              stage,
+            )
+          : null;
+      const next = inNook
+        ? inNook
+        : companionPosition(
+            stage,
+            size.current,
+            obstacles,
+            target ? local(target) : null,
+            screen,
+          );
       setPosition((previous) =>
         Math.abs(previous.x - next.x) < 2 && Math.abs(previous.y - next.y) < 2
           ? previous
-          : { x: next.x, y: next.y },
+          : next,
       );
     };
     update();
-    const timer = setInterval(update, 300);
+    const observer = new ResizeObserver(update);
+    if (root.current) observer.observe(root.current);
+    const timer = setInterval(update, 400);
     window.addEventListener("resize", update);
     kiosk.addEventListener("scroll", update, true);
     return () => {
+      observer.disconnect();
       clearInterval(timer);
       window.removeEventListener("resize", update);
       kiosk.removeEventListener("scroll", update, true);
     };
-  }, [kiosk, guidance?.id, guidance?.status, screen, historyOpen]);
-
+  }, [kiosk, screen, collapsed]);
+  const feedback = companionFeedback(state, elapsed);
+  const receiving = state === "typing" || state === "hearing";
+  const waitingCaption = receiving
+    ? "듣고 있어요"
+    : isWaiting &&
+        (caption === "요청을 확인하고 있어요." ||
+          state === "offline" ||
+          state === "transcribing")
+      ? feedback
+      : caption;
+  const moveTo = (x: number, y: number) => {
+    manual.current = true;
+    setPosition(
+      clampPosition({ x, y }, size.current, {
+        width: kiosk.offsetWidth,
+        height: kiosk.offsetHeight,
+      }),
+    );
+  };
+  const style = {
+    transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
+    "--companion-scale": scale,
+    width: `${(collapsed ? Math.min(physicalWidth, 180) : physicalWidth) / scale}px`,
+    height: `${250 / scale}px`,
+  } as CSSProperties;
   return (
     <section
-      className="kiosk-companion"
+      ref={root}
+      className={`kiosk-companion ${collapsed ? "is-collapsed" : ""}`}
       aria-label="키오스크 점원"
       data-screen={screen}
       data-x={Math.round(position.x)}
       data-y={Math.round(position.y)}
-      style={{ transform: `translate3d(${position.x}px, ${position.y}px, 0)` }}
+      data-waiting={isWaiting}
+      style={style}
     >
-      <AgentAvatar state={state} level={level} />
-      <div className="companion-speech">
-        <div className="companion-status" role="status">
-          <span className="companion-dot" />
-          {attendantLabels[state]}
-        </div>
-        {heard && (
-          <div className="companion-heard" aria-label="내가 한 말">
-            <span>내 말</span>
-            <p>{heard}</p>
+      <button
+        className="companion-character"
+        aria-label={
+          collapsed ? "점원 말풍선 펼치기" : "점원 옮기기 또는 말풍선 접기"
+        }
+        aria-expanded={!collapsed}
+        onPointerDown={(e) => {
+          dragged.current = false;
+          drag.current = {
+            x: e.clientX,
+            y: e.clientY,
+            left: position.x,
+            top: position.y,
+          };
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (!drag.current) return;
+          const dx = (e.clientX - drag.current.x) / scale,
+            dy = (e.clientY - drag.current.y) / scale;
+          if (Math.abs(dx) + Math.abs(dy) > 8 / scale) {
+            dragged.current = true;
+            moveTo(drag.current.left + dx, drag.current.top + dy);
+          }
+        }}
+        onPointerUp={() => {
+          drag.current = null;
+        }}
+        onPointerCancel={() => {
+          drag.current = null;
+        }}
+        onClick={(event) => {
+          if (event.detail === 0 || !dragged.current) setCollapsed((v) => !v);
+        }}
+        onKeyDown={(e) => {
+          const keys: Record<string, [number, number]> = {
+            ArrowLeft: [-24, 0],
+            ArrowRight: [24, 0],
+            ArrowUp: [0, -24],
+            ArrowDown: [0, 24],
+          };
+          const delta = keys[e.key];
+          if (delta) {
+            e.preventDefault();
+            moveTo(
+              position.x + delta[0] / scale,
+              position.y + delta[1] / scale,
+            );
+          }
+        }}
+      >
+        <AgentAvatar state={state} level={level} />
+      </button>
+      {!collapsed && (
+        <div className="companion-bubbles">
+          {!receiving && state !== "transcribing" && heard && (
+            <div className="companion-user-bubble" aria-label="내가 한 말">
+              <p>{heard}</p>
+            </div>
+          )}
+          <div
+            className={`companion-speech ${receiving || isWaiting ? "is-pending" : ""}`}
+          >
+            <p className="companion-caption" aria-label="현재 응답 자막">
+              {waitingCaption}
+            </p>
+            {(receiving || isWaiting) && (
+              <span className="companion-activity" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+            )}
           </div>
-        )}
-        <p className="companion-caption" aria-label="현재 응답 자막">
-          {caption}
-        </p>
-        <button
-          type="button"
-          aria-expanded={historyOpen}
-          aria-label={historyOpen ? "대화 내역 닫기" : "대화 내역 보기"}
-          onClick={onHistory}
-        >
-          <MessageCircle size={17} /> 대화 내역
-        </button>
-      </div>
+        </div>
+      )}
     </section>
   );
 }

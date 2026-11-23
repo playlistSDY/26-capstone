@@ -1321,6 +1321,10 @@ export default function App() {
                       ))}
                     </nav>
                     <div className="catalog-scroll" ref={catalogScroll}>
+                      <div
+                        className="agent-dialogue-space"
+                        aria-hidden="true"
+                      />
                       <div className="product-grid">
                         {products
                           .filter((p) => p.categories.includes(category))

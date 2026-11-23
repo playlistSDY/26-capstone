@@ -115,7 +115,7 @@ type StreamEvent = Result & {
 };
 const greeting: Message = {
   role: "assistant",
-  text: "안녕하세요. 원하시는 메뉴를 말씀해 주세요. 담긴 주문도 함께 확인하며 도와드릴게요.",
+  text: "안녕하세요. 무엇을 드릴까요?",
 };
 
 async function request<T>(
@@ -190,7 +190,7 @@ export function AgentChat({
   const [pending, setPending] = useState<Pending | null>(null);
   const [speaking, setSpeaking] = useState(false);
   const [playback, setPlayback] = useState({ active: false, level: 0 });
-  const [historyOpen, setHistoryOpen] = useState(false);
+  const historyOpen = false;
   const [companionSlot, setCompanionSlot] = useState<HTMLElement | null>(null);
   useEffect(() => {
     setCompanionSlot(document.querySelector<HTMLElement>(".kiosk"));
@@ -706,34 +706,20 @@ export function AgentChat({
               kiosk={companionSlot}
               state={presence}
               level={playback.level}
-              caption={caption}
+              caption={error || caption}
               heard={
-                voiceInput?.partial ||
-                text.trim() ||
                 [...messages]
                   .reverse()
-                  .find((message) => message.role === "user")?.text ||
-                ""
+                  .find((message) => message.role === "user")?.text || ""
               }
               guidance={guidance}
               screen={cart.screen}
-              historyOpen={historyOpen}
-              onHistory={() => setHistoryOpen((value) => !value)}
             />
             <section
               className="kiosk-conversation-history"
               hidden={!historyOpen}
               aria-label="대화 내역"
             >
-              <header className="kiosk-history-heading">
-                <h2>대화 내역</h2>
-                <button
-                  onClick={() => setHistoryOpen(false)}
-                  aria-label="대화 내역 닫기"
-                >
-                  닫기
-                </button>
-              </header>
               <div
                 ref={log}
                 hidden={!historyOpen}

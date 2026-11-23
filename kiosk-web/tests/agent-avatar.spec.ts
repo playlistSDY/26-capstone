@@ -1,13 +1,18 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mockBackend } from "./backend-fixture";
 
-async function fixture(page: Page) {
+async function fixture(page: Page, delayedReply = false) {
   await mockBackend(page);
   const events = new Map<string, any>();
   let releaseAudio!: () => void;
   const audioGate = new Promise<void>((resolve) => {
     releaseAudio = resolve;
   });
+  let releaseReply!: () => void;
+  const replyGate = new Promise<void>((resolve) => {
+    releaseReply = resolve;
+  });
+  let turns = 0;
   let audioCalls = 0;
   await page.route("**/agent-api/**", async (route) => {
     const request = route.request(),
@@ -47,6 +52,7 @@ async function fixture(page: Page) {
       });
     }
     if (path.endsWith("/turns")) {
+      turns++;
       const body = request.postDataJSON();
       events.set(body.request_id, {
         type: "final",
@@ -64,11 +70,13 @@ async function fixture(page: Page) {
       });
       return route.fulfill({ json: { ok: true } });
     }
-    if (path.endsWith("/events"))
+    if (path.endsWith("/events")) {
+      if (delayedReply) await replyGate;
       return route.fulfill({
         contentType: "application/x-ndjson",
         body: JSON.stringify(events.get(path.split("/").at(-2)!)) + "\n",
       });
+    }
     return route.fulfill({ json: { ok: true } });
   });
   await page.goto("/");
@@ -84,10 +92,17 @@ async function fixture(page: Page) {
       "따뜻한 라떼",
     );
   }
-  return { avatar, say, releaseAudio, audioCalls: () => audioCalls };
+  return {
+    avatar,
+    say,
+    releaseAudio,
+    releaseReply,
+    turns: () => turns,
+    audioCalls: () => audioCalls,
+  };
 }
 
-test("The supplied clerk stays visible with honest input status and existing history", async ({
+test("The large clerk shows a listening bubble during the STT substitute input", async ({
   page,
 }) => {
   const f = await fixture(page);
@@ -95,18 +110,13 @@ test("The supplied clerk stays visible with honest input status and existing his
   await expect(f.avatar).toHaveAttribute("data-mouth", "closed");
   await expect(page.getByText("듣고 있어요", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("log", { name: "주문 대화" })).toBeHidden();
-  await page
-    .getByRole("button", { name: "대화 내역 보기", exact: true })
-    .click();
-  await expect(page.getByRole("log", { name: "주문 대화" })).toContainText(
-    "안녕하세요",
-  );
-  await page.locator(".kiosk-history-heading button").click();
+  await expect(page.getByRole("button", { name: /대화 내역/ })).toHaveCount(0);
   await expect(page.locator(".agent-guidance")).toHaveCount(0);
   expect((await page.request.get("/agent/clerk-atlas.png")).status()).toBe(200);
   await page.getByRole("textbox", { name: "주문 메시지" }).fill("라떼");
   await expect(f.avatar).toHaveAttribute("data-state", "typing");
-  await expect(page.getByLabel("내가 한 말")).toContainText("라떼");
+  await expect(page.getByLabel("내가 한 말")).toHaveCount(0);
+  await expect(page.locator(".companion-caption")).toHaveText("듣고 있어요");
   await page.screenshot({ path: "/tmp/switch-avatar-desktop.png" });
 });
 
@@ -123,6 +133,21 @@ test("The mouth waits for actual PCM playback and closes immediately on interrup
   f.releaseAudio();
   await expect(f.avatar).toHaveAttribute("data-state", "speaking");
   await expect(f.avatar).toHaveAttribute("data-mouth", "open");
+  await page.waitForTimeout(850);
+  const inSpace = await page.evaluate(() => {
+    const actor = document
+      .querySelector(".kiosk-companion")!
+      .getBoundingClientRect();
+    const space = document
+      .querySelector(".agent-dialogue-space")!
+      .getBoundingClientRect();
+    return {
+      actor: { y: actor.y, bottom: actor.bottom },
+      space: { y: space.y, bottom: space.bottom },
+    };
+  });
+  expect(inSpace.actor.y).toBeGreaterThanOrEqual(inSpace.space.y - 1);
+  expect(inSpace.actor.bottom).toBeLessThanOrEqual(inSpace.space.bottom + 1);
   await page.screenshot({ path: "/tmp/switch-avatar-speaking.png" });
   await page.getByRole("button", { name: "말 끊기", exact: true }).click();
   await expect(f.avatar).toHaveAttribute("data-mouth", "closed");
@@ -131,7 +156,7 @@ test("The mouth waits for actual PCM playback and closes immediately on interrup
   await expect(f.avatar).toHaveAttribute("data-mouth", "closed");
 });
 
-test("Muted replies retain subtitles and can expand or fold full conversation history", async ({
+test("Finished user speech appears in an opposite-colored bubble without idle labels or history controls", async ({
   page,
 }) => {
   const f = await fixture(page);
@@ -139,16 +164,16 @@ test("Muted replies retain subtitles and can expand or fold full conversation hi
   await f.say("라떼 설명해줘");
   expect(f.audioCalls()).toBe(0);
   await expect(f.avatar).toHaveAttribute("data-mouth", "closed");
-  await expect(page.getByRole("log", { name: "주문 대화" })).toBeHidden();
-  await expect(page.locator(".companion-caption")).toContainText("따뜻한 라떼");
-  await page
-    .getByRole("button", { name: "대화 내역 보기", exact: true })
-    .click();
-  await expect(page.getByRole("log", { name: "주문 대화" })).toContainText(
-    "라떼 설명해줘",
-  );
-  await page.locator(".kiosk-history-heading button").click();
-  await expect(page.getByRole("log", { name: "주문 대화" })).toBeHidden();
+  await expect(page.getByLabel("내가 한 말")).toHaveText("라떼 설명해줘");
+  const userColor = await page
+    .locator(".companion-user-bubble")
+    .evaluate((node) => getComputedStyle(node).backgroundColor);
+  const agentColor = await page
+    .locator(".companion-speech")
+    .evaluate((node) => getComputedStyle(node).backgroundColor);
+  expect(userColor).not.toBe(agentColor);
+  await expect(page.getByRole("button", { name: /대화 내역/ })).toHaveCount(0);
+  await expect(page.getByText("입력 대기", { exact: true })).toHaveCount(0);
 });
 
 test("The character lives inside the kiosk and follows screen changes without covering buttons", async ({
@@ -158,6 +183,24 @@ test("The character lives inside the kiosk and follows screen changes without co
   await fixture(page);
   const companion = page.locator(".kiosk-companion");
   await expect(companion).toBeVisible();
+  const readable = await page.locator(".companion-caption").evaluate((node) => {
+    const kiosk = node.closest(".kiosk") as HTMLElement;
+    return (
+      (parseFloat(getComputedStyle(node).fontSize) *
+        kiosk.getBoundingClientRect().width) /
+      kiosk.offsetWidth
+    );
+  });
+  expect(readable).toBeGreaterThanOrEqual(23);
+  expect(
+    (await page.locator(".companion-character").boundingBox())!.width,
+  ).toBeGreaterThanOrEqual(128);
+  expect(
+    await page
+      .locator(".kiosk")
+      .evaluate((node) => getComputedStyle(node).paddingBottom),
+  ).toBe("0px");
+
   await expect(page.locator(".agent-chat-dialog")).toHaveCount(0);
   const initialY = await companion.getAttribute("data-y");
   await page.getByRole("button", { name: /먹고 갈게요/ }).click();
@@ -218,4 +261,52 @@ test("Natural audio completion closes the mouth and reduced motion disables idle
     timeout: 8000,
   });
   await expect(f.avatar).toHaveAttribute("data-mouth", "closed");
+});
+
+test("Long thinking updates a chat bubble without moving the character or repeating the request", async ({
+  page,
+}) => {
+  await page.clock.install();
+  const f = await fixture(page, true);
+  await page.getByRole("button", { name: "음성 끄기", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "주문 메시지" })
+    .fill("라떼 설명해줘");
+  await expect(page.locator(".companion-caption")).toHaveText("듣고 있어요");
+  await page
+    .getByRole("button", { name: "메시지 보내기", exact: true })
+    .click();
+  await expect(f.avatar).toHaveAttribute("data-state", "thinking");
+  await page.clock.runFor(1500);
+  const anchor = await page
+    .locator(".kiosk-companion")
+    .evaluate(
+      (node) => `${node.getAttribute("data-x")},${node.getAttribute("data-y")}`,
+    );
+  const first = await page.locator(".companion-caption").textContent();
+  await page.clock.runFor(8000);
+  await expect(page.locator(".companion-caption")).not.toHaveText(first!);
+  await page.clock.runFor(24000);
+  await expect(page.locator(".companion-caption")).toContainText(/늦어|기다/);
+  expect(
+    await page
+      .locator(".kiosk-companion")
+      .evaluate(
+        (node) =>
+          `${node.getAttribute("data-x")},${node.getAttribute("data-y")}`,
+      ),
+  ).toBe(anchor);
+  expect(f.turns()).toBe(1);
+  f.releaseReply();
+  await expect(page.locator(".companion-caption")).toContainText("따뜻한 라떼");
+  await page.clock.runFor(1000);
+  expect(
+    await page
+      .locator(".kiosk-companion")
+      .evaluate(
+        (node) =>
+          `${node.getAttribute("data-x")},${node.getAttribute("data-y")}`,
+      ),
+  ).toBe(anchor);
+  await page.screenshot({ path: "/tmp/switch-hover-waiting.png" });
 });

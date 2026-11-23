@@ -252,8 +252,15 @@ test("order dock supports editing, review before payment, and clearing", async (
     .getByRole("button", { name: "전체 삭제하기", exact: true })
     .click();
   await expect(
-    dock.getByRole("button", { name: "결제하기", exact: true }),
+    page
+      .locator(".order-dock")
+      .getByRole("button", {
+        name: "결제하기",
+        exact: true,
+        includeHidden: true,
+      }),
   ).toBeDisabled();
+  await expect(page.locator(".order-dock")).toBeHidden();
   await expect(
     page.getByRole("button", { name: "포장", exact: true }),
   ).toBeVisible();
