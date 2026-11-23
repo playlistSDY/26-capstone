@@ -397,6 +397,8 @@ export default function App() {
   const [farewellSlot, setFarewellSlot] = useState<HTMLDivElement | null>(null);
   const [optionCompanionSlot, setOptionCompanionSlot] =
     useState<HTMLDivElement | null>(null);
+  const [paymentCompanionSlot, setPaymentCompanionSlot] =
+    useState<HTMLDivElement | null>(null);
   const completionSpeechOrder = useRef<string | null>(null);
   const [storageError, setStorageError] = useState(false);
   const [history, setHistory] = useState<Order[]>([]);
@@ -1826,6 +1828,10 @@ export default function App() {
                             "결제수단을 선택한 뒤, 리더기 안내에 따라 주세요.",
                           )}
                         </p>
+                        <div
+                          className="payment-companion-slot"
+                          ref={setPaymentCompanionSlot}
+                        />
                         <button
                           className="secondary full"
                           data-guide="back"
@@ -2369,6 +2375,7 @@ export default function App() {
         key={chatGeneration}
         farewellSlot={farewellSlot}
         optionCompanionSlot={optionCompanionSlot}
+        paymentCompanionSlot={paymentCompanionSlot}
         completionSpeechOrder={completionSpeechOrder}
         cart={{
           lines:

@@ -160,6 +160,7 @@ export function AgentChat({
   disabled,
   farewellSlot,
   optionCompanionSlot,
+  paymentCompanionSlot,
   completionSpeechOrder,
   onState,
   onBeginOrdering,
@@ -175,6 +176,7 @@ export function AgentChat({
   disabled: boolean;
   farewellSlot: HTMLDivElement | null;
   optionCompanionSlot: HTMLDivElement | null;
+  paymentCompanionSlot: HTMLDivElement | null;
   completionSpeechOrder: RefObject<string | null>;
   onState: (state: AgentState) => void;
   onBeginOrdering: () => void;
@@ -792,7 +794,9 @@ export function AgentChat({
     : latest?.role === "assistant"
       ? latest.text
       : "요청을 확인하고 있어요.";
-  const companionTarget = optionCompanionSlot ?? companionSlot;
+  const embeddedCompanionSlot = optionCompanionSlot ?? paymentCompanionSlot;
+  const companionTarget = embeddedCompanionSlot ?? companionSlot;
+  const paymentModalOpen = cart.screen === "payment" && !!cart.payment;
   return (
     <>
       <AgentGuidance
@@ -813,6 +817,7 @@ export function AgentChat({
       {companionSlot &&
         companionTarget &&
         cart.screen !== "completed" &&
+        !paymentModalOpen &&
         createPortal(
           <KioskCompanion
             kiosk={companionSlot}
@@ -827,7 +832,7 @@ export function AgentChat({
             )}
             guidance={guidance}
             screen={cart.screen}
-            embedded={!!optionCompanionSlot}
+            embedded={!!embeddedCompanionSlot}
           />,
           companionTarget,
         )}

@@ -20,7 +20,7 @@
   color: #4a6bed;
 }
 .completion-heading {
-  padding-top: 43px;
+  padding-top: 32px;
   text-align: center;
 }
 .completion-heading .completion-mark {
@@ -44,7 +44,7 @@
 }
 .completed-screen .pickup-ticket {
   position: relative;
-  margin: 33px 0 0;
+  margin: 26px 0 0;
   padding: 26px 32px 0;
   background: #fff;
   border: 1px solid #e8edf5;
@@ -178,25 +178,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  margin-top: 16px;
+  gap: 22px;
+  width: 100%;
+  margin-top: 8px;
 }
 .completion-farewell-avatar {
-  width: 144px;
+  width: 252px;
   flex-shrink: 0;
 }
 .completion-farewell-avatar .agent-avatar {
   width: 100%;
 }
 .completion-farewell > p {
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1.2;
   color: #4e5968;
   margin: 0;
 }
 .completion-footer {
   margin-top: auto;
-  padding-top: 32px;
+  padding-top: 18px;
   width: 100%;
 }
 .completion-footer > .primary {

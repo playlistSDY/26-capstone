@@ -49,9 +49,19 @@ for (const [name, method, instruction, reading] of [
       .getByRole("button", { name: "확인하고 결제하기", exact: true })
       .click();
     await expect(page.locator(".payment-method")).toHaveCount(5);
+    const dialogue = page.locator(".payment-companion-slot .kiosk-companion");
+    await expect(dialogue).toBeVisible();
+    const methods = await page.locator(".payment-methods").boundingBox();
+    const dialogueBounds = await dialogue.boundingBox();
+    const review = await page
+      .getByRole("button", { name: "주문 내역 다시 보기" })
+      .boundingBox();
+    expect(dialogueBounds!.y).toBeGreaterThan(methods!.y + methods!.height);
+    expect(dialogueBounds!.y + dialogueBounds!.height).toBeLessThan(review!.y);
     await page.getByRole("button", { name, exact: true }).click();
     const modal = page.getByRole("dialog", { name, exact: true });
     await expect(modal.getByRole("heading")).toHaveText(instruction);
+    await expect(page.locator(".kiosk-companion")).toHaveCount(0);
     await expect(modal).not.toContainText("체험");
     await expect(
       modal.getByRole("button", { name: "결제 리더기" }),
@@ -66,6 +76,7 @@ for (const [name, method, instruction, reading] of [
     await expect(modal.getByRole("heading")).toHaveText(
       "결제를 승인하고 있어요",
     );
+    await expect(page.locator(".companion-bubbles")).toHaveCount(0);
     await page.clock.runFor(1800);
     await expect(modal.getByRole("heading")).toHaveText("결제가 완료됐어요");
     await expect(modal.getByRole("button", { name: "닫기" })).toBeDisabled();
@@ -81,7 +92,20 @@ for (const [name, method, instruction, reading] of [
     ).toBeVisible();
     await expect(
       page.getByText("맛있게 드세요!", { exact: true }),
-    ).toBeVisible();
+    ).toHaveCSS("font-size", "44px");
+    await expect(page.locator(".completion-farewell .agent-avatar")).toHaveCSS(
+      "width",
+      "252px",
+    );
+    const farewell = await page.locator(".completion-farewell").boundingBox();
+    const printStatus = await page.locator(".receipt-output-card").boundingBox();
+    const restart = await page
+      .getByRole("button", { name: "처음으로 돌아가기" })
+      .boundingBox();
+    const kiosk = await page.locator(".kiosk").boundingBox();
+    expect(farewell!.y).toBeGreaterThan(printStatus!.y + printStatus!.height);
+    expect(farewell!.y + farewell!.height).toBeLessThan(restart!.y);
+    expect(restart!.y + restart!.height).toBeLessThan(kiosk!.y + kiosk!.height);
     await expect(page.locator("html")).toHaveAttribute(
       "data-farewell-speech",
       "맛있게 드세요!",

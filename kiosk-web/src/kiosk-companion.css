@@ -444,26 +444,27 @@
 }
 
 .option-companion-slot {
+  --embedded-avatar-width: 165px;
   flex: 0 0 220px;
   margin: 0 30px;
   padding: 21px 18px;
   border-bottom: 1px solid var(--line);
   background: #fff;
 }
-.option-companion-slot .kiosk-companion {
+:is(.option-companion-slot, .payment-companion-slot) .kiosk-companion {
   --companion-scale: 1;
   position: static;
   height: 100%;
   gap: 12px;
   align-items: center;
 }
-.option-companion-slot .companion-character {
-  flex: 0 0 165px;
-  width: 165px;
+:is(.option-companion-slot, .payment-companion-slot) .companion-character {
+  flex: 0 0 var(--embedded-avatar-width, 180px);
+  width: var(--embedded-avatar-width, 180px);
   align-self: center;
   pointer-events: none;
 }
-.option-companion-slot .companion-bubbles {
+:is(.option-companion-slot, .payment-companion-slot) .companion-bubbles {
   align-self: stretch;
   height: auto;
   pointer-events: auto;
