@@ -66,7 +66,7 @@ class BridgeTest(unittest.TestCase):
         rows = [{"id": l.id, "productId": l.product_id, "quantity": l.quantity, "options": asdict(l.options)} for l in c.store.lines]
         payload = {"request_id":"turn-1", "text":"결제 결과", "payment_event":True,
                    "cart":{"screen":"completed", "place":"store", "lines":rows,
-                           "receipt":{"id":"order1", "number":"009", "total":4200, "method":"card"}}}
+                           "receipt":{"id":"order1", "number":"009", "total":4700, "method":"card"}}}
         self.bridge.submit(self.bridge.turn(self.session,payload)); self.finish()
         event = self.bridge.submit(self.bridge.events(self.session,"turn-1",0))["events"][-1]
         self.assertTrue(event["session_complete"])

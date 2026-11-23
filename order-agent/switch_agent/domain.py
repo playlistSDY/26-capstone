@@ -23,7 +23,8 @@ class Options:
     milk: str = "regular"
     ice: str = "normal"
     sweetness: str = "normal"
-    decaf: bool = False
+    decaf: bool | None = None
+    whippedCream: str = "normal"
 
 
 @dataclass
@@ -94,17 +95,28 @@ class OrderStore:
         self.final_confirmation_text = None
 
     def defaults(self, p):
-        return Options(temperature=p["temperatures"][0] if len(p["temperatures"]) == 1 else None)
+        return Options(temperature=p["temperatures"][0] if len(p["temperatures"]) == 1 else None, decaf=bool(p.get("decafOnly")))
+
+    def resolved(self, p, o: Options):
+        value = deepcopy(o)
+        if value.decaf is None: value.decaf = bool(p.get("decafOnly"))
+        return value
 
     def validate(self, p, o: Options):
         if o.temperature not in p["temperatures"]:
             raise OrderError("가능한 온도를 확인하고 선택해 주세요.")
         for name, allowed in {
             "size": {"regular", "large"}, "milk": {"regular", "oat"},
-            "ice": {"normal", "less", "none"}, "sweetness": {"normal", "less", "none"},
+            "ice": {"normal", "more", "less", "none"}, "sweetness": {"normal", "less", "none"},
         }.items():
             if getattr(o, name) not in allowed:
                 raise OrderError(f"지원하지 않는 옵션: {name}")
+        if o.whippedCream not in {"normal", "extra", "none"}:
+            raise OrderError("휘핑 옵션은 기본·추가·제거 중에서 선택해 주세요.")
+        if not p.get("whippedCream") and o.whippedCream != "normal":
+            raise OrderError("이 메뉴에서는 휘핑을 변경할 수 없어요.")
+        if p.get("decafOnly") and o.decaf is not True:
+            raise OrderError("이 메뉴는 디카페인 원두로만 주문할 수 있어요.")
         if type(o.decaf) is not bool:
             raise OrderError("디카페인은 참/거짓으로 선택해 주세요.")
         if any(type(n) is not int or not 0 <= n <= 3 for n in (o.shots, o.syrup)):
@@ -142,7 +154,7 @@ class OrderStore:
 
     def unit_price(self, line):
         o = line.options
-        return self.product(line.product_id)["price"] + (500 if o.size == "large" else 0) + o.shots * 500 + o.syrup * 300 + (600 if o.milk == "oat" else 0) + (500 if o.decaf else 0)
+        return self.product(line.product_id)["price"] + (500 if o.size == "large" else 0) + o.shots * 500 + o.syrup * 300 + (600 if o.milk == "oat" else 0) + (500 if o.decaf and not self.product(line.product_id).get("decafOnly") else 0)
 
     def snapshot(self):
         return {
@@ -160,7 +172,7 @@ class OrderStore:
 
     def add(self, product_id, quantity, options: Options):
         self.editable()
-        line = Line(uuid4().hex, product_id, quantity, deepcopy(options))
+        line = Line(uuid4().hex, product_id, quantity, self.resolved(self.product(product_id), options))
         candidate = self.lines + [line]
         self.validate_cart(candidate)
         self.lines = candidate
@@ -171,7 +183,7 @@ class OrderStore:
     def edit(self, line_id, quantity, options: Options, product_id=None):
         self.editable()
         old = self.line(line_id)
-        candidate = [Line(l.id, product_id or old.product_id, quantity, deepcopy(options)) if l.id == line_id else deepcopy(l) for l in self.lines]
+        candidate = [Line(l.id, product_id or old.product_id, quantity, self.resolved(self.product(product_id or old.product_id), options)) if l.id == line_id else deepcopy(l) for l in self.lines]
         self.validate_cart(candidate)
         self.lines = candidate
         self.focus = line_id
@@ -185,7 +197,7 @@ class OrderStore:
             raise OrderError("나눌 수량은 원래 수량보다 적어야 해요.")
         candidate = deepcopy(self.lines)
         next(l for l in candidate if l.id == line_id).quantity -= quantity
-        line = Line(uuid4().hex, old.product_id, quantity, deepcopy(options))
+        line = Line(uuid4().hex, old.product_id, quantity, self.resolved(self.product(old.product_id), options))
         candidate.append(line)
         self.validate_cart(candidate)
         self.lines = candidate
@@ -217,11 +229,12 @@ class OrderStore:
         for l in self.lines:
             o = l.options
             labels = ["따뜻한" if o.temperature == "hot" else "차가운", "큰 크기" if o.size == "large" else "기본 크기"]
-            if o.decaf: labels.append("디카페인")
+            if o.decaf and "디카페인" not in self.product(l.product_id)["name"]: labels.append("디카페인")
             if o.shots: labels.append(f"샷 {o.shots}개 추가")
             if o.syrup: labels.append(f"시럽 {o.syrup}개 추가")
             if o.milk == "oat": labels.append("오트밀크")
-            if o.ice != "normal": labels.append("얼음 적게" if o.ice == "less" else "얼음 없이")
+            if o.ice != "normal": labels.append({"more": "얼음 많이", "less": "얼음 적게", "none": "얼음 없이"}[o.ice])
+            if o.whippedCream != "normal": labels.append("휘핑 추가" if o.whippedCream == "extra" else "휘핑 제거")
             if o.sweetness != "normal": labels.append("덜 달게" if o.sweetness == "less" else "시럽 없이")
             parts.append(f"{' '.join(labels)} {self.product(l.product_id)['name']} {l.quantity}잔")
         return ", ".join(parts) if parts else "아직 담은 메뉴가 없어요"

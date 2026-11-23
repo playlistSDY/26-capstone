@@ -117,10 +117,11 @@ async function fixture(page: Page, standalone = true, startAtHome = false) {
   await page.goto(standalone ? "/?kiosk=1" : "/");
   if (!startAtHome) {
     await page.getByRole("button", { name: /포장할게요/ }).click();
+    await page.getByRole("button", { name: "커피", exact: true }).click();
     await page
       .getByRole("button", { name: "아메리카노 3,200원", exact: true })
       .click();
-    await page.getByRole("button", { name: /차갑게/ }).click();
+    await page.getByRole("button", { name: /따뜻하게/ }).click();
     await page
       .getByRole("button", { name: "3,200원 담기", exact: true })
       .click();
@@ -493,10 +494,11 @@ test("Manual checkout asks for an unchosen order type without losing items", asy
   const f = await fixture(page, true, true);
   await f.say("메뉴판 보여줘");
   await expect(page.locator(".product-card").first()).toBeVisible();
+  await page.getByRole("button", { name: "커피", exact: true }).click();
   await page
     .getByRole("button", { name: "아메리카노 3,200원", exact: true })
     .click();
-  await page.getByRole("button", { name: /차갑게/ }).click();
+  await page.getByRole("button", { name: /따뜻하게/ }).click();
   await page.getByRole("button", { name: "3,200원 담기", exact: true }).click();
   await page.getByRole("button", { name: "결제하기", exact: true }).click();
   await page

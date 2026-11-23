@@ -31,8 +31,9 @@ def store_profile(item, variants):
     }
 
 
-def details(product_id, temperature=None, size="regular", decaf=False):
+def details(product_id, temperature=None, size="regular", decaf=None):
     item = database()["items"][product_id]
+    if decaf is None: decaf = all(v["decaf"] for v in item["variants"])
     ingredient_names = [ingredient["name"] for ingredient in item["ingredients"]]
     variants = [{**v, "ingredient_names": ingredient_names + [item["name"], item["source_name"]]} for v in item["variants"] if (temperature is None or v["temperature"] == temperature) and v["size"] == size and v["decaf"] == decaf]
     return {"store_profile": store_profile(item, variants), "summary": item["summary"], "ingredients": item["ingredients"], "ingredient_amounts_demo": item["ingredient_amounts_demo"], "variants": variants, "checked_at": item["checked_at"], "classification_policy": database()["classification_policy"], "default_response_policy": "고객이 수치를 묻지 않으면 짧고 쉬운 말로 맛·카페인·관련 주의 재료만 안내. 등록된 데모 매장 설정은 단정적으로 안내하고, 실제 브랜드 공식 정보와 혼동하지 않음."}

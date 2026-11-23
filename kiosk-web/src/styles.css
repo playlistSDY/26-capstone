@@ -168,7 +168,8 @@ button:disabled:active {
   flex-shrink: 0;
   box-shadow: 0 8px 36px #19294512;
   border-radius: 3px;
-  overflow: hidden;
+  /* The scaled preview must not scroll when an option receives focus. */
+  overflow: clip;
 }
 .kiosk {
   background: #fff;

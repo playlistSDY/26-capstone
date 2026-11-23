@@ -65,6 +65,7 @@ def normalize_ui_context(store, raw):
         except (KeyError, TypeError):
             raise OrderError("선택 중인 옵션을 확인해 주세요.") from None
         p = store.product(editor["product_id"])
+        options = store.resolved(p, options)
         pending_options = deepcopy(options)
         if pending_options.temperature is None: pending_options.temperature = p["temperatures"][0]
         store.validate(p, pending_options)
@@ -90,7 +91,7 @@ def sync_cart(store, cart):
             raise OrderError("중복되거나 잘못된 주문 항목이에요.")
         ids.add(row["id"])
         try:
-            candidate.append(Line(row["id"], row["productId"], row["quantity"], Options(**row["options"])))
+            candidate.append(Line(row["id"], row["productId"], row["quantity"], store.resolved(store.product(row["productId"]), Options(**row["options"]))))
         except (KeyError, TypeError):
             raise OrderError("메뉴 옵션 형식을 확인해 주세요.") from None
     if cart["screen"] == "home" and (candidate or place is not None):

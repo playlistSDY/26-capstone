@@ -109,7 +109,7 @@ for p in products:
     variants=[]
     for temperature in p['temperatures']:
         for size in ['regular','large'] if not p['fixedSize'] else ['regular']:
-            for decaf in [False,True] if p['decaf'] else [False]:
+            for decaf in ([True] if p.get('decafOnly') else [False,True] if p['decaf'] else [False]):
                 exact=[r for r in candidates if r['size']==size and r['decaf']==decaf and r['temperature'] in [temperature,'unspecified']]
                 exact.sort(key=lambda r:r['temperature']!=temperature)
                 r=exact[0] if exact else None
@@ -120,7 +120,12 @@ for p in products:
                     if r and label in r['nutrients']:
                         values[target]=r['nutrients'][label];origins[target]='official'
                     else:
-                        values[target]=round((e[target] if target!='caffeine_mg' or not decaf else (7 if e[target] else 0))*scale,1);origins[target]='demo_estimate'
+                        if target == 'caffeine_mg' and decaf and '아샷추' in p['sourceName']:
+                            # Fictional tea base 35mg + decaf shot 7mg; never zero.
+                            values[target] = round(42 * (1.4 if size == 'large' else 1), 1)
+                        else:
+                            values[target]=round((e[target] if target!='caffeine_mg' or not decaf else (7 if e[target] else 0))*scale,1)
+                        origins[target]='demo_estimate'
                 m=re.search(r'(\d+(?:\.\d+)?)\s*ml', r['size_text'],re.I) if r else None
                 values['volume_ml']=float(m.group(1)) if m else round(e['volume_ml']*scale)
                 origins['volume_ml']='official' if m else 'demo_estimate'

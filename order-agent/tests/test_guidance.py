@@ -47,7 +47,7 @@ class GuidanceTests(unittest.TestCase):
 class GuidanceRuntimeTests(unittest.IsolatedAsyncioTestCase):
     async def test_real_sdk_guides_explanation_then_delegates_existing_selection(self):
         store = OrderStore.demo()
-        store.ui_context = {'editor': {'product_id': 'latte', 'quantity': 2, 'options': {'temperature': 'ice', 'size': 'large', 'ice': 'less', 'sweetness': 'less', 'shots': 0, 'syrup': 0, 'milk': 'regular', 'decaf': False}}, 'interaction': {'activations': 7, 'option_changes': 3}}
+        store.ui_context = {'editor': {'product_id': 'latte', 'quantity': 2, 'options': {'temperature': 'ice', 'size': 'large', 'ice': 'less', 'sweetness': 'less', 'shots': 0, 'syrup': 0, 'milk': 'regular', 'decaf': True}}, 'interaction': {'activations': 7, 'option_changes': 3}}
         options = store.ui_context['editor']['options']
         model = ScriptedModel([
             [call('guide_ui', {'target': 'option', 'instruction': '큰 크기는 500원 추가예요.', 'product_id': 'latte', 'option': 'size', 'value': 'large'})],

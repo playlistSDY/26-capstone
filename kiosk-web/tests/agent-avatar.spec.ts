@@ -227,6 +227,7 @@ test("The character lives inside the kiosk and follows screen changes without co
   await expect(page.locator(".agent-chat-dialog")).toHaveCount(0);
   const initialY = await companion.getAttribute("data-y");
   await page.getByRole("button", { name: /먹고 갈게요/ }).click();
+  await page.getByRole("button", { name: "디카페인", exact: true }).click();
   await page
     .locator('[data-guide="product"][data-guide-product="latte"]')
     .click();

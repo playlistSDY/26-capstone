@@ -43,17 +43,17 @@ def search_menu(ctx: RunContextWrapper[OrderStore], query: str = "", max_price: 
         score = 1.0 if not q or q in name or query in p["categories"] else SequenceMatcher(None, q, normalized(p["name"])).ratio()
         if score >= 0.35:
             stock = ctx.context.stock.get(p["id"])
-            candidates.append((score, {"id": p["id"], "name": p["name"], "base_price": p["price"], "available": not p.get("soldOut", False) and stock != 0, "stock_quantity": stock, "temperatures": p["temperatures"]}))
+            candidates.append((score, {"id": p["id"], "name": p["name"], "base_price": p["price"], "available": not p.get("soldOut", False) and stock != 0, "stock_quantity": stock, "temperatures": p["temperatures"], "decaf_only": bool(p.get("decafOnly")), "whipped_cream": bool(p.get("whippedCream"))}))
     candidates.sort(key=lambda item: (-item[0], not item[1]["available"], item[1]["base_price"]))
     return encoded({"mode": "mock", "price_source": "prototype", "results": [p for _, p in candidates[:5]], "total_matches": len(candidates)})
 
 
 @function_tool
-def read_menu(ctx: RunContextWrapper[OrderStore], product_id: str, temperature: str | None = None, size: str = "regular", decaf: bool = False) -> str:
+def read_menu(ctx: RunContextWrapper[OrderStore], product_id: str, temperature: str | None = None, size: str = "regular", decaf: bool | None = None) -> str:
     """메뉴 상세·옵션 제한·품절·재고 및 이디야 성분·당류·카페인·알레르기 정보를 읽는다. store_profile은 이 데모 매장의 확정 설정이다. 출처 구분은 내부에 유지하고 매장 설정은 분명하게 안내한다. 숫자는 고객이 물을 때만 말한다."""
     def read():
         p = ctx.context.product(product_id)
-        return {"product": p, "defaults": asdict(ctx.context.defaults(p)), "preference_policy": {"confirm_before_add": important_options(p, Options(temperature=temperature)), "source": "demo_policy"}, "stock_quantity": ctx.context.stock.get(product_id), "available": not p.get("soldOut", False) and ctx.context.stock.get(product_id) != 0, "menu_information": details(product_id, temperature, size, decaf), "option_prices": {"large": 500, "shot": 500, "syrup": 300, "oat": 600, "decaf": 500}, "price_source": "prototype", "mode": "mock"}
+        return {"product": p, "defaults": asdict(ctx.context.defaults(p)), "preference_policy": {"confirm_before_add": important_options(p, Options(temperature=temperature)), "source": "demo_policy"}, "stock_quantity": ctx.context.stock.get(product_id), "available": not p.get("soldOut", False) and ctx.context.stock.get(product_id) != 0, "menu_information": details(product_id, temperature, size, bool(p.get("decafOnly")) if decaf is None else decaf), "option_prices": {"large": 500, "shot": 500, "syrup": 300, "oat": 600, "decaf": 0 if p.get("decafOnly") else 500, "whippedCream_extra": 0, "ice_more": 0}, "option_constraints": {"decaf_only": bool(p.get("decafOnly")), "whippedCream": ["normal", "extra", "none"] if p.get("whippedCream") else ["normal"], "ice": ["normal", "more", "less", "none"] if p["iceAdjustable"] and temperature != "hot" else ["normal"]}, "price_source": "prototype", "mode": "mock"}
     return guarded(read)
 
 
@@ -63,9 +63,9 @@ def find_suitable_menu(ctx: RunContextWrapper[OrderStore], caffeine: Literal["an
     results = []
     for p in ctx.context.catalog.values():
         if p.get("soldOut") or ctx.context.stock.get(p["id"]) == 0: continue
-        for decaf in [False, True] if p["decaf"] else [False]:
+        for decaf in ([True] if p.get("decafOnly") else [False, True] if p["decaf"] else [False]):
             for v in details(p["id"], decaf=decaf)["variants"]:
-                price = p["price"] + (500 if decaf else 0)
+                price = p["price"] + (500 if decaf and not p.get("decafOnly") else 0)
                 if max_price is not None and price > max_price: continue
                 if not suitable(v, caffeine, sweetness, avoid_allergens or []): continue
                 results.append({"product_id": p["id"], "name": p["name"], "temperature": v["temperature"], "decaf": decaf, "price": price, "sweetness": v["sweetness"], "caffeine_level": v["caffeine_level"], "allergens": v["allergens"], "allergen_origin": v["allergen_origin"], "value_origins": v["value_origins"], "source_url": v["source_url"], "caffeine_mg": v["values"]["caffeine_mg"], "sugar_g": v["values"]["sugar_g"]})
@@ -84,7 +84,7 @@ def get_cart(ctx: RunContextWrapper[OrderStore]) -> str:
 
 @function_tool
 def add_item(ctx: RunContextWrapper[OrderStore], product_id: str, quantity: int, options: Options, confirmed_options: list[str] | None = None, use_defaults: bool = False) -> str:
-    """메뉴 추가 또는 미확정 메뉴 옵션 갱신. confirmed_options에는 손님이 직접 지정·동의한 temperature/size/ice/sweetness만 넣는다. use_defaults는 손님이 '기본으로/알아서'라고 답하면 남은 기본 옵션에 대한 동의로 참. needs_preference면 아직 추가되지 않았으므로 반환 question 하나로 남은 옵션을 묶어 묻고 답을 기다린다. 그 질문에 동의하면 question_options 항목들을 모두 confirmed_options로 반영한다. 다음 발화에 같은 product_id와 전체 옵션으로 다시 호출한다. 이전 동의는 같은 값일 때 유지된다. 추천만으로 호출하지 않는다."""
+    """메뉴 추가 또는 미확정 메뉴 옵션 갱신. confirmed_options에는 손님이 직접 지정·동의한 temperature/size/ice/sweetness/whippedCream만 넣는다. use_defaults는 손님이 '기본으로/알아서'라고 답하면 남은 기본 옵션에 대한 동의로 참. needs_preference면 아직 추가되지 않았으므로 반환 question 하나로 남은 옵션을 묶어 묻고 답을 기다린다. 그 질문에 동의하면 question_options 항목들을 모두 confirmed_options로 반영한다. 다음 발화에 같은 product_id와 전체 옵션으로 다시 호출한다. 이전 동의는 같은 값일 때 유지된다. 추천만으로 호출하지 않는다."""
     return guarded(lambda: add_with_preferences(ctx.context, product_id, quantity, options, confirmed_options or [], use_defaults))
 
 
@@ -211,7 +211,7 @@ def handoff_to_staff(ctx: RunContextWrapper[OrderStore], reason: str, unresolved
 
 
 @function_tool
-def guide_ui(ctx: RunContextWrapper[OrderStore], target: Literal["place", "category", "product", "option", "editor.quantity", "editor.add", "cart.quantity", "cart.options", "cart.remove", "checkout", "confirm_payment", "payment.method", "back"], instruction: str, product_id: str | None = None, line_id: str | None = None, option: Literal["temperature", "size", "ice", "sweetness", "milk", "decaf"] | None = None, value: str | None = None) -> str:
+def guide_ui(ctx: RunContextWrapper[OrderStore], target: Literal["place", "category", "product", "option", "editor.quantity", "editor.add", "cart.quantity", "cart.options", "cart.remove", "checkout", "confirm_payment", "payment.method", "back"], instruction: str, product_id: str | None = None, line_id: str | None = None, option: Literal["temperature", "size", "ice", "sweetness", "milk", "decaf", "whippedCream"] | None = None, value: str | None = None) -> str:
     """손님이 직접 누르도록 버튼 하나를 강조하고 위치로 이동한다. instruction은 짧은 쉬운 안내. product는 메뉴 ID, category는 value=카테고리명, option은 옵션명과 필요시 value=값, cart.*는 항목 ID, payment.method는 value=card/samsung/apple/kakao/naver. 옵션 안내는 현재 편집 중인 선택을 유지하며 창만 준비한다. 주문 추가/변경이나 결제 실행은 하지 않는다. 대신 해달라는 요청은 기존 주문 도구를 사용한다."""
     from .guidance import guide
     return guarded(lambda: guide(ctx.context, target, instruction, product_id, line_id, option, value))

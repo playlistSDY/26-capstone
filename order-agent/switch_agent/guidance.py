@@ -4,8 +4,8 @@ from .domain import OrderError
 
 TARGETS = {"place", "category", "product", "option", "editor.quantity", "editor.add", "cart.quantity", "cart.options", "cart.remove", "checkout", "confirm_payment", "payment.method", "back"}
 CATEGORIES = {"추천 메뉴", "커피", "디카페인", "논커피", "에이드", "블렌디드", "과일 주스", "티", "병음료"}
-OPTIONS = {"temperature", "size", "ice", "sweetness", "milk", "decaf"}
-VALUES = {"temperature": {"hot", "ice"}, "size": {"regular", "large"}, "ice": {"normal", "less", "none"}, "sweetness": {"normal", "less", "none"}, "milk": {"regular", "oat"}, "decaf": {"true", "false"}}
+OPTIONS = {"temperature", "size", "ice", "sweetness", "milk", "decaf", "whippedCream"}
+VALUES = {"temperature": {"hot", "ice"}, "size": {"regular", "large"}, "ice": {"normal", "more", "less", "none"}, "sweetness": {"normal", "less", "none"}, "milk": {"regular", "oat"}, "decaf": {"true", "false"}, "whippedCream": {"normal", "extra", "none"}}
 
 
 def guide(store, target, instruction, product_id=None, line_id=None, option=None, value=None):
@@ -36,7 +36,7 @@ def guide(store, target, instruction, product_id=None, line_id=None, option=None
             raise OrderError("지원하는 옵션 버튼을 안내해 주세요.")
         temperature = editor.get("options", {}).get("temperature") if editor.get("product_id") == product_id else None
         if (p["fixedOptions"] or (option == "size" and p["fixedSize"]) or
-            (option == "milk" and not p["milk"]) or (option == "decaf" and not p["decaf"]) or
+            (option == "milk" and not p["milk"]) or (option == "decaf" and (not p["decaf"] or p.get("decafOnly"))) or (option == "whippedCream" and not p.get("whippedCream")) or
             (option == "ice" and (not p["iceAdjustable"] or temperature == "hot")) or
             (option == "temperature" and value is not None and value not in p["temperatures"])):
             raise OrderError("현재 메뉴에서 사용할 수 있는 옵션을 안내해 주세요.")

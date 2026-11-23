@@ -9,7 +9,7 @@ const options = {
   milk: "regular",
   ice: "normal",
   sweetness: "normal",
-  decaf: false,
+  decaf: true,
 };
 async function fixture(page: Page) {
   await mockBackend(page);
@@ -41,7 +41,7 @@ async function fixture(page: Page) {
         total: body.cart.lines.reduce(
           (sum: number, line: any) =>
             sum +
-            (4200 + (line.options.size === "large" ? 500 : 0)) * line.quantity,
+            (4700 + (line.options.size === "large" ? 500 : 0)) * line.quantity,
           0,
         ),
         ...respond(body),
@@ -169,7 +169,7 @@ test("Highlights work through conversation without tutorial controls and preserv
   const f = await fixture(page);
   f.respond(() => ({
     lines: [{ id: "line-one", product_id: "latte", quantity: 1, options }],
-    total: 4200,
+    total: 4700,
   }));
   await f.say("아이스 라떼 기본으로 담아줘");
   await expect(page.locator(".agent-guide-ring")).toBeVisible();
@@ -185,7 +185,10 @@ test("Highlights work through conversation without tutorial controls and preserv
   await f.say("수량 버튼은 어디야?");
   await expect(page.locator(".agent-guide-ring")).toBeVisible();
   await page
-    .getByRole("button", { name: "카페라떼 주문 수량 늘리기", exact: true })
+    .getByRole("button", {
+      name: "디카페인 카페라떼 주문 수량 늘리기",
+      exact: true,
+    })
     .click();
   await expect(page.locator(".agent-guide-ring")).toHaveCount(0);
   f.respond(() => ({
@@ -194,7 +197,7 @@ test("Highlights work through conversation without tutorial controls and preserv
   await f.say("옵션 버튼은 어디야?");
   await expect(page.locator(".agent-guide-ring")).toBeVisible();
   await page
-    .getByRole("button", { name: "카페라떼 옵션 변경", exact: true })
+    .getByRole("button", { name: "디카페인 카페라떼 옵션 변경", exact: true })
     .click();
   await page
     .locator('[data-guide-option="size"][data-guide-value="large"]')
@@ -217,7 +220,7 @@ test("Highlights work through conversation without tutorial controls and preserv
         options: body.cart.ui_context.editor.options,
       },
     ],
-    total: 9400,
+    total: 10400,
   }));
   await f.say("이대로 대신 수정해줘");
   const request = f.requests.at(-1);
@@ -227,7 +230,7 @@ test("Highlights work through conversation without tutorial controls and preserv
   expect(
     request.cart.ui_context.interaction.guidance_completed,
   ).toBeGreaterThanOrEqual(1);
-  await expect(page.locator(".cart-tally")).toContainText("9,400");
+  await expect(page.locator(".cart-tally")).toContainText("10,400");
 });
 
 test("Payment explanation highlights a method without starting the reader", async ({
@@ -239,7 +242,7 @@ test("Payment explanation highlights a method without starting the reader", asyn
     view: "payment",
     place: "store",
     lines: [{ id: "one", product_id: "latte", quantity: 1, options }],
-    total: 4200,
+    total: 4700,
     guidance: guide("payment.method", { value: "card" }),
   }));
   await f.say("카드 버튼이 어디야");
@@ -309,6 +312,58 @@ test("Explanation preserves touch choices even when an older option draft remain
     page.locator('[data-guide-option="size"][data-guide-value="large"]'),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator('[data-guide="editor.add"]')).toContainText(
-    "9,400원",
+    "10,400원",
+  );
+});
+
+test("New cream and ice controls are highlighted and direct changes reach the next turn", async ({
+  page,
+}) => {
+  const f = await fixture(page);
+  f.respond(() => ({
+    item_drafts: [
+      {
+        product_id: "mocha",
+        quantity: 1,
+        options: { ...options, whippedCream: "normal" },
+        next_option: "whippedCream",
+      },
+    ],
+    guidance: guide("option", {
+      product_id: "mocha",
+      option: "whippedCream",
+      value: "none",
+    }),
+  }));
+  await f.say("휘핑 빼는 건 어디야?");
+  const cream = page.locator(
+    '[data-guide-option="whippedCream"][data-guide-value="none"]',
+  );
+  await expect(cream).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".agent-guide-ring")).toBeVisible();
+  await cream.click();
+  await page
+    .locator('[data-guide-option="ice"][data-guide-value="more"]')
+    .click();
+  f.respond((body) => ({
+    ui_context: body.cart.ui_context,
+    guidance: guide("option", {
+      product_id: "mocha",
+      option: "ice",
+      value: "more",
+    }),
+  }));
+  await f.say("얼음 많이면 어떻게 돼?");
+  expect(f.requests.at(-1).cart.ui_context.editor.options).toMatchObject({
+    decaf: true,
+    ice: "more",
+    whippedCream: "none",
+  });
+  await expect(page.locator(".agent-guide-ring")).toBeVisible();
+  await expect(
+    page.locator('[data-guide-option="ice"][data-guide-value="more"]'),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('[data-guide="editor.add"]')).toContainText(
+    "4,700원",
   );
 });

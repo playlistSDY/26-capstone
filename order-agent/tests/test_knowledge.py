@@ -51,7 +51,7 @@ class KnowledgeTest(unittest.TestCase):
         self.assertIn("제거되지", profile["preparation"]["oat_milk"])
 
     def test_decaf_is_not_reported_as_caffeine_free(self):
-        decaf = details("americano", "ice", decaf=True)["variants"][0]
+        decaf = details("americano-decaf", "ice", decaf=True)["variants"][0]
         self.assertGreater(decaf["values"]["caffeine_mg"], 0)
         self.assertFalse(suitable(decaf, "none", "any", []))
 

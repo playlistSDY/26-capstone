@@ -113,7 +113,7 @@ class RuntimeTest(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result["state"]["confirmation_pending"])
 
     async def test_order_type_correction_and_spoken_agreement_do_not_repeat_review(self):
-        s=OrderStore.demo();s.add("latte",2,Options(temperature="hot"));s.add("americano",1,Options(temperature="ice",size="large"));s.set_place("takeout")
+        s=OrderStore.demo();s.add("latte",2,Options(temperature="hot"));s.add("americano-decaf",1,Options(temperature="ice",size="large"));s.set_place("takeout")
         c=Conversation(store=s,model=ScriptedModel([
             [call("request_final_confirmation")],
             [call("set_order_type",{"place":"store"})],
