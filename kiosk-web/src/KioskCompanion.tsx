@@ -26,6 +26,7 @@ export function KioskCompanion({
   conversation,
   guidance,
   screen,
+  placeModalOpen,
   embedded = false,
 }: {
   kiosk: HTMLElement;
@@ -41,6 +42,7 @@ export function KioskCompanion({
   }[];
   guidance: GuidanceState | null;
   screen: string;
+  placeModalOpen: boolean;
   embedded?: boolean;
 }) {
   const root = useRef<HTMLElement>(null);
@@ -67,7 +69,7 @@ export function KioskCompanion({
   current.current = position;
   const size = useRef({ width: 540, height: 250 });
   const isHome = screen === "home";
-  const isFixed = isHome || embedded;
+  const isFixed = isHome || placeModalOpen || embedded;
   const isWaiting = waitingState(state);
   useEffect(() => {
     setElapsed(0);
@@ -112,16 +114,18 @@ export function KioskCompanion({
         screen === "menu" && !inModal ? `${size.current.height + 12}px` : "0px",
       );
       const modal = kiosk.querySelector<HTMLElement>(".overlay .modal");
+      const placeModal = placeModalOpen && modal ? local(modal) : null;
       const dialogue = kiosk.querySelector<HTMLElement>(
         isHome ? ".welcome-companion-space" : ".agent-dialogue-space",
       );
       const sceneReady = (screen !== "menu" && !isHome) || !!dialogue;
       const context = `${screen}:${sceneReady}:${modal?.getAttribute("aria-label") ?? ""}:${kiosk.querySelector(".option-intro h2")?.textContent ?? ""}`;
       // The footer follows real menu/cart layout changes, never new text bubbles.
-      const dialogueTop =
+      const dialogueTop = placeModal?.y ?? (
         isHome || (screen === "menu" && !inModal)
           ? (dialogue?.offsetTop ?? 0)
-          : 0;
+          : 0
+      );
       const key = `${context}:${Math.round(bounds.width)}:${Math.round(size.current.width)}:${Math.round(size.current.height)}:${dialogueTop}:${dialogue?.offsetHeight ?? 0}`;
       if (anchored.current === key) return;
       if (!anchored.current.startsWith(context + ":")) manual.current = false;
@@ -173,15 +177,26 @@ export function KioskCompanion({
               stage,
             )
           : null;
-      const next = inNook
-        ? inNook
-        : companionPosition(
-            stage,
+      const besidePlaceModal = placeModal
+        ? clampPosition(
+            {
+              x: placeModal.x + (placeModal.width - size.current.width) / 2,
+              y: placeModal.y - size.current.height - 12,
+            },
             size.current,
-            obstacles,
-            target ? local(target) : null,
-            screen,
-          );
+            stage,
+          )
+        : null;
+      const next =
+        besidePlaceModal ??
+        inNook ??
+        companionPosition(
+          stage,
+          size.current,
+          obstacles,
+          target ? local(target) : null,
+          screen,
+        );
       setPosition((previous) =>
         Math.abs(previous.x - next.x) < 2 && Math.abs(previous.y - next.y) < 2
           ? previous
@@ -200,7 +215,7 @@ export function KioskCompanion({
       window.removeEventListener("resize", update);
       kiosk.removeEventListener("scroll", update, true);
     };
-  }, [kiosk, screen, isHome, collapsed, embedded]);
+  }, [kiosk, screen, isHome, placeModalOpen, collapsed, embedded]);
   const feedback = uiText(companionFeedback(state, elapsed));
   const receiving = state === "typing" || state === "hearing";
   const waitingCaption = receiving
@@ -226,7 +241,7 @@ export function KioskCompanion({
     // The kiosk transform scales the avatar and bubbles together with the menu.
     "--companion-scale": 1,
     width:
-      collapsed && !isHome
+      collapsed && !isFixed
         ? `min(${dialogueWidth}px, var(--companion-character-width))`
         : `${dialogueWidth}px`,
     height: isHome ? undefined : "250px",
@@ -259,6 +274,7 @@ export function KioskCompanion({
       className={`kiosk-companion ${collapsed ? "is-collapsed" : ""}`}
       aria-label="키오스크 점원"
       data-screen={screen}
+      data-place-modal={placeModalOpen}
       data-x={Math.round(position.x)}
       data-y={Math.round(position.y)}
       data-waiting={isWaiting}

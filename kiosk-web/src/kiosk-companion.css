@@ -56,6 +56,12 @@
 .kiosk-companion .agent-avatar {
   width: 100%;
 }
+.kiosk-companion[data-place-modal="true"] {
+  transition: none;
+}
+.kiosk-companion[data-place-modal="true"] .companion-character {
+  pointer-events: none;
+}
 .companion-bubbles {
   flex: 1;
   min-width: 0;

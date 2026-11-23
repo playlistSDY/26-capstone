@@ -269,6 +269,18 @@ test("The character lives inside the kiosk and follows screen changes without co
     "font-size",
     "24px",
   );
+  await page.getByRole("button", { name: "매장", exact: true }).click();
+  const placeModal = page.getByRole("dialog", { name: "이용 방법 변경" });
+  await expect(placeModal).toBeVisible();
+  await expect(companion).toHaveAttribute("data-place-modal", "true");
+  const panel = await placeModal.boundingBox();
+  const actor = await companion.boundingBox();
+  const gapAbovePanel = panel!.y - (actor!.y + actor!.height);
+  expect(actor!.x + actor!.width / 2).toBeCloseTo(panel!.x + panel!.width / 2, 0);
+  expect(gapAbovePanel).toBeGreaterThan(0);
+  expect(gapAbovePanel).toBeLessThan(12);
+  await page.keyboard.press("Escape");
+  await expect(placeModal).toHaveCount(0);
   await page.getByRole("button", { name: "디카페인", exact: true }).click();
   await page
     .locator('[data-guide="product"][data-guide-product="latte"]')

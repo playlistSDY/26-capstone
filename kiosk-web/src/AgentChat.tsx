@@ -794,7 +794,9 @@ export function AgentChat({
     : latest?.role === "assistant"
       ? latest.text
       : "요청을 확인하고 있어요.";
-  const embeddedCompanionSlot = optionCompanionSlot ?? paymentCompanionSlot;
+  const placeModalOpen = cart.ui_context?.overlay === "place";
+  const embeddedCompanionSlot =
+    optionCompanionSlot ?? (placeModalOpen ? null : paymentCompanionSlot);
   const companionTarget = embeddedCompanionSlot ?? companionSlot;
   const paymentModalOpen = cart.screen === "payment" && !!cart.payment;
   return (
@@ -832,6 +834,7 @@ export function AgentChat({
             )}
             guidance={guidance}
             screen={cart.screen}
+            placeModalOpen={placeModalOpen}
             embedded={!!embeddedCompanionSlot}
           />,
           companionTarget,
