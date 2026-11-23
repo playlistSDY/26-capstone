@@ -170,7 +170,7 @@ test("every category works, sold-out items are disabled, cancellation is confirm
   await expect(
     page.getByRole("button", { name: /얼그레이 티.*품절/ }),
   ).toBeDisabled();
-  await page.getByRole("button", { name: "주문 취소", exact: true }).click();
+  await page.getByRole("button", { name: "처음으로", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText(
     "담아 둔 메뉴가 모두 지워져요",
   );
@@ -180,7 +180,7 @@ test("every category works, sold-out items are disabled, cancellation is confirm
   await expect(
     page.getByRole("button", { name: "결제하기", exact: true }),
   ).toBeEnabled();
-  await page.getByRole("button", { name: "주문 취소", exact: true }).click();
+  await page.getByRole("button", { name: "처음으로", exact: true }).click();
   await page
     .getByRole("button", { name: "주문 취소하기", exact: true })
     .click();
@@ -229,8 +229,8 @@ test("order dock supports editing, review before payment, and clearing", async (
   const dock = page.getByRole("region", { name: "현재 주문 내역" });
   await expect(dock).toContainText("바닐라라떼");
   await expect(
-    dock.getByRole("button", { name: "주문 취소" }),
-  ).not.toContainText("주문 취소");
+    dock.getByRole("button", { name: "주문 취소", exact: true }),
+  ).toHaveCount(0);
   await expect(dock.locator(".dock-scroll-buttons")).toBeHidden();
   await dock
     .getByRole("button", { name: "바닐라라떼 주문 수량 늘리기" })

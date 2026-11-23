@@ -1566,15 +1566,6 @@ export default function App() {
                             </div>
                           </div>
                           <footer className="cart-bar">
-                            <button
-                              className="icon-button"
-                              aria-label={uiText("주문 취소")}
-                              onClick={() =>
-                                cart.length ? setOverlay("cancel") : reset()
-                              }
-                            >
-                              <X size={22} aria-hidden="true" />
-                            </button>
                             <div className="cart-tally">
                               <span>
                                 {uiText("총 ")}
