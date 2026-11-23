@@ -3,7 +3,8 @@ import fs from 'node:fs/promises';
 const base=process.env.SWITCH_QA_BASE||'http://127.0.0.1:18731/';
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio']});
 const context=await browser.newContext({viewport:{width:800,height:1280}});
-const external=[],errors=[],failures=[];
+const external=[],errors=[],failures=[],printedDocuments=[];
+const quantity=Number(process.env.SWITCH_QA_QUANTITY||1);
 await context.route('**/*',route=>{
  const u=new URL(route.request().url());
  if(!['127.0.0.1','localhost'].includes(u.hostname)){external.push(u.href);return route.abort();}
@@ -11,6 +12,7 @@ await context.route('**/*',route=>{
 });
 const page=await context.newPage();
 page.on('pageerror',e=>errors.push(e.message));
+page.on('request',r=>{if(r.method()==='POST'&&new URL(r.url()).pathname==='/api/print')printedDocuments.push(r.postDataJSON().document);});
 page.on('requestfailed',r=>failures.push(r.url()));
 try{
  await page.addInitScript(()=>{window.print=()=>{throw Error('Browser print must not be called');};});
@@ -28,9 +30,15 @@ try{
  await expect(dialog).toHaveCount(0);
  await page.getByRole('button',{name:/포장할게요/}).click();
  await expect.poll(()=>page.locator('.product-card img').evaluateAll(imgs=>imgs.length===12&&imgs.every(i=>i.complete&&i.naturalWidth>0))).toBe(true);
- await page.getByRole('button',{name:'아메리카노 3,200원',exact:true}).click();
+ await page.getByRole('button',{name:'디카페인',exact:true}).click();
+ await expect(page.locator('.product-card')).toHaveCount(9);
+ await page.getByRole('button',{name:'디카페인 카페모카 4,700원',exact:true}).click();
  await page.getByRole('button',{name:/차갑게/}).click();
- await page.getByRole('button',{name:'3,200원 담기',exact:true}).click();
+ await page.getByRole('button',{name:'많이',exact:true}).click();
+ await page.getByRole('button',{name:'휘핑 제거',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'시럽 추가',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'4,700원 담기',exact:true}).click();
+ if(quantity!==1){await page.evaluate(q=>{const key='switch.kiosk.draft.v1',draft=JSON.parse(localStorage.getItem(key));draft.lines[0].quantity=q;localStorage.setItem(key,JSON.stringify(draft));},quantity);await page.goto(base+'?kiosk=1');}
  await page.getByRole('button',{name:'결제하기',exact:true}).click();
  await expect(page.locator('.kiosk-header').getByRole('button',{name:/돌아가기|이전/})).toHaveCount(0);
  await expect(page.getByRole('button',{name:'이전으로',exact:true})).toHaveCount(1);
@@ -43,12 +51,12 @@ try{
  await page.screenshot({path:'qa/offline-complete.png'});
  const response=await page.request.get(base+'api/jobs');const {jobs}=await response.json();
  const latest=jobs[0];if(latest.state!=='file-saved')throw Error('Wrong backend job state');
- await page.reload();
- await page.keyboard.press('Control+Alt+s');
+ if(printedDocuments.at(-1)?.quantity!==quantity)throw Error('Printed quantity mismatch');
+ await page.goto(base+'?kiosk=1&printerSetup=1');
  const again=page.getByRole('dialog',{name:'프린터 설정'});
  await expect(again.getByLabel('출력 대상',{exact:true})).toHaveValue('개발용 PNG 저장');
  await expect(again.getByLabel('글자 크기',{exact:true})).toHaveValue('1.15');
- const report={base,internetRequests:external,failedRequests:failures,pageErrors:errors,localFontLoaded:await page.evaluate(()=>document.fonts.check('16px Pretendard')),menuImages:12,fullscreenKioskPage:true,previewToolbarHidden:true,topBackButtonRemoved:true,backendJobState:latest.state,settingsPersisted:true,browserPrintCalls:0,physicalOutputTested:false};
+ const report={base,orderQuantity:quantity,internetRequests:external,failedRequests:failures,pageErrors:errors,localFontLoaded:await page.evaluate(()=>document.fonts.check('16px Pretendard')),menuImages:12,decafItems:9,moreIce:true,whippingRemoval:true,syrupLabel:true,fullscreenKioskPage:true,previewToolbarHidden:true,topBackButtonRemoved:true,backendJobState:latest.state,settingsPersisted:true,browserPrintCalls:0,physicalOutputTested:false};
  if(external.length||failures.length||errors.length)throw Error(JSON.stringify(report));
  await fs.writeFile('qa/offline-local-check.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
 }finally{await browser.close();}

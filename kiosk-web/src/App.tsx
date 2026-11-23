@@ -39,6 +39,7 @@ import {
 } from "./catalog";
 import {
   completeOrder,
+  MAX_ORDER_QUANTITY,
   defaults,
   putLine,
   readDraft,
@@ -139,7 +140,7 @@ function ProductImage({
 function Counter({
   value,
   onChange,
-  max = 20,
+  max = MAX_ORDER_QUANTITY,
   min = 1,
   label,
   guideLine,

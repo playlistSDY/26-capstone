@@ -6,7 +6,7 @@ import urllib.request
 import urllib.error
 from http.server import ThreadingHTTPServer
 from pathlib import Path
-from receipt_renderer import render_receipt
+from receipt_renderer import render_receipt, validate_document
 from server import KioskService, FilePrinter, ApiError, handler_for, browser_arguments
 
 ROOT = Path(__file__).resolve().parent
@@ -70,6 +70,17 @@ class BackendTests(unittest.TestCase):
         self.assertEqual(self.service.print_job(self.payload())["state"],"uncertain")
         self.service.adapter=FilePrinter()
         self.assertEqual(self.service.print_job(self.payload())["state"],"uncertain")
+    def test_999_drinks_render_and_print_while_1000_are_rejected(self):
+        doc=document();doc['items']=doc['items'][:1]
+        doc['items'][0]['quantity']=999;doc['total']=doc['items'][0]['unitPrice']*999
+        self.assertEqual(validate_document(doc),doc)
+        result=self.service.print_job({'requestId':'quantity-999','document':doc,'kind':'auto'})
+        self.assertEqual(result['state'],'file-saved')
+        doc['items'][0]['quantity']=1000;doc['total']=doc['items'][0]['unitPrice']*1000
+        with self.assertRaises(ValueError):validate_document(doc)
+        doc['items']=[{**doc['items'][0],'quantity':500},{**doc['items'][0],'quantity':500}]
+        with self.assertRaisesRegex(ValueError,'999'):validate_document(doc)
+
     def test_render_long_names_and_options_at_large_scale(self):
         doc=document();doc["items"][0]["name"]="아주 긴 메뉴 이름과 옵션이 있는 음료"*4
         doc["items"][0]["optionsLabel"]="샷 추가 · 오트밀크 · 덜 달게 · "*12

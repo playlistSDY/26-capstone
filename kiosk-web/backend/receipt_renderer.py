@@ -2,24 +2,28 @@
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
+MAX_ORDER_QUANTITY = 999
+
 WIDTH = 576  # TM-m30, 72mm printable area at 203dpi
 
 
 def validate_document(doc):
     if not isinstance(doc, dict) or not isinstance(doc.get("items"), list):
         raise ValueError("주문 내역이 올바르지 않아요.")
-    if not 1 <= len(doc["items"]) <= 100:
-        raise ValueError("주문 항목은 1~100개여야 해요.")
+    if not 1 <= len(doc["items"]) <= MAX_ORDER_QUANTITY:
+        raise ValueError("주문 항목은 1~999개여야 해요.")
     for item in doc["items"]:
         if not isinstance(item, dict):
             raise ValueError("주문 항목 형식이 올바르지 않아요.")
         for key, limit in [("name", 200), ("optionsLabel", 600)]:
             if not isinstance(item.get(key), str) or len(item[key]) > limit:
                 raise ValueError("메뉴명 또는 옵션이 너무 길어요.")
-        if type(item.get("quantity")) is not int or not 1 <= item["quantity"] <= 99:
+        if type(item.get("quantity")) is not int or not 1 <= item["quantity"] <= MAX_ORDER_QUANTITY:
             raise ValueError("수량이 올바르지 않아요.")
         if type(item.get("unitPrice")) is not int or not 0 <= item["unitPrice"] <= 10000000:
             raise ValueError("단가 정보가 없거나 올바르지 않아요.")
+    if sum(i["quantity"] for i in doc["items"]) > MAX_ORDER_QUANTITY:
+        raise ValueError("한 번에 총 999개까지 주문할 수 있어요.")
     expected = sum(i["unitPrice"] * i["quantity"] for i in doc["items"])
     if type(doc.get("total")) is not int or doc["total"] != expected:
         raise ValueError("주문 합계와 항목 금액이 일치하지 않아요.")

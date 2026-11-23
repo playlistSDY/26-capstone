@@ -401,7 +401,8 @@ def handler_for(service, web_root, port, dev=False):
                 if self.headers.get("Content-Type", "").split(";")[0] != "application/json":
                     raise ApiError("JSON 요청이 필요해요.", 415)
                 length = int(self.headers.get("Content-Length", 0))
-                if not 0 < length <= 300000:
+                max_body = 4 * 1024 * 1024 if self.path == "/api/print" else 300000
+                if not 0 < length <= max_body:
                     raise ApiError("요청이 비어 있거나 너무 커요.", 413)
                 value = json.loads(self.rfile.read(length))
                 if self.path == "/api/settings":
