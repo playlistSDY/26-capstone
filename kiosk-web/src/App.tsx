@@ -1321,10 +1321,6 @@ export default function App() {
                       ))}
                     </nav>
                     <div className="catalog-scroll" ref={catalogScroll}>
-                      <div
-                        className="agent-dialogue-space"
-                        aria-hidden="true"
-                      />
                       <div className="product-grid">
                         {products
                           .filter((p) => p.categories.includes(category))
@@ -1363,6 +1359,7 @@ export default function App() {
                         원하는 메뉴를 선택해 주세요.
                       </p>
                     </div>
+                    <div className="agent-dialogue-space" aria-hidden="true" />
                     <section className="order-dock" aria-label="현재 주문 내역">
                       <div className="dock-heading">
                         <h2>

@@ -94,7 +94,13 @@ export function KioskCompanion({
             ? !!kiosk.querySelector(".welcome-drinks")
             : true;
       const context = `${screen}:${sceneReady}:${modal?.getAttribute("aria-label") ?? ""}:${kiosk.querySelector(".option-intro h2")?.textContent ?? ""}`;
-      const key = `${context}:${Math.round(bounds.width)}:${Math.round(size.current.width)}:${Math.round(size.current.height)}`;
+      // The footer follows real menu/cart layout changes, never new text bubbles.
+      const dialogueTop =
+        screen === "menu" && !inModal
+          ? (kiosk.querySelector<HTMLElement>(".agent-dialogue-space")
+              ?.offsetTop ?? 0)
+          : 0;
+      const key = `${context}:${Math.round(bounds.width)}:${Math.round(size.current.width)}:${Math.round(size.current.height)}:${Math.round(dialogueTop)}`;
       if (anchored.current === key) return;
       if (!anchored.current.startsWith(context + ":")) manual.current = false;
       anchored.current = key;

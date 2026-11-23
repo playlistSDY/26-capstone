@@ -141,11 +141,16 @@ test("The mouth waits for actual PCM playback and closes immediately on interrup
     const space = document
       .querySelector(".agent-dialogue-space")!
       .getBoundingClientRect();
+    const menu = document
+      .querySelector(".catalog-scroll")!
+      .getBoundingClientRect();
     return {
       actor: { y: actor.y, bottom: actor.bottom },
       space: { y: space.y, bottom: space.bottom },
+      menu: { y: menu.y, bottom: menu.bottom },
     };
   });
+  expect(inSpace.menu.bottom).toBeLessThanOrEqual(inSpace.space.y + 1);
   expect(inSpace.actor.y).toBeGreaterThanOrEqual(inSpace.space.y - 1);
   expect(inSpace.actor.bottom).toBeLessThanOrEqual(inSpace.space.bottom + 1);
   await page.screenshot({ path: "/tmp/switch-avatar-speaking.png" });
