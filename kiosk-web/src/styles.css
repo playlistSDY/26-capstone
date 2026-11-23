@@ -709,7 +709,8 @@ button:disabled:active {
   padding: 5px;
 }
 .counter {
-  display: flex;
+  display: grid;
+  grid-template-columns: 32px minmax(38px, 1fr) 32px;
   align-items: center;
   gap: 10px;
   border: 1px solid #e4e8ed;
@@ -719,8 +720,9 @@ button:disabled:active {
   flex-shrink: 0;
 }
 .counter button {
-  width: 32px;
+  width: 100%;
   height: 34px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -728,7 +730,6 @@ button:disabled:active {
 }
 .counter strong {
   font-size: 19px;
-  min-width: 24px;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
@@ -1505,16 +1506,15 @@ button:disabled:active {
 }
 .dock-line .counter {
   height: 35px;
+  grid-template-columns: 28px minmax(34px, 1fr) 28px;
   gap: 4px;
   padding: 0 3px;
 }
 .dock-line .counter button {
   height: 31px;
-  width: 28px;
 }
 .dock-line .counter strong {
   font-size: 17px;
-  min-width: 24px;
 }
 .dock-line .counter svg {
   width: 16px;

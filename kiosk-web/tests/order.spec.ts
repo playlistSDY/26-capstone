@@ -236,6 +236,13 @@ test("order dock supports editing, review before payment, and clearing", async (
     .getByRole("button", { name: "바닐라라떼 주문 수량 늘리기" })
     .click();
   await expect(dock.locator(".cart-tally strong")).toHaveText("9,000원");
+  const gapDifference = await dock.locator(".counter").evaluate((counter) => {
+    const [minus, number, plus] = [...counter.children].map((child) =>
+      child.getBoundingClientRect(),
+    );
+    return Math.abs(number.left - minus.right - (plus.left - number.right));
+  });
+  expect(gapDifference).toBeLessThan(1);
   await dock.getByRole("button", { name: "바닐라라떼 옵션 변경" }).click();
   await page.getByRole("button", { name: /따뜻하게/ }).click();
   await page.getByRole("button", { name: "9,000원 수정하기" }).click();
