@@ -374,7 +374,7 @@ button:disabled:active {
 .exit-hotspot {
   position: absolute;
   top: 0;
-  right: 0;
+  left: 0;
   width: 88px;
   height: 88px;
   z-index: 2;
